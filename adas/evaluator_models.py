@@ -1,0 +1,156 @@
+"""
+Evaluator data contracts and loading models.
+"""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, field
+from typing import Any
+
+
+@dataclass(slots=True)
+class SkillDocument:
+    path: str
+    raw_text: str
+    body: str
+    metadata: dict[str, str] = field(default_factory=dict)
+    name: str | None = None
+    strategy: str | None = None
+    version: str | None = None
+    author: str | None = None
+    description: str | None = None
+
+    @classmethod
+    def from_markdown(
+        cls,
+        path: str,
+        raw_text: str,
+        body: str,
+        metadata: dict[str, str],
+    ) -> "SkillDocument":
+        return cls(
+            path=path,
+            raw_text=raw_text,
+            body=body,
+            metadata=metadata,
+            name=metadata.get("name"),
+            strategy=metadata.get("strategy"),
+            version=metadata.get("version"),
+            author=metadata.get("author"),
+            description=metadata.get("description"),
+        )
+
+
+@dataclass(slots=True)
+class VideoRecord:
+    video_id: str
+    title: str
+    channel: str
+    channel_id: str
+    published_at: str
+    description: str
+    thumbnail: str
+    query_matched: str
+    views: int = 0
+    likes: int = 0
+    subscriber_count: int | None = None
+    duration_seconds: int = 0
+    tags: list[str] = field(default_factory=list)
+    category_id: str = ""
+    views_per_hour: float = 0.0
+    url: str = ""
+    transcript: str | None = None
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "VideoRecord":
+        return cls(
+            video_id=payload["video_id"],
+            title=payload.get("title", ""),
+            channel=payload.get("channel", ""),
+            channel_id=payload.get("channel_id", ""),
+            published_at=payload.get("published_at", ""),
+            description=payload.get("description", ""),
+            thumbnail=payload.get("thumbnail", ""),
+            query_matched=payload.get("query_matched", ""),
+            views=int(payload.get("views", 0) or 0),
+            likes=int(payload.get("likes", 0) or 0),
+            subscriber_count=(
+                int(payload["subscriber_count"])
+                if payload.get("subscriber_count") is not None
+                else None
+            ),
+            duration_seconds=int(payload.get("duration_seconds", 0) or 0),
+            tags=list(payload.get("tags", [])),
+            category_id=payload.get("category_id", ""),
+            views_per_hour=float(payload.get("views_per_hour", 0.0) or 0.0),
+            url=payload.get("url", ""),
+            transcript=payload.get("transcript"),
+        )
+
+    @property
+    def transcript_or_description(self) -> str:
+        return self.transcript or self.description
+
+
+@dataclass(slots=True)
+class FeedbackPick:
+    video_id: str
+    reaction: str | None
+    skill_version: str | None = None
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "FeedbackPick":
+        return cls(
+            video_id=payload["video_id"],
+            reaction=payload.get("reaction"),
+            skill_version=payload.get("skill_version"),
+        )
+
+
+@dataclass(slots=True)
+class FeedbackEntry:
+    date: str
+    picks: list[FeedbackPick] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "FeedbackEntry":
+        return cls(
+            date=payload.get("date", ""),
+            picks=[FeedbackPick.from_dict(pick) for pick in payload.get("picks", [])],
+        )
+
+
+@dataclass(slots=True)
+class EvaluationRequest:
+    skill: SkillDocument
+    videos: list[VideoRecord]
+    feedback_history: list[FeedbackEntry]
+    cache_path: str
+    feedback_path: str | None
+
+
+@dataclass(slots=True)
+class DimensionScore:
+    name: str
+    weight: float
+    score: float | None = None
+    detail: str = ""
+
+
+@dataclass(slots=True)
+class EvaluationResult:
+    skill_name: str
+    strategy: str | None
+    cache_path: str
+    video_count: int
+    dimensions: list[DimensionScore]
+    selected_video_ids: list[str] = field(default_factory=list)
+    total_score: float | None = None
+    status: str = "pending"
+    notes: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    def dimension_map(self) -> dict[str, DimensionScore]:
+        return {dimension.name: dimension for dimension in self.dimensions}

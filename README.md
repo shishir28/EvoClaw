@@ -5,8 +5,9 @@ EvoClaw is a planned **ADAS-style, self-improving YouTube curator** for AI and e
 At the moment, this repository contains the **foundation layer** of that system:
 
 - a YouTube fetcher with caching, `subscriber_count` enrichment, and best-effort transcript support
+- a fetcher design split into API, transcript, and cache collaborators behind `YouTubeFetcher`
 - three hand-written baseline skills
-- shared configuration for search, inference, and scoring weights
+- typed shared configuration for search, inference, paths, and scoring weights
 - a production `SKILL.md` placeholder
 - a cron configuration stub for future automation
 
@@ -51,8 +52,14 @@ Implemented now:
 
 - `adas/youtube_fetcher.py`
 - `adas/config.py`
-- `adas/evaluator.py` contract scaffold with weighted aggregation and algorithmic scoring
+- `adas/config.py` with typed settings plus backward-compatible constants
+- `adas/evaluator.py` with full evaluator flow, weighted aggregation, and optional LLM judging
+- `adas/evaluator_loader.py` for loading skill, cache, and feedback inputs
+- `adas/evaluator_models.py` for evaluator DTOs / data contracts
+- `adas/algorithmic_scorer.py` for non-LLM evaluator dimensions
+- `adas/llm_judge.py` for prompt-driven model judging
 - `adas/skill_executor.py` baseline execution adapter
+- `adas/prompts/eval_judge.md`
 - `adas/baselines/*.md`
 - `skills/youtube-curator/SKILL.md`
 - `cron/jobs.json`
@@ -60,10 +67,9 @@ Implemented now:
 
 Planned but not yet implemented:
 
-- LLM-judged evaluator dimensions (`relevance`, `substance`, `reasoning`)
 - real OpenClaw execution
 - `adas/meta_agent.py`
-- `adas/prompts/`
+- meta-agent prompts
 - generated archive entries under `adas/archive/skill_*`
 - Telegram reaction capture
 - automated best-skill deployment
@@ -112,12 +118,19 @@ Transcript fetching is **best-effort**. Some videos may still have `transcript: 
 The evaluator currently supports:
 
 - loading a skill, cache, and optional feedback history
+- a separate evaluator loader module for file and request assembly
 - `score()` orchestration for explicitly selected cached videos or auto-selected baseline picks
 - automatic execution of the current baseline-style skills through a Python adapter
+- registry-driven baseline strategy execution for easier extension
+- a separate evaluator models module for DTO-style dataclasses
+- separated scoring modules for algorithmic logic and LLM judging
+- injectable prompt and chat adapters for LLM judging
 - weighted aggregation
 - algorithmic scoring for `freshness`, `diversity`, and a placeholder `alignment` score
+- stricter typed scoring inputs in `adas/algorithmic_scorer.py`
+- opt-in LLM judging for `relevance`, `substance`, and `reasoning`
 
-It does **not** yet score the LLM-judged dimensions or run real OpenClaw execution.
+It does **not** yet run real OpenClaw execution.
 
 ## Security and repo hygiene
 

@@ -355,8 +355,8 @@ egress_rules:
 - [ ] Test that each baseline works manually via OpenClaw + Telegram
 
 ### Phase 2: Evaluation harness (day 3-4)
-- [ ] Build `evaluator.py` with all 6 scoring dimensions
-- [ ] Write the LLM-as-judge prompts for relevance, substance, and reasoning
+- [x] Build `evaluator.py` with all 6 scoring dimensions
+- [x] Write the LLM-as-judge prompts for relevance, substance, and reasoning
 - [ ] Score all 3 baselines against the cached video set
 - [ ] Verify scores are sensible (baselines should score differently)
 - [ ] Build the feedback ingestion from Telegram reactions

@@ -59,70 +59,13 @@ def _views_per_hour(views: int, published_at: str) -> float:
     return round(views / age_hours, 2)
 
 
-class YouTubeFetcher:
-    def __init__(self, api_key: str = YOUTUBE_API_KEY):
+class YouTubeAPIClient:
+    def __init__(self, api_key: str = YOUTUBE_API_KEY) -> None:
         if not api_key:
             raise ValueError("YOUTUBE_API_KEY is not set. Export it as an env variable.")
         self._yt = build("youtube", "v3", developerKey=api_key)
-        self._transcript_api = YouTubeTranscriptApi() if _TRANSCRIPT_AVAILABLE else None
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
-
-    def fetch(
-        self,
-        queries: list[str],
-        days: int = VIDEO_WINDOW_DAYS,
-        max_per_query: int = MAX_RESULTS_PER_QUERY,
-        with_transcripts: bool = TRANSCRIPT_ENABLED,
-    ) -> list[dict]:
-        """Return deduplicated, enriched video records for all queries."""
-        published_after = (
-            datetime.now(timezone.utc) - timedelta(days=days)
-        ).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-        seen: dict[str, dict] = {}
-        for query in queries:
-            for video in self._search(query, published_after, max_per_query):
-                if video["video_id"] not in seen:
-                    seen[video["video_id"]] = video
-
-        if not seen:
-            return []
-
-        enriched = self._enrich(list(seen.values()))
-
-        if with_transcripts and _TRANSCRIPT_AVAILABLE:
-            enriched = self._attach_transcripts(enriched)
-
-        return enriched
-
-    def save_cache(self, videos: list[dict], path: str) -> None:
-        """Write enriched video list to a JSON cache file."""
-        dest = Path(path) if os.path.isabs(path) else Path(TEST_SETS_DIR) / path
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
-            "fetched_at": datetime.now(timezone.utc).isoformat(),
-            "count": len(videos),
-            "videos": videos,
-        }
-        dest.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
-        print(f"Cached {len(videos)} videos → {dest}")
-
-    @staticmethod
-    def load_cache(path: str) -> list[dict]:
-        """Load a previously saved cache file."""
-        dest = Path(path) if os.path.isabs(path) else Path(TEST_SETS_DIR) / path
-        raw = json.loads(dest.read_text())
-        return raw["videos"]
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-
-    def _search(self, query: str, published_after: str, max_results: int) -> list[dict]:
-        """Run a YouTube search and return stub records with video IDs."""
+    def search(self, query: str, published_after: str, max_results: int) -> list[dict]:
         try:
             resp = (
                 self._yt.search()
@@ -156,13 +99,12 @@ class YouTubeFetcher:
             })
         return results
 
-    def _enrich(self, stubs: list[dict]) -> list[dict]:
-        """Fetch per-video statistics and content details in batches of 50."""
+    def enrich(self, stubs: list[dict]) -> list[dict]:
         enriched = []
         for i in range(0, len(stubs), 50):
             batch = stubs[i : i + 50]
             ids = ",".join(v["video_id"] for v in batch)
-            channel_subscribers = self._channel_subscriber_counts(batch)
+            channel_subscribers = self.channel_subscriber_counts(batch)
             try:
                 resp = (
                     self._yt.videos()
@@ -202,8 +144,7 @@ class YouTubeFetcher:
                 })
         return enriched
 
-    def _channel_subscriber_counts(self, videos: list[dict]) -> dict[str, int | None]:
-        """Return subscriber counts keyed by channel ID for a batch of videos."""
+    def channel_subscriber_counts(self, videos: list[dict]) -> dict[str, int | None]:
         channel_ids = sorted({video["channel_id"] for video in videos})
         if not channel_ids:
             return {}
@@ -233,8 +174,16 @@ class YouTubeFetcher:
 
         return subscribers
 
-    def _attach_transcripts(self, videos: list[dict]) -> list[dict]:
-        """Best-effort transcript fetch; skips on errors."""
+class TranscriptProvider:
+    def __init__(self, pacing_seconds: float = 0.2) -> None:
+        self._transcript_api = YouTubeTranscriptApi() if _TRANSCRIPT_AVAILABLE else None
+        self._pacing_seconds = pacing_seconds
+
+    @property
+    def available(self) -> bool:
+        return self._transcript_api is not None
+
+    def attach(self, videos: list[dict]) -> list[dict]:
         for video in videos:
             vid_id = video["video_id"]
             try:
@@ -251,8 +200,72 @@ class YouTubeFetcher:
             except Exception as e:
                 print(f"[transcript] {vid_id}: {e}", file=sys.stderr)
                 video["transcript"] = None
-            time.sleep(0.2)   # gentle pacing
+            time.sleep(self._pacing_seconds)
         return videos
+
+
+class VideoCacheRepository:
+    def save(self, videos: list[dict], path: str) -> None:
+        dest = Path(path) if os.path.isabs(path) else Path(TEST_SETS_DIR) / path
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+            "count": len(videos),
+            "videos": videos,
+        }
+        dest.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+        print(f"Cached {len(videos)} videos → {dest}")
+
+    def load(self, path: str) -> list[dict]:
+        dest = Path(path) if os.path.isabs(path) else Path(TEST_SETS_DIR) / path
+        raw = json.loads(dest.read_text())
+        return raw["videos"]
+
+
+class YouTubeFetcher:
+    def __init__(
+        self,
+        api_key: str = YOUTUBE_API_KEY,
+        api_client: YouTubeAPIClient | None = None,
+        transcript_provider: TranscriptProvider | None = None,
+        cache_repository: VideoCacheRepository | None = None,
+    ) -> None:
+        self._api_client = api_client or YouTubeAPIClient(api_key)
+        self._transcript_provider = transcript_provider or TranscriptProvider()
+        self._cache_repository = cache_repository or VideoCacheRepository()
+
+    def fetch(
+        self,
+        queries: list[str],
+        days: int = VIDEO_WINDOW_DAYS,
+        max_per_query: int = MAX_RESULTS_PER_QUERY,
+        with_transcripts: bool = TRANSCRIPT_ENABLED,
+    ) -> list[dict]:
+        """Return deduplicated, enriched video records for all queries."""
+        published_after = (
+            datetime.now(timezone.utc) - timedelta(days=days)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        seen: dict[str, dict] = {}
+        for query in queries:
+            for video in self._api_client.search(query, published_after, max_per_query):
+                if video["video_id"] not in seen:
+                    seen[video["video_id"]] = video
+
+        if not seen:
+            return []
+
+        enriched = self._api_client.enrich(list(seen.values()))
+        if with_transcripts and self._transcript_provider.available:
+            return self._transcript_provider.attach(enriched)
+        return enriched
+
+    def save_cache(self, videos: list[dict], path: str) -> None:
+        self._cache_repository.save(videos, path)
+
+    @staticmethod
+    def load_cache(path: str) -> list[dict]:
+        return VideoCacheRepository().load(path)
 
 
 # ------------------------------------------------------------------

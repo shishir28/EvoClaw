@@ -8,10 +8,14 @@ from a cached dataset so the evaluator can run end to end.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any
+from typing import Protocol
+
+try:
+    from evaluator_models import SkillDocument, VideoRecord
+except ModuleNotFoundError:
+    from adas.evaluator_models import SkillDocument, VideoRecord
 
 
 _AI_TERMS = {
@@ -43,20 +47,20 @@ _BUSINESS_TERMS = {
 }
 
 _BLOCKED_SCRIPT_RANGES = [
-    ("\u0600", "\u06ff"),  # Arabic
-    ("\u0900", "\u097f"),  # Devanagari
-    ("\u0c00", "\u0c7f"),  # Telugu
-    ("\u4e00", "\u9fff"),  # CJK Unified Ideographs
+    ("\u0600", "\u06ff"),
+    ("\u0900", "\u097f"),
+    ("\u0c00", "\u0c7f"),
+    ("\u4e00", "\u9fff"),
 ]
 
 
-def _text(video: Any) -> str:
+def _text(video: VideoRecord) -> str:
     return " ".join(
         [
-            getattr(video, "title", ""),
-            getattr(video, "description", ""),
-            " ".join(getattr(video, "tags", []) or []),
-            getattr(video, "query_matched", ""),
+            video.title,
+            video.description,
+            " ".join(video.tags),
+            video.query_matched,
         ]
     ).lower()
 
@@ -65,8 +69,8 @@ def _contains_blocked_script(text: str) -> bool:
     return any(start <= ch <= end for ch in text for start, end in _BLOCKED_SCRIPT_RANGES)
 
 
-def _looks_english(video: Any) -> bool:
-    source = " ".join([getattr(video, "title", ""), getattr(video, "description", "")])
+def _looks_english(video: VideoRecord) -> bool:
+    source = " ".join([video.title, video.description])
     if _contains_blocked_script(source):
         return False
     ascii_chars = sum(1 for ch in source if ord(ch) < 128 and ch.isalpha())
@@ -76,44 +80,38 @@ def _looks_english(video: Any) -> bool:
     return ascii_chars / alpha_chars >= 0.85
 
 
-def _is_relevant(video: Any) -> bool:
+def _is_relevant(video: VideoRecord) -> bool:
     source = _text(video)
     return any(term in source for term in _AI_TERMS) and any(
         term in source for term in _BUSINESS_TERMS
     )
 
 
-def _published_at(video: Any) -> datetime:
-    return datetime.fromisoformat(getattr(video, "published_at").replace("Z", "+00:00"))
+def _published_at(video: VideoRecord) -> datetime:
+    return datetime.fromisoformat(video.published_at.replace("Z", "+00:00"))
 
 
-def _age_hours(video: Any) -> float:
-    return max(
-        (datetime.now(timezone.utc) - _published_at(video)).total_seconds() / 3600,
-        0.0,
-    )
+def _age_hours(video: VideoRecord) -> float:
+    return max((datetime.now(timezone.utc) - _published_at(video)).total_seconds() / 3600, 0.0)
 
 
-def _minutes(video: Any) -> float:
-    return max(float(getattr(video, "duration_seconds", 0) or 0) / 60.0, 0.0)
+def _minutes(video: VideoRecord) -> float:
+    return max(float(video.duration_seconds or 0) / 60.0, 0.0)
 
 
-def _subscriber_floor(video: Any, threshold: int) -> bool:
-    subscriber_count = getattr(video, "subscriber_count", None)
-    return subscriber_count is None or subscriber_count >= threshold
+def _subscriber_floor(video: VideoRecord, threshold: int) -> bool:
+    return video.subscriber_count is None or video.subscriber_count >= threshold
 
 
-def _transcript_bonus(video: Any) -> float:
-    transcript = getattr(video, "transcript", None) or ""
-    return min(len(transcript) / 500.0, 4.0)
+def _transcript_bonus(video: VideoRecord) -> float:
+    return min(len(video.transcript or "") / 500.0, 4.0)
 
 
-def _description_bonus(video: Any) -> float:
-    description = getattr(video, "description", "") or ""
-    return min(len(description) / 150.0, 3.0)
+def _description_bonus(video: VideoRecord) -> float:
+    return min(len(video.description or "") / 150.0, 3.0)
 
 
-def _duration_bonus(video: Any) -> float:
+def _duration_bonus(video: VideoRecord) -> float:
     minutes = _minutes(video)
     if 4.0 <= minutes <= 45.0:
         return 2.0
@@ -122,7 +120,7 @@ def _duration_bonus(video: Any) -> float:
     return 0.0
 
 
-def _short_penalty(video: Any) -> float:
+def _short_penalty(video: VideoRecord) -> float:
     return 2.0 if _minutes(video) < 1.0 else 0.0
 
 
@@ -132,85 +130,114 @@ class SkillExecutionResult:
     notes: list[str] = field(default_factory=list)
 
 
-class BaselineSkillExecutor:
-    """Executes the current baseline strategies over cached video records."""
+class SkillStrategyExecutor(Protocol):
+    strategy_name: str
 
-    def execute(self, skill: Any, videos: list[Any]) -> SkillExecutionResult:
-        strategy = getattr(skill, "strategy", None)
-        if strategy == "recency":
-            return self._execute_recency(videos)
-        if strategy == "engagement-velocity":
-            return self._execute_engagement_velocity(videos)
-        if strategy == "llm-substance-judge":
-            return self._execute_substance_proxy(videos)
-        raise ValueError(
-            f"Unsupported skill strategy '{strategy}'. Add an adapter or use explicit selected IDs."
-        )
+    def execute(self, videos: list[VideoRecord]) -> SkillExecutionResult: ...
 
-    def _base_candidates(self, videos: list[Any]) -> list[Any]:
-        return [
-            video
-            for video in videos
-            if _looks_english(video) and _is_relevant(video)
-        ]
 
-    def _execute_recency(self, videos: list[Any]) -> SkillExecutionResult:
-        candidates = [
-            video for video in self._base_candidates(videos) if _subscriber_floor(video, 1000)
-        ]
+class _BaseStrategyExecutor:
+    def base_candidates(self, videos: list[VideoRecord]) -> list[VideoRecord]:
+        return [video for video in videos if _looks_english(video) and _is_relevant(video)]
+
+
+class RecencyStrategyExecutor(_BaseStrategyExecutor):
+    strategy_name = "recency"
+
+    def execute(self, videos: list[VideoRecord]) -> SkillExecutionResult:
+        candidates = [video for video in self.base_candidates(videos) if _subscriber_floor(video, 1000)]
         recent_candidates = [video for video in candidates if _age_hours(video) <= 48.0]
         pool = recent_candidates if len(recent_candidates) >= 3 else candidates
         selected = sorted(pool, key=_published_at, reverse=True)[:3]
-        notes = [
-            "Executed recency strategy adapter.",
-            f"Selected from {'48h window' if pool is recent_candidates else '7d fallback pool'}.",
-        ]
         return SkillExecutionResult(
             selected_video_ids=[video.video_id for video in selected],
-            notes=notes,
+            notes=[
+                "Executed recency strategy adapter.",
+                f"Selected from {'48h window' if pool is recent_candidates else '7d fallback pool'}.",
+            ],
         )
 
-    def _execute_engagement_velocity(self, videos: list[Any]) -> SkillExecutionResult:
-        candidates = self._base_candidates(videos)
-        primary_pool = [
-            video for video in candidates if _subscriber_floor(video, 10000)
-        ]
+
+class EngagementVelocityStrategyExecutor(_BaseStrategyExecutor):
+    strategy_name = "engagement-velocity"
+
+    def execute(self, videos: list[VideoRecord]) -> SkillExecutionResult:
+        candidates = self.base_candidates(videos)
+        primary_pool = [video for video in candidates if _subscriber_floor(video, 10000)]
         pool = primary_pool
         if len(pool) < 3:
             pool = [video for video in candidates if _subscriber_floor(video, 1000)]
         selected = sorted(
             pool,
-            key=lambda video: (getattr(video, "views_per_hour", 0.0), _published_at(video)),
+            key=lambda video: (video.views_per_hour, _published_at(video)),
             reverse=True,
         )[:3]
-        notes = [
-            "Executed engagement-velocity strategy adapter.",
-            f"Used subscriber threshold {'10,000' if pool is primary_pool else '1,000 fallback'}.",
-        ]
         return SkillExecutionResult(
             selected_video_ids=[video.video_id for video in selected],
-            notes=notes,
+            notes=[
+                "Executed engagement-velocity strategy adapter.",
+                f"Used subscriber threshold {'10,000' if pool is primary_pool else '1,000 fallback'}.",
+            ],
         )
 
-    def _execute_substance_proxy(self, videos: list[Any]) -> SkillExecutionResult:
-        candidates = self._base_candidates(videos)
+
+class SubstanceProxyStrategyExecutor(_BaseStrategyExecutor):
+    strategy_name = "llm-substance-judge"
+
+    def execute(self, videos: list[VideoRecord]) -> SkillExecutionResult:
         ranked = sorted(
-            candidates,
+            self.base_candidates(videos),
             key=lambda video: (
                 _transcript_bonus(video)
                 + _description_bonus(video)
                 + _duration_bonus(video)
                 - _short_penalty(video),
-                getattr(video, "views_per_hour", 0.0),
+                video.views_per_hour,
             ),
             reverse=True,
         )
         selected = ranked[:3]
-        notes = [
-            "Executed substance-judge proxy adapter.",
-            "Used transcript availability, description richness, and duration as substance heuristics.",
-        ]
         return SkillExecutionResult(
             selected_video_ids=[video.video_id for video in selected],
-            notes=notes,
+            notes=[
+                "Executed substance-judge proxy adapter.",
+                "Used transcript availability, description richness, and duration as substance heuristics.",
+            ],
         )
+
+
+class BaselineSkillExecutor:
+    """Executes the current baseline strategies over cached video records."""
+
+    def __init__(self, strategies: list[SkillStrategyExecutor] | None = None) -> None:
+        strategy_list = strategies or [
+            RecencyStrategyExecutor(),
+            EngagementVelocityStrategyExecutor(),
+            SubstanceProxyStrategyExecutor(),
+        ]
+        duplicate_strategy_names = {
+            strategy.strategy_name
+            for strategy in strategy_list
+            if sum(1 for item in strategy_list if item.strategy_name == strategy.strategy_name) > 1
+        }
+        if duplicate_strategy_names:
+            raise ValueError(
+                "Duplicate strategy executors registered for: "
+                + ", ".join(sorted(duplicate_strategy_names))
+            )
+        self._strategies = {
+            strategy.strategy_name: strategy for strategy in strategy_list
+        }
+
+    def execute(
+        self,
+        skill: SkillDocument,
+        videos: list[VideoRecord],
+    ) -> SkillExecutionResult:
+        strategy_name = skill.strategy
+        strategy = self._strategies.get(strategy_name or "")
+        if strategy is None:
+            raise ValueError(
+                f"Unsupported skill strategy '{strategy_name}'. Add an adapter or use explicit selected IDs."
+            )
+        return strategy.execute(videos)

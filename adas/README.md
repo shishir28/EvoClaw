@@ -16,6 +16,12 @@ The fetcher already supports:
 - cache save/load helpers
 - a CLI entrypoint for manual refreshes
 
+Internally it is now split into smaller collaborators:
+
+- `YouTubeAPIClient` for search and enrichment calls
+- `TranscriptProvider` for best-effort transcript attachment
+- `VideoCacheRepository` for cache persistence
+
 Example:
 
 ```bash
@@ -33,19 +39,79 @@ Central config for:
 - path constants used by the planned ADAS loop
 - nightly loop parameters like iteration counts and retry limits
 
+It now also exposes a typed `SETTINGS` object as the source of truth, while keeping the older constant-style imports working for existing modules.
+
 ### `evaluator.py`
 
-The evaluator scaffold now defines:
+The evaluator now defines:
 
-- the input contract for skill, cache, and feedback loading
-- the output contract for dimension scores and overall results
+- orchestration of the evaluator flow
 - a `score()` orchestration path for explicit selected video IDs or adapter-selected picks
-- automatic execution for the current baseline strategies through `skill_executor.py`
-- weighted aggregation for completed dimension scores
-- algorithmic scoring for freshness, diversity, and alignment placeholder
-- a result template that future dimension scoring logic will populate
+- composition of the smaller evaluator components listed below
+- constructor injection points for the main evaluator collaborators
 
-Current limitation: the LLM-judged dimensions and real OpenClaw execution are not implemented yet.
+### `evaluator_loader.py`
+
+Owns request loading concerns that used to sit inside the data contracts:
+
+- skill markdown loading and frontmatter parsing
+- cache loading
+- feedback history loading
+- assembly of `EvaluationRequest`
+
+### `evaluator_models.py`
+
+Owns the evaluator DTO-style dataclasses:
+
+- skill documents
+- cached video records
+- feedback entries
+- evaluation request/result types
+- dimension score records
+
+### `algorithmic_scorer.py`
+
+Owns the non-LLM evaluator dimensions:
+
+- freshness
+- diversity
+- alignment placeholder
+
+It now uses explicit evaluator model types instead of loose `Any`-style contracts.
+
+### `llm_judge.py`
+
+Owns prompt-based judging for:
+
+- relevance
+- substance
+- reasoning
+
+It now separates:
+
+- prompt template loading
+- chat completion transport
+- score parsing and judge orchestration
+
+### `skill_executor.py`
+
+Owns Python-adapter execution for the current baseline strategies.
+
+It now uses separate strategy executors behind a registry instead of one central conditional dispatcher.
+
+### Evaluator runtime path
+
+The evaluator runtime is now split cleanly:
+
+1. `Evaluator` loads request data and orchestrates the flow
+2. `evaluator_loader.py` assembles the request from files
+3. `evaluator_models.py` provides the request/result data structures
+4. `skill_executor.py` selects videos for supported baseline skills
+5. `algorithmic_scorer.py` scores the rule-based dimensions
+6. `llm_judge.py` scores the semantic dimensions
+7. `Evaluator` aggregates the final result
+
+Current limitation: real OpenClaw execution and the later meta-agent loop are not implemented yet.
 
 ### `baselines/`
 
@@ -79,9 +145,8 @@ Current contents are early local datasets and placeholders:
 
 The design in `Plan.md` expects this directory to grow with:
 
-- `evaluator.py` for scoring candidate skills
 - `meta_agent.py` for the overnight improvement loop
-- `prompts/` for meta-agent and judge prompts
+- additional prompts for the meta-agent loop
 - generated archive folders such as `archive/skill_001/`
 
 ## Data flow

@@ -19,7 +19,13 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] fetcher updated for the installed `youtube-transcript-api` client
 - [x] `subscriber_count` enrichment in fetcher output
 - [x] `adas/config.py`
-- [x] `adas/evaluator.py` contract scaffold
+- [x] `adas/evaluator.py` orchestration flow
+- [x] `adas/evaluator_loader.py`
+- [x] `adas/evaluator_models.py`
+- [x] `adas/algorithmic_scorer.py`
+- [x] `adas/llm_judge.py`
+- [x] `adas/skill_executor.py`
+- [x] `adas/prompts/eval_judge.md`
 - [x] baseline skills in `adas/baselines/`
 - [x] production skill placeholder in `skills/youtube-curator/SKILL.md`
 - [x] archive index stub in `adas/archive/index.json`
@@ -31,9 +37,7 @@ It is written as a learning-oriented checklist so you can follow the system incr
 
 ### Not implemented yet
 
-- [ ] evaluator scoring logic inside `adas/evaluator.py`
 - [ ] `adas/meta_agent.py`
-- [ ] `adas/prompts/`
 - [ ] generated archive entries under `adas/archive/skill_*`
 - [ ] automatic deployment of winning skill
 - [ ] Telegram digest sender
@@ -128,15 +132,21 @@ The evaluator now has:
 
 - request models for skill, videos, and feedback history
 - result models for weighted dimensions and final output shape
-- loader methods for `SKILL.md`, cache JSON, and optional feedback JSON
+- a dedicated loader module for `SKILL.md`, cache JSON, and optional feedback JSON
+- a smaller, more cohesive structure:
+  - `adas/evaluator_models.py` for DTO-style data contracts
+  - `adas/evaluator_loader.py` for request assembly
+  - `adas/evaluator.py` for orchestration
+  - `adas/algorithmic_scorer.py` for rule-based scoring
+  - `adas/llm_judge.py` for model-based judging
 - weighted aggregation once dimension scores are assigned
 - algorithmic scoring for freshness, diversity, and a neutral-feedback alignment placeholder
 - `score()` orchestration for explicit selected video IDs
-- a result template and execution hooks for the remaining LLM-judged scoring logic
+- LLM-judged scoring for relevance, substance, and reasoning
+- a result template and execution hooks for end-to-end evaluator scoring
 
 Current limitation:
 
-- evaluator still needs LLM-judged dimensions for relevance, substance, and reasoning
 - real OpenClaw execution is still a later replacement step
 
 ### Files involved
@@ -171,6 +181,7 @@ Step 3 is complete for the current implementation path.
 The evaluator can now execute the current baseline-style skills automatically through a Python adapter:
 
 - `adas/skill_executor.py` implements deterministic baseline execution
+- strategy-specific executors are registered behind a registry-driven adapter
 - `Evaluator.score(...)` can auto-select top videos for supported strategies
 - the execution layer is separate from scoring so it can later be replaced with real OpenClaw execution
 
@@ -188,18 +199,31 @@ The evaluator can now execute the current baseline-style skills automatically th
 
 ### Tasks
 
-- [ ] create `adas/prompts/eval_judge.md`
-- [ ] add model client logic
-- [ ] implement judge calls for:
-  - [ ] relevance
-  - [ ] substance
-  - [ ] reasoning
-- [ ] parse JSON responses safely
-- [ ] combine judge scores with algorithmic scores
+- [x] create `adas/prompts/eval_judge.md`
+- [x] add model client logic
+- [x] implement judge calls for:
+  - [x] relevance
+  - [x] substance
+  - [x] reasoning
+- [x] parse JSON responses safely
+- [x] combine judge scores with algorithmic scores
 
 ### Why this matters
 
 This is what lets the system judge quality, not just recency or popularity.
+
+### Step 4 progress
+
+Step 4 is complete for the current implementation scope.
+
+The evaluator can now:
+
+- load `adas/prompts/eval_judge.md`
+- call the configured local OpenAI-compatible endpoint
+- separate prompt loading and chat transport behind injectable adapters
+- score `relevance`, `substance`, and `reasoning`
+- merge those scores into the existing algorithmic evaluator flow
+- return a fully aggregated `total_score` when all dimensions are present
 
 ### Files involved
 
