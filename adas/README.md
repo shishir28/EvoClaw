@@ -39,9 +39,13 @@ The evaluator scaffold now defines:
 
 - the input contract for skill, cache, and feedback loading
 - the output contract for dimension scores and overall results
-- a result template that future scoring logic will populate
+- a `score()` orchestration path for explicit selected video IDs or adapter-selected picks
+- automatic execution for the current baseline strategies through `skill_executor.py`
+- weighted aggregation for completed dimension scores
+- algorithmic scoring for freshness, diversity, and alignment placeholder
+- a result template that future dimension scoring logic will populate
 
-Current limitation: the scoring behavior itself is not implemented yet.
+Current limitation: the LLM-judged dimensions and real OpenClaw execution are not implemented yet.
 
 ### `baselines/`
 
@@ -94,6 +98,6 @@ The intended lifecycle inside `adas/` is:
 
 - Runtime-generated data in `test_sets/` and `archive/skill_*/` is gitignored.
 - Secret values are loaded from the repo root `.env`.
-- The current repo state is still **pre-evaluator / pre-meta-agent**.
+- The current repo state is **early evaluator / pre-meta-agent**.
 - Transcript fetching is **best-effort**: some videos now resolve transcripts, but YouTube may still block others depending on IP/network conditions.
 - The current cache shape is strong enough to begin the evaluator, because it includes `views_per_hour`, `subscriber_count`, and descriptions even when transcripts are missing.

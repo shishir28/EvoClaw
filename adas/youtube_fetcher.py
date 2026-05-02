@@ -24,13 +24,22 @@ try:
 except ImportError:
     _TRANSCRIPT_AVAILABLE = False
 
-from config import (
-    YOUTUBE_API_KEY,
-    MAX_RESULTS_PER_QUERY,
-    VIDEO_WINDOW_DAYS,
-    TRANSCRIPT_ENABLED,
-    TEST_SETS_DIR,
-)
+try:
+    from config import (
+        YOUTUBE_API_KEY,
+        MAX_RESULTS_PER_QUERY,
+        VIDEO_WINDOW_DAYS,
+        TRANSCRIPT_ENABLED,
+        TEST_SETS_DIR,
+    )
+except ModuleNotFoundError:
+    from adas.config import (
+        YOUTUBE_API_KEY,
+        MAX_RESULTS_PER_QUERY,
+        VIDEO_WINDOW_DAYS,
+        TRANSCRIPT_ENABLED,
+        TEST_SETS_DIR,
+    )
 
 # ISO 8601 duration → seconds
 _DURATION_RE = re.compile(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?")
@@ -252,7 +261,10 @@ class YouTubeFetcher:
 
 if __name__ == "__main__":
     import argparse
-    from config import SEARCH_QUERIES, VIDEO_WINDOW_DAYS
+    try:
+        from config import SEARCH_QUERIES, VIDEO_WINDOW_DAYS
+    except ModuleNotFoundError:
+        from adas.config import SEARCH_QUERIES, VIDEO_WINDOW_DAYS
 
     parser = argparse.ArgumentParser(description="Fetch and cache YouTube videos")
     parser.add_argument("--days", type=int, default=VIDEO_WINDOW_DAYS)

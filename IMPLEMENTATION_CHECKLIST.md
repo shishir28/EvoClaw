@@ -19,6 +19,7 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] fetcher updated for the installed `youtube-transcript-api` client
 - [x] `subscriber_count` enrichment in fetcher output
 - [x] `adas/config.py`
+- [x] `adas/evaluator.py` contract scaffold
 - [x] baseline skills in `adas/baselines/`
 - [x] production skill placeholder in `skills/youtube-curator/SKILL.md`
 - [x] archive index stub in `adas/archive/index.json`
@@ -30,7 +31,7 @@ It is written as a learning-oriented checklist so you can follow the system incr
 
 ### Not implemented yet
 
-- [ ] `adas/evaluator.py`
+- [ ] evaluator scoring logic inside `adas/evaluator.py`
 - [ ] `adas/meta_agent.py`
 - [ ] `adas/prompts/`
 - [ ] generated archive entries under `adas/archive/skill_*`
@@ -103,21 +104,40 @@ Current dataset notes:
 
 ### Tasks
 
-- [ ] create `adas/evaluator.py`
-- [ ] define evaluator input shape
-- [ ] define evaluator output shape
-- [ ] load `SKILL.md`
-- [ ] load cached videos
-- [ ] load optional feedback history
-- [ ] implement weighted score aggregation
-- [ ] implement algorithmic scoring first:
-  - [ ] freshness
-  - [ ] diversity
-  - [ ] alignment placeholder
+- [x] create `adas/evaluator.py`
+- [x] define evaluator input shape
+- [x] define evaluator output shape
+- [x] load `SKILL.md`
+- [x] load cached videos
+- [x] load optional feedback history
+- [x] implement weighted score aggregation
+- [x] implement algorithmic scoring first:
+  - [x] freshness
+  - [x] diversity
+  - [x] alignment placeholder
 
 ### Why this matters
 
 The evaluator defines what "better" means. Without it, the meta agent has nothing useful to optimize.
+
+### Step 2 progress
+
+Step 2 is complete for the current implementation scope.
+
+The evaluator now has:
+
+- request models for skill, videos, and feedback history
+- result models for weighted dimensions and final output shape
+- loader methods for `SKILL.md`, cache JSON, and optional feedback JSON
+- weighted aggregation once dimension scores are assigned
+- algorithmic scoring for freshness, diversity, and a neutral-feedback alignment placeholder
+- `score()` orchestration for explicit selected video IDs
+- a result template and execution hooks for the remaining LLM-judged scoring logic
+
+Current limitation:
+
+- evaluator still needs LLM-judged dimensions for relevance, substance, and reasoning
+- real OpenClaw execution is still a later replacement step
 
 ### Files involved
 
@@ -133,16 +153,26 @@ The evaluator defines what "better" means. Without it, the meta agent has nothin
 
 ### Tasks
 
-- [ ] define the execution contract for a skill
-- [ ] choose the first implementation approach:
-  - [ ] Python adapter for baseline skills
+- [x] define the execution contract for a skill
+- [x] choose the first implementation approach:
+  - [x] Python adapter for baseline skills
   - [ ] later replacement with real OpenClaw execution
-- [ ] make the evaluator consume that contract
-- [ ] keep the interface generic enough to swap implementations later
+- [x] make the evaluator consume that contract
+- [x] keep the interface generic enough to swap implementations later
 
 ### Why this matters
 
 A skill cannot be scored until it can produce structured output.
+
+### Step 3 progress
+
+Step 3 is complete for the current implementation path.
+
+The evaluator can now execute the current baseline-style skills automatically through a Python adapter:
+
+- `adas/skill_executor.py` implements deterministic baseline execution
+- `Evaluator.score(...)` can auto-select top videos for supported strategies
+- the execution layer is separate from scoring so it can later be replaced with real OpenClaw execution
 
 ### Files involved
 

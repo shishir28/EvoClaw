@@ -51,7 +51,8 @@ Implemented now:
 
 - `adas/youtube_fetcher.py`
 - `adas/config.py`
-- `adas/evaluator.py` contract scaffold
+- `adas/evaluator.py` contract scaffold with weighted aggregation and algorithmic scoring
+- `adas/skill_executor.py` baseline execution adapter
 - `adas/baselines/*.md`
 - `skills/youtube-curator/SKILL.md`
 - `cron/jobs.json`
@@ -59,7 +60,8 @@ Implemented now:
 
 Planned but not yet implemented:
 
-- evaluator scoring logic
+- LLM-judged evaluator dimensions (`relevance`, `substance`, `reasoning`)
+- real OpenClaw execution
 - `adas/meta_agent.py`
 - `adas/prompts/`
 - generated archive entries under `adas/archive/skill_*`
@@ -106,6 +108,16 @@ The current fetcher output includes:
 - `transcript` when available
 
 Transcript fetching is **best-effort**. Some videos may still have `transcript: null` if YouTube blocks caption retrieval for the current IP.
+
+The evaluator currently supports:
+
+- loading a skill, cache, and optional feedback history
+- `score()` orchestration for explicitly selected cached videos or auto-selected baseline picks
+- automatic execution of the current baseline-style skills through a Python adapter
+- weighted aggregation
+- algorithmic scoring for `freshness`, `diversity`, and a placeholder `alignment` score
+
+It does **not** yet score the LLM-judged dimensions or run real OpenClaw execution.
 
 ## Security and repo hygiene
 
