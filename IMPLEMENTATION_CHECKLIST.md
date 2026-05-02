@@ -8,7 +8,6 @@ Use it to answer two questions quickly:
 2. **What should we build next, step by step?**
 
 It is written as a learning-oriented checklist so you can follow the system incrementally and understand how each part fits together.
-
 ---
 
 ## 1. Current implementation status
@@ -28,12 +27,13 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] `adas/prompts/eval_judge.md`
 - [x] baseline skills in `adas/baselines/`
 - [x] production skill placeholder in `skills/youtube-curator/SKILL.md`
-- [x] archive index stub in `adas/archive/index.json`
+- [x] empty archive index stub in `adas/archive/index.json`
 - [x] sample cache in `adas/test_sets/video_cache_test.json`
 - [x] reusable local cache in `adas/test_sets/video_cache_w1.json`
-- [x] feedback file stub in `adas/test_sets/feedback.json`
+- [x] feedback history stub in `adas/test_sets/feedback.json`
 - [x] cron config stub in `cron/jobs.json`
 - [x] repository documentation in `README.md` files
+- [x] high-level orientation docs in `ARCHITECTURE.md` and `WORKFLOW.md`
 
 ### Not implemented yet
 
@@ -248,6 +248,16 @@ The evaluator can now:
 ### Why this matters
 
 If the evaluator is wrong, the rest of the system will optimize toward the wrong target.
+
+### Step 5 progress
+
+Step 5 has not started yet.
+
+The missing work here is the comparison run itself:
+
+- run the three baselines on the same cached set
+- save result breakdowns somewhere persistent
+- compare the ranking and inspect whether it matches intuition
 
 ### Files involved
 
@@ -475,9 +485,9 @@ This is what turns a prototype into a dependable system.
 If the goal is to understand what is happening as you build, use this order:
 
 - [x] Step 1 - real fetch + cache generation
-- [ ] Step 2 - evaluator skeleton
-- [ ] Step 3 - skill execution contract
-- [ ] Step 4 - LLM judging
+- [x] Step 2 - evaluator skeleton
+- [x] Step 3 - skill execution contract
+- [x] Step 4 - LLM judging
 - [ ] Step 5 - baseline scoring runs
 - [ ] Step 6 - archive writes
 - [ ] Step 7 - feedback ingestion

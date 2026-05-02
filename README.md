@@ -1,14 +1,14 @@
 # EvoClaw
 
-EvoClaw is a planned **ADAS-style, self-improving YouTube curator** for AI and entrepreneurship content. The target system runs inside a NemoClaw/OpenClaw environment, fetches candidate videos, evaluates curation strategies, evolves better `SKILL.md` prompts over time, and delivers a daily top-3 digest to Telegram.
+EvoClaw is an **ADAS-style, self-improving YouTube curator** for AI and entrepreneurship content. The target system runs inside a NemoClaw/OpenClaw environment, fetches candidate videos, evaluates curation strategies, evolves better `SKILL.md` prompts over time, and eventually delivers a daily top-3 digest to Telegram.
 
-At the moment, this repository contains the **foundation layer** of that system:
+The repository is currently at the **working fetcher + evaluator stage**:
 
 - a YouTube fetcher with caching, `subscriber_count` enrichment, and best-effort transcript support
-- a fetcher design split into API, transcript, and cache collaborators behind `YouTubeFetcher`
-- three hand-written baseline skills
+- a modular evaluator stack with DTO models, request loading, algorithmic scoring, optional LLM judging, and weighted aggregation
+- a Python adapter that executes the current baseline `SKILL.md` strategies over cached videos
 - typed shared configuration for search, inference, paths, and scoring weights
-- a production `SKILL.md` placeholder
+- three hand-written baseline skills plus a production `SKILL.md` placeholder
 - a cron configuration stub for future automation
 
 ## Target architecture
@@ -26,11 +26,20 @@ The planned end-to-end loop is:
 
 ```text
 EvoClaw/
+├── ARCHITECTURE.md                # High-level codebase structure
+├── WORKFLOW.md                    # Current and planned execution flows
 ├── adas/
+│   ├── algorithmic_scorer.py     # Deterministic evaluator dimensions
 │   ├── archive/                  # Archive index and future generated skills
 │   ├── baselines/                # Seed curation strategies
-│   ├── test_sets/                # Local caches and feedback artifacts
 │   ├── config.py                 # Shared configuration
+│   ├── evaluator.py              # Evaluator orchestration
+│   ├── evaluator_loader.py       # Skill/cache/feedback loading
+│   ├── evaluator_models.py       # DTO-style evaluator contracts
+│   ├── llm_judge.py              # Prompt-driven semantic judging
+│   ├── prompts/                  # Evaluator prompts
+│   ├── skill_executor.py         # Python adapter for baseline skills
+│   ├── test_sets/                # Local caches and feedback artifacts
 │   └── youtube_fetcher.py        # YouTube data collection and caching
 ├── cron/
 │   ├── README.md
@@ -63,6 +72,13 @@ Implemented now:
 - `skills/youtube-curator/SKILL.md`
 - `cron/jobs.json`
 - local Step 1 validation: real fetch works and produces a reusable cache in `adas/test_sets/video_cache_w1.json`
+- evaluator architecture cleanup: smaller modules, DTO separation, injected collaborators, and readability-focused helpers
+
+Current next milestone:
+
+- run all three baselines against the same dataset
+- save and compare evaluator result breakdowns
+- confirm the scores feel sensible before building the archive and meta-agent loop
 
 Planned but not yet implemented:
 
@@ -72,6 +88,8 @@ Planned but not yet implemented:
 - generated archive entries under `adas/archive/skill_*`
 - Telegram reaction capture
 - automated best-skill deployment
+- archive result persistence beyond the empty `adas/archive/index.json` stub
+- end-to-end cron-driven runtime wiring
 
 ## Setup
 
@@ -132,6 +150,13 @@ The evaluator currently supports:
 
 It does **not** yet run real OpenClaw execution.
 
+Example evaluator run:
+
+```bash
+cd adas
+python3 evaluator.py --skill baselines/baseline_popular.md --cache video_cache_w1.json
+```
+
 ## Security and repo hygiene
 
 - `.env` is intentionally ignored and should never be committed.
@@ -141,6 +166,8 @@ It does **not** yet run real OpenClaw execution.
 
 ## References
 
+- `ARCHITECTURE.md` explains the current module boundaries and responsibilities.
+- `WORKFLOW.md` explains what you can run today and how the full loop is intended to evolve.
 - `Plan.md` describes the full intended design, phases, and success metrics.
 - `adas/README.md` documents the ADAS workspace in more detail.
 - `skills/youtube-curator/README.md` explains the production skill directory.

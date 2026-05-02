@@ -10,6 +10,18 @@ The system combines three ideas:
 - **NemoClaw's sandbox** for safe execution of untested, auto-generated skills
 - **OpenClaw's skill system** as the interface between discovered strategies and the running agent
 
+## Current implementation snapshot
+
+The codebase is currently at the **working fetcher + evaluator** stage:
+
+- real YouTube fetches work and produce reusable caches
+- the evaluator is implemented and split into focused modules
+- baseline `SKILL.md` files can be executed through a Python adapter over cached videos
+- LLM judging for relevance, substance, and reasoning is implemented
+- archive writes, meta-agent orchestration, Telegram automation, and scheduled runtime wiring are still future phases
+
+The immediate next milestone is to run all three baselines end to end on the same dataset, save the score breakdowns, and confirm the evaluator ranking makes sense.
+
 ---
 
 ## Architecture
@@ -49,7 +61,7 @@ The system combines three ideas:
 
 ---
 
-## Project structure
+## Target project structure
 
 ```
 ~/.openclaw/workspace/
@@ -58,18 +70,23 @@ The system combines three ideas:
 │       └── SKILL.md              ← The "production" skill (best from archive)
 │
 ├── adas/
-│   ├── meta_agent.py             ← Main ADAS loop
-│   ├── evaluator.py              ← Scores candidate skills
-│   ├── youtube_fetcher.py        ← YouTube search + metadata extraction
+│   ├── algorithmic_scorer.py     ← Deterministic scoring dimensions
 │   ├── config.py                 ← Topics, scoring weights, model config
+│   ├── evaluator.py              ← Evaluator orchestration
+│   ├── evaluator_loader.py       ← Loads skill/cache/feedback inputs
+│   ├── evaluator_models.py       ← DTO-style evaluator contracts
+│   ├── llm_judge.py              ← Prompt-based semantic judging
+│   ├── skill_executor.py         ← Python adapter for baseline skills
+│   ├── youtube_fetcher.py        ← YouTube search + metadata extraction
+│   ├── meta_agent.py             ← Main ADAS loop (planned)
 │   │
 │   ├── archive/
-│   │   ├── index.json            ← Registry of all discovered skills + scores
-│   │   ├── skill_001/
+│   │   ├── index.json            ← Registry stub for discovered skills + scores
+│   │   ├── skill_001/             ← Planned generated archive entry
 │   │   │   ├── SKILL.md
 │   │   │   ├── result.json       ← Evaluation scores
 │   │   │   └── meta.json         ← Design rationale from meta agent
-│   │   ├── skill_002/
+│   │   ├── skill_002/             ← Planned generated archive entry
 │   │   │   └── ...
 │   │   └── ...
 │   │
@@ -80,14 +97,13 @@ The system combines three ideas:
 │   │
 │   ├── test_sets/
 │   │   ├── video_cache_w1.json   ← Cached YouTube results for eval
-│   │   ├── video_cache_w2.json
 │   │   └── feedback.json         ← Your 👍/👎 history from Telegram
 │   │
 │   └── prompts/
-│       ├── meta_system.md        ← System prompt for the meta agent
-│       ├── meta_design.md        ← "Design a new curation skill" prompt
-│       ├── meta_reflect.md       ← Self-reflection prompt for novelty
-│       └── eval_judge.md         ← LLM-as-judge prompt for scoring
+│       ├── eval_judge.md         ← LLM-as-judge prompt for scoring
+│       ├── meta_system.md        ← System prompt for the meta agent (planned)
+│       ├── meta_design.md        ← "Design a new curation skill" prompt (planned)
+│       └── meta_reflect.md       ← Self-reflection prompt for novelty (planned)
 │
 └── cron/
     └── jobs.json                 ← Cron entries for ADAS + daily delivery
@@ -156,13 +172,16 @@ Scores a candidate SKILL.md against cached video sets. This is the critical piec
 | Reasoning | 0.10 | LLM-as-judge: does the "why watch" summary accurately reflect content? |
 | Alignment | 0.10 | Feedback match: does the pick pattern align with your 👍 history? |
 
-**Process:**
-1. Load the candidate SKILL.md into a temporary OpenClaw agent session
-2. Feed it the cached video set as context
-3. Capture its top 3 picks + reasoning
-4. Score each dimension
-5. Compute weighted total (0-10 scale)
-6. Return scores + detailed breakdown
+**Current process:**
+1. Load the candidate `SKILL.md`, cached video set, and optional feedback history
+2. Resolve picks either from explicit selected video IDs or from the Python baseline adapter
+3. Score algorithmic dimensions (`freshness`, `diversity`, `alignment`)
+4. Optionally call the LLM judge for `relevance`, `substance`, and `reasoning`
+5. Compute the weighted total (0-10 scale) when all dimensions are present
+6. Return scores plus the detailed breakdown
+
+**Later replacement step:**
+- Swap the Python adapter for real OpenClaw skill execution when the surrounding runtime exists
 
 **Why LLM-as-judge works here:**
 The ADAS paper showed that LLM-as-judge ensembles are effective even with modest correlation to ground truth, as long as they're complementary. We use Nemotron locally for all judging — no API costs, full privacy.
@@ -232,7 +251,7 @@ The self-reflection prompts check for:
 
 ### Component 5: Telegram delivery + feedback loop
 
-**Morning delivery (7:00 AM via cron):**
+**Morning delivery (current cron stub uses 4:00 AM local time):**
 
 The production skill (best from archive) runs and sends a Telegram message like:
 
@@ -295,9 +314,9 @@ Two cron jobs in NemoClaw:
     },
     {
       "name": "morning-digest",
-      "schedule": "0 7 * * *",
+      "schedule": "0 4 * * *",
       "command": "openclaw agent --agent main --local -m '/youtube-curator'",
-      "description": "Send top 3 videos to Telegram at 7 AM"
+      "description": "Send top 3 videos to Telegram at 4 AM"
     }
   ]
 }
@@ -356,6 +375,7 @@ egress_rules:
 
 ### Phase 2: Evaluation harness (day 3-4)
 - [x] Build `evaluator.py` with all 6 scoring dimensions
+- [x] Split evaluator concerns into loader, DTO, scorer, judge, and executor modules
 - [x] Write the LLM-as-judge prompts for relevance, substance, and reasoning
 - [ ] Score all 3 baselines against the cached video set
 - [ ] Verify scores are sensible (baselines should score differently)

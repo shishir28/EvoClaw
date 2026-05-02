@@ -1,6 +1,6 @@
 # ADAS workspace
 
-This directory holds the components for the **Adaptive Design / evaluation / archive** side of EvoClaw.
+This directory holds the **fetch, evaluate, and future archive** side of EvoClaw.
 
 ## What is here now
 
@@ -133,17 +133,23 @@ These represent three different curation philosophies:
 
 ### `archive/`
 
-Currently only contains `index.json`, which is the future registry for generated skills and their scores.
+Right now this contains only `index.json`, and it is still empty:
+
+- `best_skill_id` is `null`
+- `best_score` is `0.0`
+- `skills` is an empty list
+
+Archive entry generation is the next later phase; no `archive/skill_*` folders exist yet.
 
 ### `test_sets/`
 
-Intended for cached video sets and feedback history.
+Holds cached video sets and feedback history.
 
-Current contents are early local datasets and placeholders:
+Current contents are:
 
 - `video_cache_test.json`
 - `video_cache_w1.json` generated locally for Step 1 validation
-- `feedback.json`
+- `feedback.json` with an empty `history` list
 
 ## Planned additions
 
@@ -155,18 +161,26 @@ The design in `Plan.md` expects this directory to grow with:
 
 ## Data flow
 
-The intended lifecycle inside `adas/` is:
+The current lifecycle inside `adas/` is:
 
 1. Fetch fresh or cached YouTube candidates.
-2. Evaluate a candidate `SKILL.md` against cached sets.
-3. Record score breakdowns and metadata in the archive.
-4. Iterate via a meta agent to discover stronger skills.
-5. Promote the best skill into `skills/youtube-curator/SKILL.md`.
+2. Load a candidate `SKILL.md`, cache JSON, and optional feedback history.
+3. Execute supported baseline strategies through the Python adapter, or score explicit selected IDs.
+4. Score algorithmic dimensions first, then optionally apply LLM-judged dimensions.
+5. Aggregate the final weighted result.
+
+The planned later lifecycle adds:
+
+6. Record score breakdowns and metadata in the archive.
+7. Iterate via a meta agent to discover stronger skills.
+8. Promote the best skill into `skills/youtube-curator/SKILL.md`.
 
 ## Notes
 
 - Runtime-generated data in `test_sets/` and `archive/skill_*/` is gitignored.
 - Secret values are loaded from the repo root `.env`.
-- The current repo state is **early evaluator / pre-meta-agent**.
+- The current repo state is **post-evaluator / pre-archive / pre-meta-agent**.
 - Transcript fetching is **best-effort**: some videos now resolve transcripts, but YouTube may still block others depending on IP/network conditions.
 - The current cache shape is strong enough to begin the evaluator, because it includes `views_per_hour`, `subscriber_count`, and descriptions even when transcripts are missing.
+- The next concrete implementation step is to score the three baselines end to end and save their result breakdowns.
+- See the repo-level `ARCHITECTURE.md` and `WORKFLOW.md` files for the simplest high-level explanation.
