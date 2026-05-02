@@ -1,0 +1,16 @@
+# secrets
+.env
+.claude/
+
+# python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# generated / runtime data
+adas/test_sets/video_cache*.json
+adas/archive/skill_*/
+adas/test_sets/feedback.json

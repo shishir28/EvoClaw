@@ -1,0 +1,17 @@
+{
+  "timezone": "Australia/Sydney",
+  "jobs": [
+    {
+      "name": "adas-evolution",
+      "schedule": "0 2 * * *",
+      "command": "python3 ~/.openclaw/workspace/adas/meta_agent.py",
+      "description": "Run ADAS loop at 2 AM AEST — 5 iterations per night"
+    },
+    {
+      "name": "morning-digest",
+      "schedule": "0 4 * * *",
+      "command": "openclaw agent --agent main --local -m '/youtube-curator'",
+      "description": "Send top 3 videos to Telegram at 4 AM AEST"
+    }
+  ]
+}
