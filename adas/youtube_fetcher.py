@@ -14,6 +14,7 @@ import sys
 import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from typing import TypedDict
 
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -45,6 +46,29 @@ except ModuleNotFoundError:
 _DURATION_RE = re.compile(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?")
 
 
+class VideoStub(TypedDict):
+    video_id: str
+    title: str
+    channel: str
+    channel_id: str
+    published_at: str
+    description: str
+    thumbnail: str
+    query_matched: str
+
+
+class VideoRecordPayload(VideoStub, total=False):
+    views: int
+    likes: int
+    subscriber_count: int | None
+    duration_seconds: int
+    tags: list[str]
+    category_id: str
+    views_per_hour: float
+    url: str
+    transcript: str | None
+
+
 def _parse_duration(iso: str) -> int:
     m = _DURATION_RE.match(iso or "")
     if not m:
@@ -65,7 +89,51 @@ class YouTubeAPIClient:
             raise ValueError("YOUTUBE_API_KEY is not set. Export it as an env variable.")
         self._yt = build("youtube", "v3", developerKey=api_key)
 
-    def search(self, query: str, published_after: str, max_results: int) -> list[dict]:
+    def _build_video_stub(self, item: dict, query: str) -> VideoStub:
+        snippet = item["snippet"]
+        return {
+            "video_id": item["id"]["videoId"],
+            "title": snippet["title"],
+            "channel": snippet["channelTitle"],
+            "channel_id": snippet["channelId"],
+            "published_at": snippet["publishedAt"],
+            "description": snippet.get("description", ""),
+            "thumbnail": snippet.get("thumbnails", {}).get("high", {}).get("url", ""),
+            "query_matched": query,
+        }
+
+    def _merge_video_details(
+        self,
+        stub: VideoStub,
+        detail: dict,
+        channel_subscribers: dict[str, int | None],
+    ) -> VideoRecordPayload:
+        stats = detail.get("statistics", {})
+        content = detail.get("contentDetails", {})
+        snippet = detail.get("snippet", {})
+
+        views = int(stats.get("viewCount", 0))
+        likes = int(stats.get("likeCount", 0))
+        duration_sec = _parse_duration(content.get("duration", ""))
+
+        return {
+            **stub,
+            "views": views,
+            "likes": likes,
+            "subscriber_count": channel_subscribers.get(stub["channel_id"]),
+            "duration_seconds": duration_sec,
+            "tags": snippet.get("tags", []),
+            "category_id": snippet.get("categoryId", ""),
+            "views_per_hour": _views_per_hour(views, stub["published_at"]),
+            "url": f"https://www.youtube.com/watch?v={stub['video_id']}",
+        }
+
+    def search(
+        self,
+        query: str,
+        published_after: str,
+        max_results: int,
+    ) -> list[VideoStub]:
         try:
             resp = (
                 self._yt.search()
@@ -84,23 +152,13 @@ class YouTubeAPIClient:
             print(f"[search] HttpError for '{query}': {e}", file=sys.stderr)
             return []
 
-        results = []
+        results: list[VideoStub] = []
         for item in resp.get("items", []):
-            snippet = item["snippet"]
-            results.append({
-                "video_id": item["id"]["videoId"],
-                "title": snippet["title"],
-                "channel": snippet["channelTitle"],
-                "channel_id": snippet["channelId"],
-                "published_at": snippet["publishedAt"],
-                "description": snippet.get("description", ""),
-                "thumbnail": snippet.get("thumbnails", {}).get("high", {}).get("url", ""),
-                "query_matched": query,
-            })
+            results.append(self._build_video_stub(item, query))
         return results
 
-    def enrich(self, stubs: list[dict]) -> list[dict]:
-        enriched = []
+    def enrich(self, stubs: list[VideoStub]) -> list[VideoRecordPayload]:
+        enriched: list[VideoRecordPayload] = []
         for i in range(0, len(stubs), 50):
             batch = stubs[i : i + 50]
             ids = ",".join(v["video_id"] for v in batch)
@@ -123,28 +181,13 @@ class YouTubeAPIClient:
                     enriched.append(stub)
                     continue
 
-                stats = detail.get("statistics", {})
-                content = detail.get("contentDetails", {})
-                snippet = detail.get("snippet", {})
-
-                views = int(stats.get("viewCount", 0))
-                likes = int(stats.get("likeCount", 0))
-                duration_sec = _parse_duration(content.get("duration", ""))
-
-                enriched.append({
-                    **stub,
-                    "views": views,
-                    "likes": likes,
-                    "subscriber_count": channel_subscribers.get(stub["channel_id"]),
-                    "duration_seconds": duration_sec,
-                    "tags": snippet.get("tags", []),
-                    "category_id": snippet.get("categoryId", ""),
-                    "views_per_hour": _views_per_hour(views, stub["published_at"]),
-                    "url": f"https://www.youtube.com/watch?v={stub['video_id']}",
-                })
+                enriched.append(self._merge_video_details(stub, detail, channel_subscribers))
         return enriched
 
-    def channel_subscriber_counts(self, videos: list[dict]) -> dict[str, int | None]:
+    def channel_subscriber_counts(
+        self,
+        videos: list[VideoStub],
+    ) -> dict[str, int | None]:
         channel_ids = sorted({video["channel_id"] for video in videos})
         if not channel_ids:
             return {}
@@ -183,7 +226,7 @@ class TranscriptProvider:
     def available(self) -> bool:
         return self._transcript_api is not None
 
-    def attach(self, videos: list[dict]) -> list[dict]:
+    def attach(self, videos: list[VideoRecordPayload]) -> list[VideoRecordPayload]:
         for video in videos:
             vid_id = video["video_id"]
             try:
@@ -205,8 +248,11 @@ class TranscriptProvider:
 
 
 class VideoCacheRepository:
-    def save(self, videos: list[dict], path: str) -> None:
-        dest = Path(path) if os.path.isabs(path) else Path(TEST_SETS_DIR) / path
+    def _resolve_path(self, path: str) -> Path:
+        return Path(path) if os.path.isabs(path) else Path(TEST_SETS_DIR) / path
+
+    def save(self, videos: list[VideoRecordPayload], path: str) -> None:
+        dest = self._resolve_path(path)
         dest.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "fetched_at": datetime.now(timezone.utc).isoformat(),
@@ -216,8 +262,8 @@ class VideoCacheRepository:
         dest.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
         print(f"Cached {len(videos)} videos → {dest}")
 
-    def load(self, path: str) -> list[dict]:
-        dest = Path(path) if os.path.isabs(path) else Path(TEST_SETS_DIR) / path
+    def load(self, path: str) -> list[VideoRecordPayload]:
+        dest = self._resolve_path(path)
         raw = json.loads(dest.read_text())
         return raw["videos"]
 
@@ -240,13 +286,13 @@ class YouTubeFetcher:
         days: int = VIDEO_WINDOW_DAYS,
         max_per_query: int = MAX_RESULTS_PER_QUERY,
         with_transcripts: bool = TRANSCRIPT_ENABLED,
-    ) -> list[dict]:
+    ) -> list[VideoRecordPayload]:
         """Return deduplicated, enriched video records for all queries."""
         published_after = (
             datetime.now(timezone.utc) - timedelta(days=days)
         ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        seen: dict[str, dict] = {}
+        seen: dict[str, VideoStub] = {}
         for query in queries:
             for video in self._api_client.search(query, published_after, max_per_query):
                 if video["video_id"] not in seen:
@@ -260,11 +306,11 @@ class YouTubeFetcher:
             return self._transcript_provider.attach(enriched)
         return enriched
 
-    def save_cache(self, videos: list[dict], path: str) -> None:
+    def save_cache(self, videos: list[VideoRecordPayload], path: str) -> None:
         self._cache_repository.save(videos, path)
 
     @staticmethod
-    def load_cache(path: str) -> list[dict]:
+    def load_cache(path: str) -> list[VideoRecordPayload]:
         return VideoCacheRepository().load(path)
 
 

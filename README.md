@@ -51,7 +51,6 @@ EvoClaw/
 Implemented now:
 
 - `adas/youtube_fetcher.py`
-- `adas/config.py`
 - `adas/config.py` with typed settings plus backward-compatible constants
 - `adas/evaluator.py` with full evaluator flow, weighted aggregation, and optional LLM judging
 - `adas/evaluator_loader.py` for loading skill, cache, and feedback inputs
@@ -128,6 +127,7 @@ The evaluator currently supports:
 - weighted aggregation
 - algorithmic scoring for `freshness`, `diversity`, and a placeholder `alignment` score
 - stricter typed scoring inputs in `adas/algorithmic_scorer.py`
+- clearer evaluator orchestration through smaller internal helper methods
 - opt-in LLM judging for `relevance`, `substance`, and `reasoning`
 
 It does **not** yet run real OpenClaw execution.

@@ -21,6 +21,7 @@ Internally it is now split into smaller collaborators:
 - `YouTubeAPIClient` for search and enrichment calls
 - `TranscriptProvider` for best-effort transcript attachment
 - `VideoCacheRepository` for cache persistence
+- typed payload contracts so the fetcher flow is easier to follow than anonymous `dict` shapes
 
 Example:
 
@@ -41,6 +42,8 @@ Central config for:
 
 It now also exposes a typed `SETTINGS` object as the source of truth, while keeping the older constant-style imports working for existing modules.
 
+For readability, `load_settings()` is now composed from smaller section builder helpers instead of one large configuration block.
+
 ### `evaluator.py`
 
 The evaluator now defines:
@@ -49,6 +52,7 @@ The evaluator now defines:
 - a `score()` orchestration path for explicit selected video IDs or adapter-selected picks
 - composition of the smaller evaluator components listed below
 - constructor injection points for the main evaluator collaborators
+- smaller private helper methods so the main score path reads top-down
 
 ### `evaluator_loader.py`
 

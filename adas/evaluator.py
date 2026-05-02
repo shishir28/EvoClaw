@@ -214,6 +214,51 @@ class Evaluator:
     def pending_dimension_names(self, result: EvaluationResult) -> list[str]:
         return [dimension.name for dimension in result.dimensions if dimension.score is None]
 
+    def _select_videos_for_request(
+        self,
+        request: EvaluationRequest,
+        selected_video_ids: list[str] | None,
+    ) -> tuple[list[str], list[str]]:
+        if selected_video_ids is not None:
+            return selected_video_ids, []
+
+        execution = self._skill_executor.execute(request.skill, request.videos)
+        return execution.selected_video_ids, execution.notes
+
+    def _apply_llm_scores(
+        self,
+        result: EvaluationResult,
+        request: EvaluationRequest,
+    ) -> None:
+        selected_videos = self.resolve_selected_videos(request, result.selected_video_ids)
+        llm_scores, llm_details = self._llm_judge.judge_dimensions(request, selected_videos)
+        self.apply_dimension_scores(result, llm_scores, details=llm_details)
+        result.notes.append("Applied LLM-judged scores for relevance, substance, and reasoning.")
+
+    def _apply_optional_scores(
+        self,
+        result: EvaluationResult,
+        extra_scores: dict[str, float] | None,
+        extra_details: dict[str, str] | None,
+    ) -> None:
+        if not extra_scores and not extra_details:
+            return
+
+        self.apply_dimension_scores(
+            result,
+            extra_scores or {},
+            details=extra_details,
+        )
+
+    def _finalize_result(self, result: EvaluationResult) -> EvaluationResult:
+        pending_dimensions = self.pending_dimension_names(result)
+        if pending_dimensions:
+            result.status = "partially_scored"
+            result.notes.append("Pending dimensions: " + ", ".join(pending_dimensions))
+            return result
+
+        return self.aggregate_weighted_score(result)
+
     def score(
         self,
         skill_path: str,
@@ -229,37 +274,19 @@ class Evaluator:
             cache_path=cache_path,
             feedback_path=feedback_path,
         )
-        if selected_video_ids is None:
-            execution = self._skill_executor.execute(request.skill, request.videos)
-            selected_video_ids = execution.selected_video_ids
-        else:
-            execution = None
+        selected_video_ids, execution_notes = self._select_videos_for_request(
+            request,
+            selected_video_ids,
+        )
 
         result = self.score_algorithmic_dimensions(request, selected_video_ids)
-        if execution:
-            result.notes.extend(execution.notes)
-
-        selected_videos = self.resolve_selected_videos(request, result.selected_video_ids)
+        result.notes.extend(execution_notes)
 
         if use_llm_judging:
-            llm_scores, llm_details = self._llm_judge.judge_dimensions(request, selected_videos)
-            self.apply_dimension_scores(result, llm_scores, details=llm_details)
-            result.notes.append("Applied LLM-judged scores for relevance, substance, and reasoning.")
+            self._apply_llm_scores(result, request)
 
-        if extra_scores or extra_details:
-            self.apply_dimension_scores(
-                result,
-                extra_scores or {},
-                details=extra_details,
-            )
-
-        pending_dimensions = self.pending_dimension_names(result)
-        if pending_dimensions:
-            result.status = "partially_scored"
-            result.notes.append("Pending dimensions: " + ", ".join(pending_dimensions))
-            return result
-
-        return self.aggregate_weighted_score(result)
+        self._apply_optional_scores(result, extra_scores, extra_details)
+        return self._finalize_result(result)
 
 
 if __name__ == "__main__":

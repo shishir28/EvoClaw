@@ -95,72 +95,102 @@ def _bool_env(name: str, default: bool) -> bool:
 
 
 def _resolve_inference_base_url(backend: str) -> str:
-    return os.environ.get("LLM_BASE_URL", _DEFAULT_BACKEND_URLS.get(backend, _DEFAULT_BACKEND_URLS["ollama"]))
+    return os.environ.get(
+        "LLM_BASE_URL",
+        _DEFAULT_BACKEND_URLS.get(backend, _DEFAULT_BACKEND_URLS["ollama"]),
+    )
+
+
+def _build_search_settings() -> SearchSettings:
+    return SearchSettings(
+        queries=(
+            "AI startup 2026",
+            "artificial intelligence entrepreneurship",
+            "AI founder interview",
+            "machine learning startup building",
+            "AI product launch",
+        ),
+        max_results_per_query=10,
+        video_window_days=7,
+        transcript_enabled=_bool_env("TRANSCRIPT_ENABLED", True),
+    )
+
+
+def _build_integration_settings() -> IntegrationSettings:
+    return IntegrationSettings(
+        youtube_api_key=os.environ.get("YOUTUBE_API_KEY", ""),
+        telegram_bot_token=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
+        telegram_chat_id=os.environ.get("TELEGRAM_CHAT_ID", ""),
+    )
+
+
+def _build_inference_settings() -> InferenceSettings:
+    backend = os.environ.get("INFERENCE_BACKEND", "ollama")
+    return InferenceSettings(
+        backend=backend,
+        model=os.environ.get("LLM_MODEL", "nemotron-super"),
+        base_url=_resolve_inference_base_url(backend),
+    )
+
+
+def _build_evaluation_settings() -> EvaluationSettings:
+    return EvaluationSettings(
+        score_weights={
+            "relevance": 0.25,
+            "substance": 0.25,
+            "freshness": 0.15,
+            "diversity": 0.15,
+            "reasoning": 0.10,
+            "alignment": 0.10,
+        }
+    )
+
+
+def _build_loop_settings() -> LoopSettings:
+    return LoopSettings(
+        iterations_per_night=5,
+        max_reflect_rounds=2,
+        max_debug_retries=3,
+    )
+
+
+def _build_path_settings(base_dir: Path) -> PathSettings:
+    adas_dir = base_dir / "adas"
+    archive_dir = adas_dir / "archive"
+    test_sets_dir = adas_dir / "test_sets"
+    return PathSettings(
+        base_dir=str(base_dir),
+        adas_dir=str(adas_dir),
+        archive_dir=str(archive_dir),
+        archive_index=str(archive_dir / "index.json"),
+        baselines_dir=str(adas_dir / "baselines"),
+        test_sets_dir=str(test_sets_dir),
+        prompts_dir=str(adas_dir / "prompts"),
+        skill_production=str(base_dir / "skills" / "youtube-curator" / "SKILL.md"),
+        feedback_file=str(test_sets_dir / "feedback.json"),
+    )
+
+
+def _build_quota_settings() -> QuotaSettings:
+    return QuotaSettings(
+        daily_search_budget=50,
+        daily_video_detail_budget=500,
+    )
 
 
 def load_settings(env_file: Path = DEFAULT_ENV_FILE) -> AppSettings:
     _load_environment(env_file)
 
-    base_dir = str(Path(__file__).resolve().parent.parent)
-    adas_dir = str(Path(base_dir) / "adas")
-    archive_dir = str(Path(adas_dir) / "archive")
-    test_sets_dir = str(Path(adas_dir) / "test_sets")
-
-    inference_backend = os.environ.get("INFERENCE_BACKEND", "ollama")
+    base_dir = Path(__file__).resolve().parent.parent
 
     return AppSettings(
-        search=SearchSettings(
-            queries=(
-                "AI startup 2026",
-                "artificial intelligence entrepreneurship",
-                "AI founder interview",
-                "machine learning startup building",
-                "AI product launch",
-            ),
-            max_results_per_query=10,
-            video_window_days=7,
-            transcript_enabled=_bool_env("TRANSCRIPT_ENABLED", True),
-        ),
-        integrations=IntegrationSettings(
-            youtube_api_key=os.environ.get("YOUTUBE_API_KEY", ""),
-            telegram_bot_token=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
-            telegram_chat_id=os.environ.get("TELEGRAM_CHAT_ID", ""),
-        ),
-        inference=InferenceSettings(
-            backend=inference_backend,
-            model=os.environ.get("LLM_MODEL", "nemotron-super"),
-            base_url=_resolve_inference_base_url(inference_backend),
-        ),
-        evaluation=EvaluationSettings(
-            score_weights={
-                "relevance": 0.25,
-                "substance": 0.25,
-                "freshness": 0.15,
-                "diversity": 0.15,
-                "reasoning": 0.10,
-                "alignment": 0.10,
-            }
-        ),
-        loop=LoopSettings(
-            iterations_per_night=5,
-            max_reflect_rounds=2,
-            max_debug_retries=3,
-        ),
-        paths=PathSettings(
-            base_dir=base_dir,
-            adas_dir=adas_dir,
-            archive_dir=archive_dir,
-            archive_index=str(Path(archive_dir) / "index.json"),
-            baselines_dir=str(Path(adas_dir) / "baselines"),
-            test_sets_dir=test_sets_dir,
-            prompts_dir=str(Path(adas_dir) / "prompts"),
-            skill_production=str(Path(base_dir) / "skills" / "youtube-curator" / "SKILL.md"),
-            feedback_file=str(Path(test_sets_dir) / "feedback.json"),
-        ),
-        quotas=QuotaSettings(
-            daily_search_budget=50,
-            daily_video_detail_budget=500,
-        ),
+        search=_build_search_settings(),
+        integrations=_build_integration_settings(),
+        inference=_build_inference_settings(),
+        evaluation=_build_evaluation_settings(),
+        loop=_build_loop_settings(),
+        paths=_build_path_settings(base_dir),
+        quotas=_build_quota_settings(),
     )
 
 
