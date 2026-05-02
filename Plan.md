@@ -348,10 +348,10 @@ egress_rules:
 ## Implementation phases
 
 ### Phase 1: Foundation (day 1-2)
-- [ ] Set up YouTube Data API key and test basic search
-- [ ] Build `youtube_fetcher.py` with search + metadata + transcript extraction
-- [ ] Cache 1 week of video results for evaluation
-- [ ] Write the 3 baseline SKILL.md files
+- [x] Set up YouTube Data API key and test basic search
+- [x] Build `youtube_fetcher.py` with search + metadata + transcript extraction
+- [x] Cache 1 week of video results for evaluation
+- [x] Write the 3 baseline SKILL.md files
 - [ ] Test that each baseline works manually via OpenClaw + Telegram
 
 ### Phase 2: Evaluation harness (day 3-4)

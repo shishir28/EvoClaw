@@ -4,7 +4,7 @@ EvoClaw is a planned **ADAS-style, self-improving YouTube curator** for AI and e
 
 At the moment, this repository contains the **foundation layer** of that system:
 
-- a YouTube fetcher with caching and transcript support
+- a YouTube fetcher with caching, `subscriber_count` enrichment, and best-effort transcript support
 - three hand-written baseline skills
 - shared configuration for search, inference, and scoring weights
 - a production `SKILL.md` placeholder
@@ -54,6 +54,7 @@ Implemented now:
 - `adas/baselines/*.md`
 - `skills/youtube-curator/SKILL.md`
 - `cron/jobs.json`
+- local Step 1 validation: real fetch works and produces a reusable cache in `adas/test_sets/video_cache_w1.json`
 
 Planned but not yet implemented:
 
@@ -95,6 +96,15 @@ python youtube_fetcher.py --days 7 --max-per-query 10 --output video_cache_w1.js
 ```
 
 This writes the cache into `adas/test_sets/`.
+
+The current fetcher output includes:
+
+- core video metadata
+- `views_per_hour`
+- `subscriber_count`
+- `transcript` when available
+
+Transcript fetching is **best-effort**. Some videos may still have `transcript: null` if YouTube blocks caption retrieval for the current IP.
 
 ## Security and repo hygiene
 

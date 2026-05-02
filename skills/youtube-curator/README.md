@@ -4,7 +4,7 @@ This directory is meant to hold the **production OpenClaw skill** used for the d
 
 ## Current state
 
-`SKILL.md` exists and acts as the current production placeholder. Right now it reflects a hand-written baseline strategy rather than a skill that has been discovered and promoted by the ADAS loop.
+`SKILL.md` exists and acts as the current production placeholder. Right now it reflects a hand-written **recency-style baseline** rather than a skill that has been discovered and promoted by the ADAS loop.
 
 ## Intended role
 

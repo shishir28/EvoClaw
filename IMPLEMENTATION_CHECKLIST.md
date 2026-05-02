@@ -1,0 +1,450 @@
+# EvoClaw implementation checklist
+
+This file is the practical companion to `Plan.md`.
+
+Use it to answer two questions quickly:
+
+1. **What already exists?**
+2. **What should we build next, step by step?**
+
+It is written as a learning-oriented checklist so you can follow the system incrementally and understand how each part fits together.
+
+---
+
+## 1. Current implementation status
+
+### Already implemented
+
+- [x] `adas/youtube_fetcher.py`
+- [x] fetcher updated for the installed `youtube-transcript-api` client
+- [x] `subscriber_count` enrichment in fetcher output
+- [x] `adas/config.py`
+- [x] baseline skills in `adas/baselines/`
+- [x] production skill placeholder in `skills/youtube-curator/SKILL.md`
+- [x] archive index stub in `adas/archive/index.json`
+- [x] sample cache in `adas/test_sets/video_cache_test.json`
+- [x] reusable local cache in `adas/test_sets/video_cache_w1.json`
+- [x] feedback file stub in `adas/test_sets/feedback.json`
+- [x] cron config stub in `cron/jobs.json`
+- [x] repository documentation in `README.md` files
+
+### Not implemented yet
+
+- [ ] `adas/evaluator.py`
+- [ ] `adas/meta_agent.py`
+- [ ] `adas/prompts/`
+- [ ] generated archive entries under `adas/archive/skill_*`
+- [ ] automatic deployment of winning skill
+- [ ] Telegram digest sender
+- [ ] Telegram reaction capture / feedback ingestion automation
+- [ ] actual scheduled runtime wiring
+- [ ] NemoClaw policy configuration in runnable form
+
+---
+
+## 2. How the full system is supposed to work
+
+The planned end-to-end flow is:
+
+1. Fetch candidate YouTube videos.
+2. Run a skill or strategy to select the best 3.
+3. Score that skill on relevance, substance, freshness, diversity, reasoning, and alignment.
+4. Store the skill and its results in the archive.
+5. Let a meta agent propose improved skills.
+6. Promote the best skill into `skills/youtube-curator/SKILL.md`.
+7. Run the production skill on a schedule.
+8. Send the results to Telegram.
+9. Capture feedback and feed it back into scoring.
+
+---
+
+## 3. Step-by-step implementation roadmap
+
+## Step 1 - Finish the foundation
+
+**Goal:** make the existing fetcher work against real data and produce a reliable evaluation dataset.
+
+### Tasks
+
+- [x] add a real `YOUTUBE_API_KEY` in `.env`
+- [x] run `adas/youtube_fetcher.py` successfully
+- [x] inspect the cache output and confirm the fields are usable
+- [x] decide the canonical cache filenames to use (`video_cache_w1.json` for the first reusable set)
+- [x] create one solid dataset with roughly 30-50 videos
+- [x] review the three baseline strategies against that dataset
+
+### Why this matters
+
+Everything downstream depends on clean cached video data.
+
+### Step 1 result
+
+Step 1 is effectively complete for learning and implementation purposes.
+
+Current dataset notes:
+
+- `video_cache_w1.json` contains 49 videos
+- cache entries now include `views_per_hour` and `subscriber_count`
+- transcripts are **best-effort**, not guaranteed for every video
+- missing transcripts should fall back to `description` in future evaluator logic
+
+### Files involved
+
+- `adas/youtube_fetcher.py`
+- `adas/config.py`
+- `.env`
+- `adas/test_sets/`
+
+---
+
+## Step 2 - Build the evaluator skeleton
+
+**Goal:** create the scoring engine before worrying about the meta-agent loop.
+
+### Tasks
+
+- [ ] create `adas/evaluator.py`
+- [ ] define evaluator input shape
+- [ ] define evaluator output shape
+- [ ] load `SKILL.md`
+- [ ] load cached videos
+- [ ] load optional feedback history
+- [ ] implement weighted score aggregation
+- [ ] implement algorithmic scoring first:
+  - [ ] freshness
+  - [ ] diversity
+  - [ ] alignment placeholder
+
+### Why this matters
+
+The evaluator defines what "better" means. Without it, the meta agent has nothing useful to optimize.
+
+### Files involved
+
+- `adas/evaluator.py`
+- `adas/config.py`
+- `adas/test_sets/feedback.json`
+
+---
+
+## Step 3 - Define how a skill gets executed
+
+**Goal:** decide how a `SKILL.md` becomes actual picks plus reasoning.
+
+### Tasks
+
+- [ ] define the execution contract for a skill
+- [ ] choose the first implementation approach:
+  - [ ] Python adapter for baseline skills
+  - [ ] later replacement with real OpenClaw execution
+- [ ] make the evaluator consume that contract
+- [ ] keep the interface generic enough to swap implementations later
+
+### Why this matters
+
+A skill cannot be scored until it can produce structured output.
+
+### Files involved
+
+- `adas/evaluator.py`
+- potentially a new adapter module under `adas/`
+- `adas/baselines/*.md`
+
+---
+
+## Step 4 - Add LLM judging
+
+**Goal:** score the subjective dimensions using the configured inference backend.
+
+### Tasks
+
+- [ ] create `adas/prompts/eval_judge.md`
+- [ ] add model client logic
+- [ ] implement judge calls for:
+  - [ ] relevance
+  - [ ] substance
+  - [ ] reasoning
+- [ ] parse JSON responses safely
+- [ ] combine judge scores with algorithmic scores
+
+### Why this matters
+
+This is what lets the system judge quality, not just recency or popularity.
+
+### Files involved
+
+- `adas/evaluator.py`
+- `adas/prompts/eval_judge.md`
+- `adas/config.py`
+
+---
+
+## Step 5 - Score the three baselines end to end
+
+**Goal:** verify that the evaluator behaves sensibly before building the meta agent.
+
+### Tasks
+
+- [ ] run all three baselines on the same dataset
+- [ ] save result breakdowns
+- [ ] compare the baseline scores
+- [ ] confirm the differences make intuitive sense
+- [ ] tune weights only if clearly necessary
+
+### Why this matters
+
+If the evaluator is wrong, the rest of the system will optimize toward the wrong target.
+
+### Files involved
+
+- `adas/baselines/*.md`
+- `adas/evaluator.py`
+- `adas/test_sets/`
+
+---
+
+## Step 6 - Build the archive layer
+
+**Goal:** store every evaluated skill in a form the system can learn from later.
+
+### Tasks
+
+- [ ] define archive entry structure
+- [ ] create `archive/skill_xxx/` folders
+- [ ] save:
+  - [ ] `SKILL.md`
+  - [ ] `result.json`
+  - [ ] `meta.json`
+- [ ] update `adas/archive/index.json`
+- [ ] track `best_skill_id`
+- [ ] track `best_score`
+
+### Why this matters
+
+The archive is the memory of the improvement loop.
+
+### Files involved
+
+- `adas/archive/index.json`
+- generated `adas/archive/skill_xxx/`
+- `adas/evaluator.py`
+
+---
+
+## Step 7 - Build feedback ingestion
+
+**Goal:** make `feedback.json` meaningful before wiring Telegram automation.
+
+### Tasks
+
+- [ ] define the final feedback schema clearly
+- [ ] add a simple manual way to append feedback
+- [ ] update evaluator alignment scoring to read it
+- [ ] start with a lightweight heuristic for alignment
+
+### Why this matters
+
+This separates preference learning from Telegram integration and keeps iteration simple.
+
+### Files involved
+
+- `adas/test_sets/feedback.json`
+- `adas/evaluator.py`
+
+---
+
+## Step 8 - Create meta-agent prompts
+
+**Goal:** define the prompt assets before writing the orchestration code.
+
+### Tasks
+
+- [ ] create `adas/prompts/meta_system.md`
+- [ ] create `adas/prompts/meta_design.md`
+- [ ] create `adas/prompts/meta_reflect.md`
+- [ ] define the JSON output contract:
+  - [ ] `thought`
+  - [ ] `name`
+  - [ ] `skill_md`
+- [ ] define reflection checks for novelty and correctness
+- [ ] define debug instructions for broken outputs
+
+### Why this matters
+
+Good prompt contracts make the loop much easier to build and debug.
+
+### Files involved
+
+- `adas/prompts/`
+
+---
+
+## Step 9 - Build `meta_agent.py`
+
+**Goal:** implement one complete generate -> reflect -> evaluate -> archive cycle.
+
+### Tasks
+
+- [ ] create `adas/meta_agent.py`
+- [ ] load archive history
+- [ ] generate a candidate skill
+- [ ] run one or two reflection passes
+- [ ] validate candidate format
+- [ ] evaluate the candidate
+- [ ] archive the result
+- [ ] update best skill metadata
+
+### Why this matters
+
+This is the actual ADAS loop.
+
+### Files involved
+
+- `adas/meta_agent.py`
+- `adas/evaluator.py`
+- `adas/archive/`
+- `adas/prompts/`
+
+---
+
+## Step 10 - Add production skill deployment
+
+**Goal:** automatically promote the best archived skill to the live skill path.
+
+### Tasks
+
+- [ ] copy winning `SKILL.md` to `skills/youtube-curator/SKILL.md`
+- [ ] only deploy when the new score is better
+- [ ] record which skill version was deployed
+
+### Why this matters
+
+This is how experimentation becomes production behavior.
+
+### Files involved
+
+- `adas/meta_agent.py`
+- `skills/youtube-curator/SKILL.md`
+
+---
+
+## Step 11 - Add Telegram delivery
+
+**Goal:** send the production results to Telegram.
+
+### Tasks
+
+- [ ] create a Telegram sender module
+- [ ] define the final message formatter
+- [ ] run the production skill and format its picks
+- [ ] send a manual test message
+
+### Why this matters
+
+This is the user-facing output of the system.
+
+### Files involved
+
+- new Telegram integration code
+- `skills/youtube-curator/SKILL.md`
+- `.env`
+
+---
+
+## Step 12 - Add Telegram feedback capture
+
+**Goal:** feed real reactions back into the system.
+
+### Tasks
+
+- [ ] choose polling or webhook
+- [ ] map reactions back to delivered video IDs
+- [ ] persist results into `adas/test_sets/feedback.json`
+- [ ] connect those results to evaluator alignment scoring
+
+### Why this matters
+
+This closes the human-feedback loop.
+
+### Files involved
+
+- new Telegram feedback code
+- `adas/test_sets/feedback.json`
+- `adas/evaluator.py`
+
+---
+
+## Step 13 - Wire cron and runtime automation
+
+**Goal:** make the full loop run on schedule.
+
+### Tasks
+
+- [ ] verify `cron/jobs.json` matches real file paths
+- [ ] make missing-config failures explicit
+- [ ] run the evolution job manually
+- [ ] run the digest job manually
+- [ ] only then trust scheduled execution
+
+### Why this matters
+
+Scheduling should happen only after each manual path works.
+
+### Files involved
+
+- `cron/jobs.json`
+- `adas/meta_agent.py`
+- Telegram delivery code
+
+---
+
+## Step 14 - Add hardening and policy configuration
+
+**Goal:** make the system safe, stable, and suitable for real repeated execution.
+
+### Tasks
+
+- [ ] apply network policy for YouTube, Telegram, and local inference
+- [ ] confirm writable paths are limited to intended workspace locations
+- [ ] add validation for generated `SKILL.md`
+- [ ] add retry handling for model and API failures
+- [ ] add useful logs around archive writes, deployment, and delivery
+
+### Why this matters
+
+This is what turns a prototype into a dependable system.
+
+---
+
+## 4. Recommended learning order
+
+If the goal is to understand what is happening as you build, use this order:
+
+- [x] Step 1 - real fetch + cache generation
+- [ ] Step 2 - evaluator skeleton
+- [ ] Step 3 - skill execution contract
+- [ ] Step 4 - LLM judging
+- [ ] Step 5 - baseline scoring runs
+- [ ] Step 6 - archive writes
+- [ ] Step 7 - feedback ingestion
+- [ ] Step 8 - meta-agent prompts
+- [ ] Step 9 - meta-agent loop
+- [ ] Step 10 - deployment
+- [ ] Step 11 - Telegram sending
+- [ ] Step 12 - Telegram feedback capture
+- [ ] Step 13 - cron automation
+- [ ] Step 14 - hardening
+
+---
+
+## 5. Smallest useful milestone
+
+If we want the smallest checkpoint that proves the project is moving in the right direction, aim for this:
+
+- [x] fetch real video data
+- [x] build one reusable cached dataset
+- [x] execute the three baseline strategies
+- [ ] score them with the evaluator
+- [ ] store the results in the archive
+
+Once this milestone works, the rest of the project becomes much easier to reason about.

@@ -14,7 +14,6 @@ import sys
 import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Optional
 
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -56,6 +55,7 @@ class YouTubeFetcher:
         if not api_key:
             raise ValueError("YOUTUBE_API_KEY is not set. Export it as an env variable.")
         self._yt = build("youtube", "v3", developerKey=api_key)
+        self._transcript_api = YouTubeTranscriptApi() if _TRANSCRIPT_AVAILABLE else None
 
     # ------------------------------------------------------------------
     # Public API
@@ -153,6 +153,7 @@ class YouTubeFetcher:
         for i in range(0, len(stubs), 50):
             batch = stubs[i : i + 50]
             ids = ",".join(v["video_id"] for v in batch)
+            channel_subscribers = self._channel_subscriber_counts(batch)
             try:
                 resp = (
                     self._yt.videos()
@@ -177,13 +178,13 @@ class YouTubeFetcher:
 
                 views = int(stats.get("viewCount", 0))
                 likes = int(stats.get("likeCount", 0))
-                subs_raw = detail.get("statistics", {}).get("subscriberCount")
                 duration_sec = _parse_duration(content.get("duration", ""))
 
                 enriched.append({
                     **stub,
                     "views": views,
                     "likes": likes,
+                    "subscriber_count": channel_subscribers.get(stub["channel_id"]),
                     "duration_seconds": duration_sec,
                     "tags": snippet.get("tags", []),
                     "category_id": snippet.get("categoryId", ""),
@@ -192,15 +193,48 @@ class YouTubeFetcher:
                 })
         return enriched
 
+    def _channel_subscriber_counts(self, videos: list[dict]) -> dict[str, int | None]:
+        """Return subscriber counts keyed by channel ID for a batch of videos."""
+        channel_ids = sorted({video["channel_id"] for video in videos})
+        if not channel_ids:
+            return {}
+
+        subscribers: dict[str, int | None] = {}
+        for i in range(0, len(channel_ids), 50):
+            batch = channel_ids[i : i + 50]
+            try:
+                resp = (
+                    self._yt.channels()
+                    .list(part="statistics", id=",".join(batch))
+                    .execute()
+                )
+            except HttpError as e:
+                print(f"[channels] HttpError: {e}", file=sys.stderr)
+                for channel_id in batch:
+                    subscribers[channel_id] = None
+                continue
+
+            for item in resp.get("items", []):
+                stats = item.get("statistics", {})
+                subs_raw = stats.get("subscriberCount")
+                subscribers[item["id"]] = int(subs_raw) if subs_raw is not None else None
+
+            for channel_id in batch:
+                subscribers.setdefault(channel_id, None)
+
+        return subscribers
+
     def _attach_transcripts(self, videos: list[dict]) -> list[dict]:
         """Best-effort transcript fetch; skips on errors."""
         for video in videos:
             vid_id = video["video_id"]
             try:
-                transcript_list = YouTubeTranscriptApi.get_transcript(
-                    vid_id, languages=["en", "en-US"]
+                fetched = self._transcript_api.fetch(vid_id, languages=["en", "en-US"])
+                segments = fetched.to_raw_data() if hasattr(fetched, "to_raw_data") else fetched
+                text = " ".join(
+                    seg["text"] if isinstance(seg, dict) else seg.text
+                    for seg in segments
                 )
-                text = " ".join(seg["text"] for seg in transcript_list)
                 # Cap at ~3000 chars so prompts stay manageable
                 video["transcript"] = text[:3000]
             except (TranscriptsDisabled, NoTranscriptFound):

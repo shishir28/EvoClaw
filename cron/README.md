@@ -12,6 +12,11 @@ This directory contains the planned scheduler configuration for EvoClaw automati
 2. `morning-digest`  
    Runs the production YouTube curator skill to send the daily Telegram digest.
 
+In the current file, those schedules are set to:
+
+- `0 2 * * *` for `adas-evolution`
+- `0 4 * * *` for `morning-digest`
+
 ## Important current limitation
 
 The schedule file is present, but the underlying automation is not fully wired yet:

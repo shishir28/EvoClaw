@@ -11,6 +11,7 @@ The fetcher already supports:
 - YouTube Data API search across multiple queries
 - metadata enrichment for returned videos
 - derived `views_per_hour`
+- channel `subscriber_count` enrichment via the YouTube channels endpoint
 - optional transcript retrieval through `youtube-transcript-api`
 - cache save/load helpers
 - a CLI entrypoint for manual refreshes
@@ -54,9 +55,10 @@ Currently only contains `index.json`, which is the future registry for generated
 
 Intended for cached video sets and feedback history.
 
-Current contents are only early placeholders:
+Current contents are early local datasets and placeholders:
 
 - `video_cache_test.json`
+- `video_cache_w1.json` generated locally for Step 1 validation
 - `feedback.json`
 
 ## Planned additions
@@ -83,3 +85,5 @@ The intended lifecycle inside `adas/` is:
 - Runtime-generated data in `test_sets/` and `archive/skill_*/` is gitignored.
 - Secret values are loaded from the repo root `.env`.
 - The current repo state is still **pre-evaluator / pre-meta-agent**.
+- Transcript fetching is **best-effort**: some videos now resolve transcripts, but YouTube may still block others depending on IP/network conditions.
+- The current cache shape is strong enough to begin the evaluator, because it includes `views_per_hour`, `subscriber_count`, and descriptions even when transcripts are missing.
