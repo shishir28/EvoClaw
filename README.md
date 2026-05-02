@@ -51,6 +51,7 @@ Implemented now:
 
 - `adas/youtube_fetcher.py`
 - `adas/config.py`
+- `adas/evaluator.py` contract scaffold
 - `adas/baselines/*.md`
 - `skills/youtube-curator/SKILL.md`
 - `cron/jobs.json`
@@ -58,7 +59,7 @@ Implemented now:
 
 Planned but not yet implemented:
 
-- `adas/evaluator.py`
+- evaluator scoring logic
 - `adas/meta_agent.py`
 - `adas/prompts/`
 - generated archive entries under `adas/archive/skill_*`

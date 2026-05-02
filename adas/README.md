@@ -33,6 +33,16 @@ Central config for:
 - path constants used by the planned ADAS loop
 - nightly loop parameters like iteration counts and retry limits
 
+### `evaluator.py`
+
+The evaluator scaffold now defines:
+
+- the input contract for skill, cache, and feedback loading
+- the output contract for dimension scores and overall results
+- a result template that future scoring logic will populate
+
+Current limitation: the scoring behavior itself is not implemented yet.
+
 ### `baselines/`
 
 Three seed skill designs for bootstrapping the search space:
