@@ -43,6 +43,7 @@ class Evaluator:
         llm_judge: LLMJudge | None = None,
         score_weights: dict[str, float] | None = None,
     ) -> None:
+        """Wire up all scoring dependencies, creating default instances when none are injected."""
         self._request_loader = request_loader or EvaluationRequestLoader()
         self._skill_executor = skill_executor or BaselineSkillExecutor()
         self._algorithmic_scorer = algorithmic_scorer or AlgorithmicScorer()
@@ -55,6 +56,7 @@ class Evaluator:
         cache_path: str,
         feedback_path: str | None = FEEDBACK_FILE,
     ) -> EvaluationRequest:
+        """Load and assemble a typed EvaluationRequest from a skill file, video cache, and optional feedback."""
         return self._request_loader.load_request(
             skill_path=skill_path,
             cache_path=cache_path,
@@ -62,6 +64,7 @@ class Evaluator:
         )
 
     def build_result_template(self, request: EvaluationRequest) -> EvaluationResult:
+        """Create a blank EvaluationResult shell with all dimension scores initialised to None."""
         dimensions = [
             DimensionScore(name=name, weight=weight, detail="Not scored yet.")
             for name, weight in self._score_weights.items()
@@ -83,6 +86,7 @@ class Evaluator:
         request: EvaluationRequest,
         selected_video_ids: list[str],
     ) -> list[VideoRecord]:
+        """Validate selected video IDs against the cache and return the matching VideoRecord objects."""
         if not selected_video_ids:
             raise ValueError("selected_video_ids must contain at least one video ID.")
         if len(selected_video_ids) != len(set(selected_video_ids)):
@@ -104,6 +108,7 @@ class Evaluator:
         scores: dict[str, float],
         details: dict[str, str] | None = None,
     ) -> EvaluationResult:
+        """Write numeric scores and optional detail strings into the result's DimensionScore objects, validating the 0–10 range."""
         details = details or {}
         dimension_map = result.dimension_map()
 
@@ -129,6 +134,7 @@ class Evaluator:
         return result
 
     def aggregate_weighted_score(self, result: EvaluationResult) -> EvaluationResult:
+        """Compute the weighted total score across all dimensions and set result status to 'scored'."""
         dimension_map = result.dimension_map()
         expected_dimensions = set(self._score_weights)
         actual_dimensions = set(dimension_map)
@@ -173,6 +179,7 @@ class Evaluator:
         request: EvaluationRequest,
         selected_video_ids: list[str],
     ) -> EvaluationResult:
+        """Run the deterministic freshness, diversity, and alignment scorers and return a partially-scored result."""
         selected_videos = self.resolve_selected_videos(request, selected_video_ids)
         result = self.build_result_template(request)
         result.selected_video_ids = selected_video_ids
@@ -212,6 +219,7 @@ class Evaluator:
         return result
 
     def pending_dimension_names(self, result: EvaluationResult) -> list[str]:
+        """Return the names of any dimensions that have not yet received a score."""
         return [dimension.name for dimension in result.dimensions if dimension.score is None]
 
     def _select_videos_for_request(
@@ -219,6 +227,7 @@ class Evaluator:
         request: EvaluationRequest,
         selected_video_ids: list[str] | None,
     ) -> tuple[list[str], list[str]]:
+        """Return video IDs to evaluate — uses caller-supplied IDs if provided, otherwise runs the skill executor."""
         if selected_video_ids is not None:
             return selected_video_ids, []
 
@@ -230,6 +239,7 @@ class Evaluator:
         result: EvaluationResult,
         request: EvaluationRequest,
     ) -> None:
+        """Call the LLM judge to score relevance, substance, and reasoning, then write results into the result object."""
         selected_videos = self.resolve_selected_videos(request, result.selected_video_ids)
         llm_scores, llm_details = self._llm_judge.judge_dimensions(request, selected_videos)
         self.apply_dimension_scores(result, llm_scores, details=llm_details)
@@ -241,6 +251,7 @@ class Evaluator:
         extra_scores: dict[str, float] | None,
         extra_details: dict[str, str] | None,
     ) -> None:
+        """Apply any caller-supplied override scores or detail strings to the result, if provided."""
         if not extra_scores and not extra_details:
             return
 
@@ -251,6 +262,7 @@ class Evaluator:
         )
 
     def _finalize_result(self, result: EvaluationResult) -> EvaluationResult:
+        """Mark the result as partially_scored if any dimensions are missing, or compute the final weighted score."""
         pending_dimensions = self.pending_dimension_names(result)
         if pending_dimensions:
             result.status = "partially_scored"
@@ -269,6 +281,7 @@ class Evaluator:
         extra_details: dict[str, str] | None = None,
         use_llm_judging: bool = False,
     ) -> EvaluationResult:
+        """Run the full evaluation pipeline — load, select, score algorithmically, optionally judge with LLM, and finalise."""
         request = self.load_request(
             skill_path=skill_path,
             cache_path=cache_path,

@@ -12,7 +12,7 @@ import os
 import re
 import sys
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TypedDict
 
@@ -20,26 +20,31 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 try:
-    from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
+    from youtube_transcript_api import (
+        NoTranscriptFound,
+        TranscriptsDisabled,
+        YouTubeTranscriptApi,
+    )
+
     _TRANSCRIPT_AVAILABLE = True
 except ImportError:
     _TRANSCRIPT_AVAILABLE = False
 
 try:
     from config import (
-        YOUTUBE_API_KEY,
         MAX_RESULTS_PER_QUERY,
-        VIDEO_WINDOW_DAYS,
-        TRANSCRIPT_ENABLED,
         TEST_SETS_DIR,
+        TRANSCRIPT_ENABLED,
+        VIDEO_WINDOW_DAYS,
+        YOUTUBE_API_KEY,
     )
 except ModuleNotFoundError:
     from adas.config import (
-        YOUTUBE_API_KEY,
         MAX_RESULTS_PER_QUERY,
-        VIDEO_WINDOW_DAYS,
-        TRANSCRIPT_ENABLED,
         TEST_SETS_DIR,
+        TRANSCRIPT_ENABLED,
+        VIDEO_WINDOW_DAYS,
+        YOUTUBE_API_KEY,
     )
 
 # ISO 8601 duration → seconds
@@ -70,6 +75,7 @@ class VideoRecordPayload(VideoStub, total=False):
 
 
 def _parse_duration(iso: str) -> int:
+    """Convert an ISO 8601 duration string (e.g. 'PT1H30M') to total seconds."""
     m = _DURATION_RE.match(iso or "")
     if not m:
         return 0
@@ -78,6 +84,7 @@ def _parse_duration(iso: str) -> int:
 
 
 def _views_per_hour(views: int, published_at: str) -> float:
+    """Calculate views per hour since publication, with a 1-hour minimum age floor."""
     pub = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
     age_hours = max((datetime.now(timezone.utc) - pub).total_seconds() / 3600, 1)
     return round(views / age_hours, 2)
@@ -85,12 +92,16 @@ def _views_per_hour(views: int, published_at: str) -> float:
 
 class YouTubeAPIClient:
     def __init__(self, api_key: str = YOUTUBE_API_KEY) -> None:
+        """Build the YouTube API service client and initialise the per-session subscriber cache."""
         if not api_key:
-            raise ValueError("YOUTUBE_API_KEY is not set. Export it as an env variable.")
+            raise ValueError(
+                "YOUTUBE_API_KEY is not set. Export it as an env variable."
+            )
         self._yt = build("youtube", "v3", developerKey=api_key)
         self._subscriber_count_cache: dict[str, int | None] = {}
 
     def _build_video_stub(self, item: dict, query: str) -> VideoStub:
+        """Extract the lightweight VideoStub fields from a raw YouTube search result item."""
         snippet = item["snippet"]
         return {
             "video_id": item["id"]["videoId"],
@@ -109,6 +120,7 @@ class YouTubeAPIClient:
         detail: dict,
         channel_subscribers: dict[str, int | None],
     ) -> VideoRecordPayload:
+        """Merge statistics and content-detail fields from the videos.list API onto an existing stub."""
         stats = detail.get("statistics", {})
         content = detail.get("contentDetails", {})
         snippet = detail.get("snippet", {})
@@ -134,6 +146,7 @@ class YouTubeAPIClient:
         stub: VideoStub,
         channel_subscribers: dict[str, int | None],
     ) -> VideoRecordPayload:
+        """Build a zero-stats payload from a stub when the videos.list API returns no detail for a video."""
         return {
             **stub,
             "views": 0,
@@ -153,6 +166,7 @@ class YouTubeAPIClient:
         published_after: str,
         max_results: int,
     ) -> list[VideoStub]:
+        """Search YouTube for videos matching query published after the given ISO timestamp."""
         try:
             resp = (
                 self._yt.search()
@@ -177,6 +191,7 @@ class YouTubeAPIClient:
         return results
 
     def enrich(self, stubs: list[VideoStub]) -> list[VideoRecordPayload]:
+        """Fetch statistics, duration, and tags for a list of stubs via the videos.list API in batches of 50."""
         enriched: list[VideoRecordPayload] = []
         channel_subscribers = self.channel_subscriber_counts(stubs)
         for i in range(0, len(stubs), 50):
@@ -189,23 +204,32 @@ class YouTubeAPIClient:
                     .execute()
                 )
             except HttpError as e:
-                print(f"[enrich] HttpError for batch, skipping {len(batch)} videos: {e}", file=sys.stderr)
+                print(
+                    f"[enrich] HttpError for batch, skipping {len(batch)} videos: {e}",
+                    file=sys.stderr,
+                )
                 continue
 
             detail_map = {item["id"]: item for item in resp.get("items", [])}
             for stub in batch:
                 detail = detail_map.get(stub["video_id"])
                 if not detail:
-                    print(f"[enrich] skipping {stub['video_id']}: no detail returned by API", file=sys.stderr)
+                    print(
+                        f"[enrich] skipping {stub['video_id']}: no detail returned by API",
+                        file=sys.stderr,
+                    )
                     continue
 
-                enriched.append(self._merge_video_details(stub, detail, channel_subscribers))
+                enriched.append(
+                    self._merge_video_details(stub, detail, channel_subscribers)
+                )
         return enriched
 
     def channel_subscriber_counts(
         self,
         videos: list[VideoStub],
     ) -> dict[str, int | None]:
+        """Return subscriber counts keyed by channel ID, using an in-session cache to avoid redundant API calls."""
         channel_ids = sorted({video["channel_id"] for video in videos})
         if not channel_ids:
             return {}
@@ -244,21 +268,29 @@ class YouTubeAPIClient:
             for channel_id in channel_ids
         }
 
+
 class TranscriptProvider:
     def __init__(self, pacing_seconds: float = 0.2) -> None:
+        """Initialise the transcript API client and configure inter-request pacing delay."""
         self._transcript_api = YouTubeTranscriptApi() if _TRANSCRIPT_AVAILABLE else None
         self._pacing_seconds = pacing_seconds
 
     @property
     def available(self) -> bool:
+        """Return True if the youtube-transcript-api package is installed and the client is ready."""
         return self._transcript_api is not None
 
     def attach(self, videos: list[VideoRecordPayload]) -> list[VideoRecordPayload]:
+        """Fetch and attach English transcripts to each video in-place, capped at 3000 characters."""
         for video in videos:
             vid_id = video["video_id"]
             try:
                 fetched = self._transcript_api.fetch(vid_id, languages=["en", "en-US"])
-                segments = fetched.to_raw_data() if hasattr(fetched, "to_raw_data") else fetched
+                segments = (
+                    fetched.to_raw_data()
+                    if hasattr(fetched, "to_raw_data")
+                    else fetched
+                )
                 text = " ".join(
                     seg["text"] if isinstance(seg, dict) else seg.text
                     for seg in segments
@@ -276,9 +308,11 @@ class TranscriptProvider:
 
 class VideoCacheRepository:
     def _resolve_path(self, path: str) -> Path:
+        """Return an absolute Path, prefixing with TEST_SETS_DIR when a relative path is given."""
         return Path(path) if os.path.isabs(path) else Path(TEST_SETS_DIR) / path
 
     def save(self, videos: list[VideoRecordPayload], path: str) -> None:
+        """Serialise the video list to a JSON file with a fetch timestamp and count envelope."""
         dest = self._resolve_path(path)
         dest.parent.mkdir(parents=True, exist_ok=True)
         payload = {
@@ -290,6 +324,7 @@ class VideoCacheRepository:
         print(f"Cached {len(videos)} videos → {dest}")
 
     def load(self, path: str) -> list[VideoRecordPayload]:
+        """Read a previously saved cache file and return its video list."""
         dest = self._resolve_path(path)
         raw = json.loads(dest.read_text())
         return raw["videos"]
@@ -303,6 +338,7 @@ class YouTubeFetcher:
         transcript_provider: TranscriptProvider | None = None,
         cache_repository: VideoCacheRepository | None = None,
     ) -> None:
+        """Wire up the API client, transcript provider, and cache repository, creating defaults when not injected."""
         self._api_client = api_client or YouTubeAPIClient(api_key)
         self._transcript_provider = transcript_provider or TranscriptProvider()
         self._cache_repository = cache_repository or VideoCacheRepository()
@@ -315,9 +351,9 @@ class YouTubeFetcher:
         with_transcripts: bool = TRANSCRIPT_ENABLED,
     ) -> list[VideoRecordPayload]:
         """Return deduplicated, enriched video records for all queries."""
-        published_after = (
-            datetime.now(timezone.utc) - timedelta(days=days)
-        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        published_after = (datetime.now(timezone.utc) - timedelta(days=days)).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
 
         seen: dict[str, VideoStub] = {}
         for query in queries:
@@ -334,10 +370,12 @@ class YouTubeFetcher:
         return enriched
 
     def save_cache(self, videos: list[VideoRecordPayload], path: str) -> None:
+        """Persist the given video list to disk via the injected cache repository."""
         self._cache_repository.save(videos, path)
 
     @staticmethod
     def load_cache(path: str) -> list[VideoRecordPayload]:
+        """Load a cached video list from disk without requiring a fetcher instance."""
         return VideoCacheRepository().load(path)
 
 
@@ -347,6 +385,7 @@ class YouTubeFetcher:
 
 if __name__ == "__main__":
     import argparse
+
     try:
         from config import SEARCH_QUERIES, VIDEO_WINDOW_DAYS
     except ModuleNotFoundError:
