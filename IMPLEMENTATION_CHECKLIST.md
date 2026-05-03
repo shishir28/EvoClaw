@@ -24,6 +24,11 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] `adas/algorithmic_scorer.py`
 - [x] `adas/llm_judge.py`
 - [x] `adas/skill_executor.py`
+- [x] `adas/baseline_catalog.py`
+- [x] `adas/baseline_evaluation_models.py`
+- [x] `adas/baseline_evaluation_runner.py`
+- [x] `adas/evaluation_result_store.py`
+- [x] `adas/baseline_comparison.py`
 - [x] `adas/prompts/eval_judge.md`
 - [x] baseline skills in `adas/baselines/`
 - [x] production skill placeholder in `skills/youtube-curator/SKILL.md`
@@ -34,6 +39,7 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] cron config stub in `cron/jobs.json`
 - [x] repository documentation in `README.md` files
 - [x] high-level orientation docs in `ARCHITECTURE.md` and `WORKFLOW.md`
+- [x] unit tests for evaluator, loader, scorer, executor, and Step 5 comparison flow
 
 ### Not implemented yet
 
@@ -239,11 +245,11 @@ The evaluator can now:
 
 ### Tasks
 
-- [ ] run all three baselines on the same dataset
-- [ ] save result breakdowns
-- [ ] compare the baseline scores
-- [ ] confirm the differences make intuitive sense
-- [ ] tune weights only if clearly necessary
+- [x] run all three baselines on the same dataset
+- [x] save result breakdowns
+- [x] compare the baseline scores
+- [x] confirm the differences make intuitive sense
+- [x] tune weights only if clearly necessary
 
 ### Why this matters
 
@@ -251,18 +257,31 @@ If the evaluator is wrong, the rest of the system will optimize toward the wrong
 
 ### Step 5 progress
 
-Step 5 has not started yet.
+Step 5 is complete for the current implementation scope.
 
-The missing work here is the comparison run itself:
+Saved outputs now live under:
 
-- run the three baselines on the same cached set
-- save result breakdowns somewhere persistent
-- compare the ranking and inspect whether it matches intuition
+- `adas/baseline_results/video_cache_w1/summary.json`
+- `adas/baseline_results/video_cache_w1/results/`
+
+Current recorded ranking on `video_cache_w1.json`:
+
+1. `recency-first` — `7.3924`
+2. `engagement-velocity` — `7.1419`
+3. `llm-substance-judge` — `5.7784`
+
+Interpretation:
+
+- the ranking is plausible for the current evaluator and dataset
+- recency and engagement-velocity are close, which makes sense because they share two strong picks
+- the substance proxy baseline scores lower because its current heuristic picks do not hold up as strongly under the LLM judge
+- no weight tuning was applied yet, because the result did not look obviously wrong
 
 ### Files involved
 
 - `adas/baselines/*.md`
 - `adas/evaluator.py`
+- `adas/baseline_results/`
 - `adas/test_sets/`
 
 ---
@@ -488,7 +507,7 @@ If the goal is to understand what is happening as you build, use this order:
 - [x] Step 2 - evaluator skeleton
 - [x] Step 3 - skill execution contract
 - [x] Step 4 - LLM judging
-- [ ] Step 5 - baseline scoring runs
+- [x] Step 5 - baseline scoring runs
 - [ ] Step 6 - archive writes
 - [ ] Step 7 - feedback ingestion
 - [ ] Step 8 - meta-agent prompts
@@ -508,7 +527,7 @@ If we want the smallest checkpoint that proves the project is moving in the righ
 - [x] fetch real video data
 - [x] build one reusable cached dataset
 - [x] execute the three baseline strategies
-- [ ] score them with the evaluator
+- [x] score them with the evaluator
 - [ ] store the results in the archive
 
 Once this milestone works, the rest of the project becomes much easier to reason about.

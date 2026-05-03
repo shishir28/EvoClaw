@@ -2,14 +2,16 @@
 
 EvoClaw is an **ADAS-style, self-improving YouTube curator** for AI and entrepreneurship content. The target system runs inside a NemoClaw/OpenClaw environment, fetches candidate videos, evaluates curation strategies, evolves better `SKILL.md` prompts over time, and eventually delivers a daily top-3 digest to Telegram.
 
-The repository is currently at the **working fetcher + evaluator stage**:
+The repository is currently at the **working fetcher + evaluator + baseline comparison stage**:
 
 - a YouTube fetcher with caching, `subscriber_count` enrichment, and best-effort transcript support
 - a modular evaluator stack with DTO models, request loading, algorithmic scoring, optional LLM judging, and weighted aggregation
 - a Python adapter that executes the current baseline `SKILL.md` strategies over cached videos
+- a Step 5 comparison flow that evaluates all baselines against one cache and persists detailed results
 - typed shared configuration for search, inference, paths, and scoring weights
 - three hand-written baseline skills plus a production `SKILL.md` placeholder
 - a cron configuration stub for future automation
+- a focused pytest suite covering the evaluator path and Step 5 orchestration
 
 ## Target architecture
 
@@ -29,8 +31,14 @@ EvoClaw/
 ├── adas/
 │   ├── algorithmic_scorer.py     # Deterministic evaluator dimensions
 │   ├── archive/                  # Archive index and future generated skills
+│   ├── baseline_catalog.py       # Ordered baseline skill discovery
+│   ├── baseline_comparison.py    # Step 5 comparison orchestration and CLI
+│   ├── baseline_evaluation_models.py # Step 5 DTO-style result contracts
+│   ├── baseline_evaluation_runner.py # Multi-skill evaluation orchestration
+│   ├── baseline_results/         # Saved Step 5 comparison outputs
 │   ├── baselines/                # Seed curation strategies
 │   ├── config.py                 # Shared configuration
+│   ├── evaluation_result_store.py # Step 5 result persistence
 │   ├── evaluator.py              # Evaluator orchestration
 │   ├── evaluator_loader.py       # Skill/cache/feedback loading
 │   ├── evaluator_models.py       # DTO-style evaluator contracts
@@ -50,6 +58,7 @@ EvoClaw/
 ├── .gitignore                    # Excludes secrets and generated data
 ├── Plan.md                       # Original project design and roadmap
 ├── README.md
+├── tests/                        # Unit tests for evaluator and Step 5 flow
 └── requirements.txt
 ```
 
@@ -65,18 +74,32 @@ Implemented now:
 - `adas/algorithmic_scorer.py` for non-LLM evaluator dimensions
 - `adas/llm_judge.py` for prompt-driven model judging
 - `adas/skill_executor.py` baseline execution adapter
+- `adas/baseline_catalog.py` baseline file discovery
+- `adas/baseline_evaluation_models.py` Step 5 result DTOs
+- `adas/baseline_evaluation_runner.py` baseline evaluation orchestration
+- `adas/evaluation_result_store.py` Step 5 persistence layer
+- `adas/baseline_comparison.py` Step 5 comparison service and CLI
 - `adas/prompts/eval_judge.md`
 - `adas/baselines/*.md`
+- `adas/baseline_results/video_cache_w1/summary.json`
 - `skills/youtube-curator/SKILL.md`
 - `cron/jobs.json`
 - local Step 1 validation: real fetch works and produces a reusable cache in `adas/test_sets/video_cache_w1.json`
 - evaluator architecture cleanup: smaller modules, DTO separation, injected collaborators, and readability-focused helpers
+- baseline comparison results saved under `adas/baseline_results/video_cache_w1/`
+- pytest coverage for evaluator, loader, scorer, executor, and Step 5 comparison modules
+
+Current baseline comparison snapshot on `video_cache_w1.json`:
+
+- `recency-first`: **7.3924**
+- `engagement-velocity`: **7.1419**
+- `llm-substance-judge`: **5.7784**
 
 Current next milestone:
 
-- run all three baselines against the same dataset
-- save and compare evaluator result breakdowns
-- confirm the scores feel sensible before building the archive and meta-agent loop
+- define the archive entry structure
+- start persisting evaluated skills into the archive layer
+- carry the Step 5 comparison outputs forward into Step 6
 
 Planned but not yet implemented:
 
@@ -86,7 +109,6 @@ Planned but not yet implemented:
 - generated archive entries under `adas/archive/skill_*`
 - Telegram reaction capture
 - automated best-skill deployment
-- archive result persistence beyond the empty `adas/archive/index.json` stub
 - end-to-end cron-driven runtime wiring
 
 ## Setup
@@ -155,6 +177,18 @@ cd adas
 python3 evaluator.py --skill baselines/baseline_popular.md --cache video_cache_w1.json
 ```
 
+Run the full baseline comparison:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python adas/baseline_comparison.py --cache adas/test_sets/video_cache_w1.json
+```
+
+This writes:
+
+- per-baseline result files under `adas/baseline_results/video_cache_w1/results/`
+- a ranking summary in `adas/baseline_results/video_cache_w1/summary.json`
+
 ## Security and repo hygiene
 
 - `.env` is intentionally ignored and should never be committed.
@@ -166,5 +200,7 @@ python3 evaluator.py --skill baselines/baseline_popular.md --cache video_cache_w
 
 - `Plan.md` describes the full intended design, phases, and success metrics.
 - `adas/README.md` documents the ADAS workspace in more detail.
+- `ARCHITECTURE.md` explains the current module layout, including Step 5 comparison modules.
+- `WORKFLOW.md` explains the runnable fetch -> evaluate -> compare flow.
 - `skills/youtube-curator/README.md` explains the production skill directory.
 - `cron/README.md` explains the planned scheduler wiring.

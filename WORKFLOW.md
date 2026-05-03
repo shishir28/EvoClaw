@@ -4,7 +4,7 @@ This file explains **what actually happens today** in the codebase, and **what t
 
 ## 1. Current runnable workflow
 
-Today, EvoClaw supports a complete **fetch -> evaluate** workflow.
+Today, EvoClaw supports a complete **fetch -> evaluate -> compare** workflow.
 
 ### Step 1: Fetch candidate videos
 
@@ -80,6 +80,21 @@ It builds a prompt from `adas/prompts/eval_judge.md` and calls the configured Op
 3. returns `partially_scored` if only algorithmic dimensions are present
 4. returns `scored` with `total_score` once all dimensions are available
 
+### Step 6: Compare all baseline skills on one cache
+
+`adas/baseline_comparison.py`:
+
+1. asks `BaselineCatalog` for the ordered baseline skill files
+2. asks `BaselineEvaluationRunner` to evaluate each one against the same cache
+3. asks `EvaluationResultStore` to persist one result file per skill
+4. writes a `summary.json` ranking file under `adas/baseline_results/`
+
+Current saved baseline comparison on `video_cache_w1.json`:
+
+1. `recency-first` — `7.3924`
+2. `engagement-velocity` — `7.1419`
+3. `llm-substance-judge` — `5.7784`
+
 ## 2. Current workflow as a diagram
 
 ```text
@@ -105,7 +120,13 @@ SKILL.md + cache JSON + feedback JSON
                     evaluator.py
                         |
                         v
-                 EvaluationResult
+                  EvaluationResult
+                        |
+                        v
+             baseline_comparison.py
+                        |
+                        v
+       baseline_results/<cache-stem>/summary.json
 ```
 
 ## 3. What is not in the workflow yet
@@ -164,9 +185,8 @@ python3 evaluator.py --skill baselines/baseline_curated.md --cache video_cache_w
 
 The next useful workflow to add is:
 
-1. run all three baselines on the same cached dataset
-2. persist each evaluation result
-3. compare the scores side by side
-4. confirm the evaluator ranking feels sensible
+1. turn the saved Step 5 comparison outputs into archive entries
+2. define best-skill metadata updates
+3. prepare the archive for meta-agent reads
 
-That is the last missing step before archive work becomes worth building.
+That is the next missing step before the meta-agent loop becomes worth building.

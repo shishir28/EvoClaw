@@ -59,6 +59,7 @@ class PathSettings:
     archive_dir: str
     archive_index: str
     baselines_dir: str
+    baseline_results_dir: str
     test_sets_dir: str
     prompts_dir: str
     skill_production: str
@@ -164,6 +165,7 @@ def _build_path_settings(base_dir: Path) -> PathSettings:
         archive_dir=str(archive_dir),
         archive_index=str(archive_dir / "index.json"),
         baselines_dir=str(adas_dir / "baselines"),
+        baseline_results_dir=str(adas_dir / "baseline_results"),
         test_sets_dir=str(test_sets_dir),
         prompts_dir=str(adas_dir / "prompts"),
         skill_production=str(base_dir / "skills" / "youtube-curator" / "SKILL.md"),
@@ -221,6 +223,7 @@ ADAS_DIR = SETTINGS.paths.adas_dir
 ARCHIVE_DIR = SETTINGS.paths.archive_dir
 ARCHIVE_INDEX = SETTINGS.paths.archive_index
 BASELINES_DIR = SETTINGS.paths.baselines_dir
+BASELINE_RESULTS_DIR = SETTINGS.paths.baseline_results_dir
 TEST_SETS_DIR = SETTINGS.paths.test_sets_dir
 PROMPTS_DIR = SETTINGS.paths.prompts_dir
 SKILL_PRODUCTION = SETTINGS.paths.skill_production

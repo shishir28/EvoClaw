@@ -4,7 +4,7 @@ This file explains the **current codebase shape** in plain language so you can u
 
 ## 1. Current architecture in one sentence
 
-EvoClaw currently has a working **fetch -> evaluate** foundation, with the future **archive -> evolve -> deploy -> deliver** loop still to be built.
+EvoClaw currently has a working **fetch -> evaluate -> compare** foundation, with the future **archive -> evolve -> deploy -> deliver** loop still to be built.
 
 ## 2. Main layers
 
@@ -18,6 +18,9 @@ EvoClaw currently has a working **fetch -> evaluate** foundation, with the futur
 | Deterministic scoring | Score freshness, diversity, and placeholder alignment | `adas/algorithmic_scorer.py` |
 | Model judging | Score relevance, substance, and reasoning through an OpenAI-compatible endpoint | `adas/llm_judge.py` |
 | Skill execution | Execute the current baseline skill strategies over cached videos | `adas/skill_executor.py` |
+| Baseline discovery | Provide the ordered list of Step 5 baseline skill files | `adas/baseline_catalog.py` |
+| Baseline comparison orchestration | Run all baseline skills against one cache | `adas/baseline_comparison.py`, `adas/baseline_evaluation_runner.py` |
+| Comparison persistence | Save Step 5 detailed results and ranking summaries | `adas/baseline_evaluation_models.py`, `adas/evaluation_result_store.py` |
 | Prompt assets | Hold reusable evaluator prompt templates | `adas/prompts/eval_judge.md` |
 | Production skill placeholder | Future deployment target for the best skill | `skills/youtube-curator/SKILL.md` |
 | Scheduler stub | Planned automation entrypoints | `cron/jobs.json` |
@@ -44,6 +47,18 @@ llm_judge.py
 evaluator.py
     -> orchestrates the full evaluation flow
     -> returns EvaluationResult
+
+baseline_catalog.py
+    -> returns the baseline skill paths used for Step 5
+
+baseline_evaluation_runner.py
+    -> evaluates all baseline skills against one cache
+
+evaluation_result_store.py
+    -> persists one result file per baseline plus a summary
+
+baseline_comparison.py
+    -> composes catalog + runner + store for the full Step 5 flow
 ```
 
 ## 4. Core design choices already visible in the code
@@ -99,6 +114,7 @@ That keeps API access, transcript attachment, cache persistence, and orchestrati
 - algorithmic scoring
 - optional LLM judging
 - weighted aggregation
+- baseline comparison persistence and ranking on `video_cache_w1.json`
 - placeholder production skill
 
 ### Planned later
@@ -123,7 +139,8 @@ If you want the easiest learning path through the code:
 7. `adas/skill_executor.py`
 8. `adas/algorithmic_scorer.py`
 9. `adas/llm_judge.py`
-10. `adas/youtube_fetcher.py`
+10. `adas/baseline_comparison.py`
+11. `adas/youtube_fetcher.py`
 
 ## 8. How to run unit tests
 

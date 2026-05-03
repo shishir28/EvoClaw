@@ -12,15 +12,16 @@ The system combines three ideas:
 
 ## Current implementation snapshot
 
-The codebase is currently at the **working fetcher + evaluator** stage:
+The codebase is currently at the **working fetcher + evaluator + baseline comparison** stage:
 
 - real YouTube fetches work and produce reusable caches
 - the evaluator is implemented and split into focused modules
 - baseline `SKILL.md` files can be executed through a Python adapter over cached videos
 - LLM judging for relevance, substance, and reasoning is implemented
+- Step 5 baseline comparison is implemented and persists JSON results plus a ranking summary
 - archive writes, meta-agent orchestration, Telegram automation, and scheduled runtime wiring are still future phases
 
-The immediate next milestone is to run all three baselines end to end on the same dataset, save the score breakdowns, and confirm the evaluator ranking makes sense.
+The immediate next milestone is to turn the Step 5 comparison outputs into the real archive layer for Step 6.
 
 ---
 
@@ -71,7 +72,13 @@ The immediate next milestone is to run all three baselines end to end on the sam
 │
 ├── adas/
 │   ├── algorithmic_scorer.py     ← Deterministic scoring dimensions
+│   ├── baseline_catalog.py       ← Ordered baseline skill discovery
+│   ├── baseline_comparison.py    ← Step 5 comparison orchestration and CLI
+│   ├── baseline_evaluation_models.py ← Step 5 result contracts
+│   ├── baseline_evaluation_runner.py ← Multi-skill evaluation orchestration
+│   ├── baseline_results/         ← Saved Step 5 comparison outputs
 │   ├── config.py                 ← Topics, scoring weights, model config
+│   ├── evaluation_result_store.py ← Step 5 persistence layer
 │   ├── evaluator.py              ← Evaluator orchestration
 │   ├── evaluator_loader.py       ← Loads skill/cache/feedback inputs
 │   ├── evaluator_models.py       ← DTO-style evaluator contracts
@@ -377,8 +384,8 @@ egress_rules:
 - [x] Build `evaluator.py` with all 6 scoring dimensions
 - [x] Split evaluator concerns into loader, DTO, scorer, judge, and executor modules
 - [x] Write the LLM-as-judge prompts for relevance, substance, and reasoning
-- [ ] Score all 3 baselines against the cached video set
-- [ ] Verify scores are sensible (baselines should score differently)
+- [x] Score all 3 baselines against the cached video set
+- [x] Verify scores are sensible (baselines should score differently)
 - [ ] Build the feedback ingestion from Telegram reactions
 
 ### Phase 3: Meta agent loop (day 5-7)

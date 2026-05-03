@@ -1,0 +1,49 @@
+{
+  "generated_at": "2026-05-03T07:47:18.484505+00:00",
+  "skills": [
+    {
+      "skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_recency.md",
+      "skill_name": "recency-first",
+      "status": "scored",
+      "total_score": 7.3924,
+      "error": null,
+      "result_file": "results/baseline_recency.json"
+    },
+    {
+      "skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_popular.md",
+      "skill_name": "engagement-velocity",
+      "status": "scored",
+      "total_score": 7.1419,
+      "error": null,
+      "result_file": "results/baseline_popular.json"
+    },
+    {
+      "skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_curated.md",
+      "skill_name": "llm-substance-judge",
+      "status": "scored",
+      "total_score": 5.7784,
+      "error": null,
+      "result_file": "results/baseline_curated.json"
+    }
+  ],
+  "ranking": [
+    {
+      "skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_recency.md",
+      "skill_name": "recency-first",
+      "total_score": 7.3924,
+      "status": "scored"
+    },
+    {
+      "skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_popular.md",
+      "skill_name": "engagement-velocity",
+      "total_score": 7.1419,
+      "status": "scored"
+    },
+    {
+      "skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_curated.md",
+      "skill_name": "llm-substance-judge",
+      "total_score": 5.7784,
+      "status": "scored"
+    }
+  ]
+}

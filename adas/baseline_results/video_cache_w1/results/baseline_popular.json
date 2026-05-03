@@ -1,0 +1,66 @@
+{
+  "skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_popular.md",
+  "skill_name": "engagement-velocity",
+  "status": "scored",
+  "total_score": 7.1419,
+  "error": null,
+  "result": {
+    "skill_name": "engagement-velocity",
+    "strategy": "engagement-velocity",
+    "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
+    "video_count": 49,
+    "dimensions": [
+      {
+        "name": "relevance",
+        "weight": 0.25,
+        "score": 8.0,
+        "detail": "The videos cover AI and entrepreneurship, which aligns well with the theme. However, 'AI is the Next Big Thing in 2026 | Ft @MastersUnion' seems to focus more on career counseling rather than AI and entrepreneurship directly."
+      },
+      {
+        "name": "substance",
+        "weight": 0.25,
+        "score": 6.0,
+        "detail": "'AI is the Next Big Thing in 2026 | Ft @MastersUnion' has a vague summary and does not provide substantial information. The other two videos have more concrete insights but still lack deep substance compared to the high velocity of views."
+      },
+      {
+        "name": "freshness",
+        "weight": 0.15,
+        "score": 6.3201,
+        "detail": "gwsaC3WiCqs: 42.76h old -> 6.44; TsXhgpZRU2w: 41.71h old -> 6.52; w8ipILmKYEw: 161.76h old -> 6.0"
+      },
+      {
+        "name": "diversity",
+        "weight": 0.15,
+        "score": 9.9593,
+        "detail": "3/3 unique channels; avg topical similarity=0.0081"
+      },
+      {
+        "name": "reasoning",
+        "weight": 0.1,
+        "score": 7.0,
+        "detail": "'6 Profitable AI business ideas for 2026' and 'POV: AI just upgraded the photoshoot game 🚀📸 #ecommerce #product' summaries accurately reflect the content. However, 'AI is the Next Big Thing in 2026 | Ft @MastersUnion' summary is overly generic and does not capture the essence of the video."
+      },
+      {
+        "name": "alignment",
+        "weight": 0.1,
+        "score": 5.0,
+        "detail": "No feedback history yet; using neutral placeholder score."
+      }
+    ],
+    "selected_video_ids": [
+      "gwsaC3WiCqs",
+      "TsXhgpZRU2w",
+      "w8ipILmKYEw"
+    ],
+    "total_score": 7.1419,
+    "status": "scored",
+    "notes": [
+      "Supports partial scoring until every dimension has a value.",
+      "Weighted aggregation is applied once all dimension scores are assigned.",
+      "Only algorithmic dimensions are scored here; LLM-judged dimensions remain pending.",
+      "Executed engagement-velocity strategy adapter.",
+      "Used subscriber threshold 10,000.",
+      "Applied LLM-judged scores for relevance, substance, and reasoning."
+    ]
+  }
+}

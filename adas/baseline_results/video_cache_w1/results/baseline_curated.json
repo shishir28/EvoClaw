@@ -1,0 +1,66 @@
+{
+  "skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_curated.md",
+  "skill_name": "llm-substance-judge",
+  "status": "scored",
+  "total_score": 5.7784,
+  "error": null,
+  "result": {
+    "skill_name": "llm-substance-judge",
+    "strategy": "llm-substance-judge",
+    "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
+    "video_count": 49,
+    "dimensions": [
+      {
+        "name": "relevance",
+        "weight": 0.25,
+        "score": 6.0,
+        "detail": "Two of the three videos touch on AI and entrepreneurship, but the third is more about AI in general and LinkedIn creators rather than AI specifically for entrepreneurship."
+      },
+      {
+        "name": "substance",
+        "weight": 0.25,
+        "score": 4.0,
+        "detail": "The first video offers a list of AI business ideas, which is somewhat actionable but lacks detailed strategies or metrics. The second video provides a personal story and a prediction without substantial actionable insights. The third video has a vague summary that doesn't fully capture the content."
+      },
+      {
+        "name": "freshness",
+        "weight": 0.15,
+        "score": 6.5542,
+        "detail": "gwsaC3WiCqs: 42.76h old -> 6.44; j_dwcU6J-C4: 33.28h old -> 7.23; cR-GsoYdcT8: 87.77h old -> 6.0"
+      },
+      {
+        "name": "diversity",
+        "weight": 0.15,
+        "score": 9.9686,
+        "detail": "3/3 unique channels; avg topical similarity=0.0063"
+      },
+      {
+        "name": "reasoning",
+        "weight": 0.1,
+        "score": 3.0,
+        "detail": "The `why_watch_summary` for the first video accurately reflects the content. The second video's summary is overly optimistic and doesn't fully represent the content. The third video's summary is too generic and doesn't provide a clear indication of the video's value."
+      },
+      {
+        "name": "alignment",
+        "weight": 0.1,
+        "score": 5.0,
+        "detail": "No feedback history yet; using neutral placeholder score."
+      }
+    ],
+    "selected_video_ids": [
+      "gwsaC3WiCqs",
+      "j_dwcU6J-C4",
+      "cR-GsoYdcT8"
+    ],
+    "total_score": 5.7784,
+    "status": "scored",
+    "notes": [
+      "Supports partial scoring until every dimension has a value.",
+      "Weighted aggregation is applied once all dimension scores are assigned.",
+      "Only algorithmic dimensions are scored here; LLM-judged dimensions remain pending.",
+      "Executed substance-judge proxy adapter.",
+      "Used transcript availability, description richness, and duration as substance heuristics.",
+      "Applied LLM-judged scores for relevance, substance, and reasoning."
+    ]
+  }
+}
