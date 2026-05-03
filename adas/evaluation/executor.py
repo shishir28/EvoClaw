@@ -14,9 +14,9 @@ from datetime import datetime, timezone
 from typing import Protocol
 
 try:
-    from evaluator_models import SkillDocument, VideoRecord
-except ModuleNotFoundError:
-    from adas.evaluator_models import SkillDocument, VideoRecord
+    from .models import SkillDocument, VideoRecord
+except ImportError:
+    from evaluation.models import SkillDocument, VideoRecord
 
 
 _AI_TERMS = {

@@ -10,11 +10,11 @@ from pathlib import Path
 from typing import Any, Protocol
 
 try:
+    from ..config import LLM_BASE_URL, LLM_MODEL, PROMPTS_DIR
+    from .models import EvaluationRequest, VideoRecord
+except ImportError:
     from config import LLM_BASE_URL, LLM_MODEL, PROMPTS_DIR
-    from evaluator_models import EvaluationRequest, VideoRecord
-except ModuleNotFoundError:
-    from adas.config import LLM_BASE_URL, LLM_MODEL, PROMPTS_DIR
-    from adas.evaluator_models import EvaluationRequest, VideoRecord
+    from evaluation.models import EvaluationRequest, VideoRecord
 
 
 def _first_sentence(text: str) -> str:

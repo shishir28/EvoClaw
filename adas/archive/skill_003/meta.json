@@ -1,0 +1,18 @@
+{
+  "skill_id": "skill_003",
+  "skill_name": "recency-first",
+  "source_type": "baseline",
+  "archive_key": "baseline:/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_recency.md:{\"cache_path\": \"/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json\", \"feedback_path\": \"/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json\", \"use_llm_judging\": true}",
+  "archive_path": "skill_003",
+  "archived_at": "2026-05-03T11:02:19.087678+00:00",
+  "origin_skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_recency.md",
+  "status": "scored",
+  "total_score": 7.3924,
+  "strategy": "recency",
+  "error": null,
+  "context": {
+    "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
+    "feedback_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json",
+    "use_llm_judging": true
+  }
+}

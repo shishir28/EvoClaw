@@ -7,11 +7,11 @@ from __future__ import annotations
 from typing import Protocol
 
 try:
-    from baseline_evaluation_models import BaselineEvaluationRecord
-    from evaluator_models import EvaluationResult
-except ModuleNotFoundError:
-    from adas.baseline_evaluation_models import BaselineEvaluationRecord
-    from adas.evaluator_models import EvaluationResult
+    from ..evaluation.models import EvaluationResult
+    from .models import BaselineEvaluationRecord
+except ImportError:
+    from evaluation.models import EvaluationResult
+    from baseline.models import BaselineEvaluationRecord
 
 
 class EvaluatorProtocol(Protocol):

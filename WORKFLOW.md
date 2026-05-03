@@ -4,7 +4,7 @@ This file explains **what actually happens today** in the codebase, and **what t
 
 ## 1. Current runnable workflow
 
-Today, EvoClaw supports a complete **fetch -> evaluate -> compare** workflow.
+Today, EvoClaw supports a complete **fetch -> evaluate -> compare -> archive** workflow.
 
 ### Step 1: Fetch candidate videos
 
@@ -24,7 +24,7 @@ Typical output today:
 
 ### Step 2: Load an evaluation request
 
-`adas/evaluator_loader.py`:
+`adas/evaluation/loader.py`:
 
 1. reads a candidate `SKILL.md`
 2. parses its YAML frontmatter
@@ -34,7 +34,7 @@ Typical output today:
 
 ### Step 3: Select videos for the skill
 
-`adas/skill_executor.py`:
+`adas/evaluation/executor.py`:
 
 1. reads the skill strategy from the parsed skill metadata
 2. chooses the matching Python strategy executor
@@ -49,13 +49,13 @@ Supported strategies today:
 
 ### Step 4: Score the selection
 
-`adas/evaluator.py` coordinates two scoring paths.
+`adas/evaluation/service.py` coordinates two scoring paths.
 
 When run from the CLI without explicit `--selected-ids`, it still executes the baseline adapter path and returns a real scored result instead of an empty template payload.
 
 #### 4a. Algorithmic scoring
 
-`adas/algorithmic_scorer.py` scores:
+`adas/evaluation/scorer.py` scores:
 
 - `freshness`
 - `diversity`
@@ -65,7 +65,7 @@ When run from the CLI without explicit `--selected-ids`, it still executes the b
 
 #### 4b. Optional LLM judging
 
-If LLM judging is enabled, `adas/llm_judge.py` scores:
+If LLM judging is enabled, `adas/evaluation/judge.py` scores:
 
 - `relevance`
 - `substance`
@@ -77,7 +77,7 @@ The default judge client is created lazily, so algorithmic-only runs do not pay 
 
 ### Step 5: Aggregate the result
 
-`adas/evaluator.py`:
+`adas/evaluation/service.py`:
 
 1. applies all dimension scores to the result
 2. checks whether any dimensions are still missing
@@ -86,7 +86,7 @@ The default judge client is created lazily, so algorithmic-only runs do not pay 
 
 ### Step 6: Compare all baseline skills on one cache
 
-`adas/baseline_comparison.py`:
+`adas/baseline/comparison.py`:
 
 1. asks `BaselineCatalog` for the ordered baseline skill files
 2. asks `BaselineEvaluationRunner` to evaluate each one against the same cache
@@ -100,6 +100,21 @@ Current saved baseline comparison on `video_cache_w1.json`:
 1. `recency-first` — `7.3924`
 2. `engagement-velocity` — `7.1419`
 3. `llm-substance-judge` — `5.7784`
+
+### Step 7: Archive evaluated skills
+
+`adas/archive_runtime/service.py` and `adas/archive_runtime/store.py`:
+
+1. read the evaluated baseline records
+2. allocate or reuse `skill_###` archive IDs for the evaluation context
+3. write `SKILL.md`, `result.json`, and `meta.json` under `adas/archive/skill_###/`
+4. update `adas/archive/index.json` with the archive entries and best-skill metadata
+
+Current archive snapshot:
+
+1. `skill_003` (`recency-first`) — `7.3924`
+2. `skill_002` (`engagement-velocity`) — `7.1419`
+3. `skill_001` (`llm-substance-judge`) — `5.7784`
 
 ## 2. Current workflow as a diagram
 
@@ -133,19 +148,24 @@ SKILL.md + cache JSON + feedback JSON
                         |
                         v
        baseline_results/<cache-stem>/summary.json
+                        |
+                        v
+             archive_service.py
+                        |
+                        v
+            archive/index.json + skill_###/
 ```
 
 ## 3. What is not in the workflow yet
 
 The following steps are still planned, not implemented:
 
-1. save evaluated results into archive folders
-2. generate new candidate skills through `adas/meta_agent.py`
-3. compare candidates against archived history
-4. deploy the winning skill automatically
-5. run the production skill on a schedule
-6. send the digest to Telegram
-7. capture Telegram reactions back into feedback history
+1. generate new candidate skills through `adas/meta_agent.py`
+2. compare candidates against archived history
+3. deploy the winning skill automatically
+4. run the production skill on a schedule
+5. send the digest to Telegram
+6. capture Telegram reactions back into feedback history
 
 ## 4. Planned future full workflow
 
@@ -187,12 +207,19 @@ cd adas
 python3 evaluator.py --skill baselines/baseline_curated.md --cache video_cache_w1.json --with-llm-judge
 ```
 
+Run baseline comparison plus archive:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python adas/baseline_comparison.py --cache adas/test_sets/video_cache_w1.json --archive
+```
+
 ## 6. Immediate next workflow milestone
 
 The next useful workflow to add is:
 
-1. turn the saved Step 5 comparison outputs into archive entries
-2. define best-skill metadata updates
-3. prepare the archive for meta-agent reads
+1. make feedback history influence `alignment` meaningfully
+2. add the meta-agent prompt assets
+3. start the first archive-aware candidate generation loop
 
-That is the next missing step before the meta-agent loop becomes worth building.
+That is the next missing step before the meta-agent loop becomes runnable.

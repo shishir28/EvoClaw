@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import evaluator as evaluator_module
 from builders import make_request, make_result, video
 from evaluator import Evaluator, _build_cli_output
-from skill_executor import SkillExecutionResult
+from evaluation.executor import SkillExecutionResult
 
 
 class _StubRequestLoader:

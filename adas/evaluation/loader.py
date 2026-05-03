@@ -8,23 +8,13 @@ import json
 from pathlib import Path
 
 try:
+    from ..config import FEEDBACK_FILE, TEST_SETS_DIR
+    from ..youtube_fetcher import VideoCacheRepository
+    from .models import EvaluationRequest, FeedbackEntry, SkillDocument, VideoRecord
+except ImportError:
     from config import FEEDBACK_FILE, TEST_SETS_DIR
-    from evaluator_models import (
-        EvaluationRequest,
-        FeedbackEntry,
-        SkillDocument,
-        VideoRecord,
-    )
     from youtube_fetcher import VideoCacheRepository
-except ModuleNotFoundError:
-    from adas.config import FEEDBACK_FILE, TEST_SETS_DIR
-    from adas.evaluator_models import (
-        EvaluationRequest,
-        FeedbackEntry,
-        SkillDocument,
-        VideoRecord,
-    )
-    from adas.youtube_fetcher import VideoCacheRepository
+    from evaluation.models import EvaluationRequest, FeedbackEntry, SkillDocument, VideoRecord
 
 
 def _resolve_path(path: str, base_dir: str | None = None) -> Path:

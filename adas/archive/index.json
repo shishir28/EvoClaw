@@ -1,5 +1,60 @@
 {
-  "best_skill_id": null,
-  "best_score": 0.0,
-  "skills": []
+  "best_skill_id": "skill_003",
+  "best_score": 7.3924,
+  "skills": [
+    {
+      "skill_id": "skill_001",
+      "skill_name": "llm-substance-judge",
+      "source_type": "baseline",
+      "archive_key": "baseline:/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_curated.md:{\"cache_path\": \"/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json\", \"feedback_path\": \"/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json\", \"use_llm_judging\": true}",
+      "archive_path": "skill_001",
+      "archived_at": "2026-05-03T11:02:19.086220+00:00",
+      "origin_skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_curated.md",
+      "status": "scored",
+      "total_score": 5.7784,
+      "strategy": "llm-substance-judge",
+      "error": null,
+      "context": {
+        "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
+        "feedback_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json",
+        "use_llm_judging": true
+      }
+    },
+    {
+      "skill_id": "skill_002",
+      "skill_name": "engagement-velocity",
+      "source_type": "baseline",
+      "archive_key": "baseline:/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_popular.md:{\"cache_path\": \"/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json\", \"feedback_path\": \"/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json\", \"use_llm_judging\": true}",
+      "archive_path": "skill_002",
+      "archived_at": "2026-05-03T11:02:19.087488+00:00",
+      "origin_skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_popular.md",
+      "status": "scored",
+      "total_score": 7.1419,
+      "strategy": "engagement-velocity",
+      "error": null,
+      "context": {
+        "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
+        "feedback_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json",
+        "use_llm_judging": true
+      }
+    },
+    {
+      "skill_id": "skill_003",
+      "skill_name": "recency-first",
+      "source_type": "baseline",
+      "archive_key": "baseline:/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_recency.md:{\"cache_path\": \"/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json\", \"feedback_path\": \"/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json\", \"use_llm_judging\": true}",
+      "archive_path": "skill_003",
+      "archived_at": "2026-05-03T11:02:19.087678+00:00",
+      "origin_skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_recency.md",
+      "status": "scored",
+      "total_score": 7.3924,
+      "strategy": "recency",
+      "error": null,
+      "context": {
+        "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
+        "feedback_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json",
+        "use_llm_judging": true
+      }
+    }
+  ]
 }

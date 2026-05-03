@@ -1,5 +1,5 @@
 """
-Tests for adas/evaluator_models.py
+Tests for adas/evaluation/models.py
 """
 
 from __future__ import annotations

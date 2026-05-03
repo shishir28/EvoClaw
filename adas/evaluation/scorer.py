@@ -9,9 +9,9 @@ from datetime import datetime, timezone
 from itertools import combinations
 
 try:
-    from evaluator_models import EvaluationRequest, VideoRecord
-except ModuleNotFoundError:
-    from adas.evaluator_models import EvaluationRequest, VideoRecord
+    from .models import EvaluationRequest, VideoRecord
+except ImportError:
+    from evaluation.models import EvaluationRequest, VideoRecord
 
 _GENERIC_TOPIC_TERMS = {
     "about",

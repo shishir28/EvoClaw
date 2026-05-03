@@ -19,20 +19,24 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] `subscriber_count` enrichment in fetcher output
 - [x] `adas/config.py`
 - [x] `adas/evaluator.py` orchestration flow
-- [x] `adas/evaluator_loader.py`
-- [x] `adas/evaluator_models.py`
-- [x] `adas/algorithmic_scorer.py`
-- [x] `adas/llm_judge.py`
-- [x] `adas/skill_executor.py`
-- [x] `adas/baseline_catalog.py`
-- [x] `adas/baseline_evaluation_models.py`
-- [x] `adas/baseline_evaluation_runner.py`
-- [x] `adas/evaluation_result_store.py`
+- [x] `adas/evaluation/loader.py`
+- [x] `adas/evaluation/models.py`
+- [x] `adas/evaluation/scorer.py`
+- [x] `adas/evaluation/judge.py`
+- [x] `adas/evaluation/executor.py`
+- [x] `adas/baseline/catalog.py`
+- [x] `adas/baseline/models.py`
+- [x] `adas/baseline/runner.py`
+- [x] `adas/baseline/result_store.py`
 - [x] `adas/baseline_comparison.py`
+- [x] `adas/archive_runtime/models.py`
+- [x] `adas/archive_runtime/store.py`
+- [x] `adas/archive_runtime/service.py`
 - [x] `adas/prompts/eval_judge.md`
 - [x] baseline skills in `adas/baselines/`
 - [x] production skill placeholder in `skills/youtube-curator/SKILL.md`
-- [x] empty archive index stub in `adas/archive/index.json`
+- [x] populated archive index in `adas/archive/index.json`
+- [x] versioned archive entries under `adas/archive/skill_*/`
 - [x] sample cache in `adas/test_sets/video_cache_test.json`
 - [x] reusable local cache in `adas/test_sets/video_cache_w1.json`
 - [x] feedback history stub in `adas/test_sets/feedback.json`
@@ -40,7 +44,7 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] repository documentation in `README.md` files
 - [x] high-level orientation docs in `ARCHITECTURE.md` and `WORKFLOW.md`
 - [x] unit tests for evaluator, loader, scorer, executor, evaluator CLI helpers, and Step 5 comparison flow
-- [x] current full pytest suite passing (`142 passed`)
+- [x] current full pytest suite passing (`145 passed`)
 
 ### Not implemented yet
 
@@ -141,11 +145,11 @@ The evaluator now has:
 - result models for weighted dimensions and final output shape
 - a dedicated loader module for `SKILL.md`, cache JSON, and optional feedback JSON
 - a smaller, more cohesive structure:
-  - `adas/evaluator_models.py` for DTO-style data contracts
-  - `adas/evaluator_loader.py` for request assembly
+  - `adas/evaluation/models.py` for DTO-style data contracts
+  - `adas/evaluation/loader.py` for request assembly
   - `adas/evaluator.py` for orchestration
-  - `adas/algorithmic_scorer.py` for rule-based scoring
-  - `adas/llm_judge.py` for model-based judging
+  - `adas/evaluation/scorer.py` for rule-based scoring
+  - `adas/evaluation/judge.py` for model-based judging
 - weighted aggregation once dimension scores are assigned
 - algorithmic scoring for freshness, diversity, and a neutral-feedback alignment placeholder
 - `score()` orchestration for explicit selected video IDs
@@ -189,7 +193,7 @@ Step 3 is complete for the current implementation path.
 
 The evaluator can now execute the current baseline-style skills automatically through a Python adapter:
 
-- `adas/skill_executor.py` implements deterministic baseline execution
+- `adas/evaluation/executor.py` implements deterministic baseline execution
 - strategy-specific executors are registered behind a registry-driven adapter
 - `Evaluator.score(...)` can auto-select top videos for supported strategies
 - the execution layer is separate from scoring so it can later be replaced with real OpenClaw execution
@@ -296,15 +300,15 @@ Interpretation:
 
 ### Tasks
 
-- [ ] define archive entry structure
-- [ ] create `archive/skill_xxx/` folders
-- [ ] save:
-  - [ ] `SKILL.md`
-  - [ ] `result.json`
-  - [ ] `meta.json`
-- [ ] update `adas/archive/index.json`
-- [ ] track `best_skill_id`
-- [ ] track `best_score`
+- [x] define archive entry structure
+- [x] create `archive/skill_xxx/` folders
+- [x] save:
+  - [x] `SKILL.md`
+  - [x] `result.json`
+  - [x] `meta.json`
+- [x] update `adas/archive/index.json`
+- [x] track `best_skill_id`
+- [x] track `best_score`
 
 ### Why this matters
 
@@ -314,7 +318,10 @@ The archive is the memory of the improvement loop.
 
 - `adas/archive/index.json`
 - generated `adas/archive/skill_xxx/`
-- `adas/evaluator.py`
+- `adas/archive_runtime/models.py`
+- `adas/archive_runtime/store.py`
+- `adas/archive_runtime/service.py`
+- `adas/baseline_comparison.py`
 
 ---
 
@@ -512,7 +519,7 @@ If the goal is to understand what is happening as you build, use this order:
 - [x] Step 3 - skill execution contract
 - [x] Step 4 - LLM judging
 - [x] Step 5 - baseline scoring runs
-- [ ] Step 6 - archive writes
+- [x] Step 6 - archive writes
 - [ ] Step 7 - feedback ingestion
 - [ ] Step 8 - meta-agent prompts
 - [ ] Step 9 - meta-agent loop
@@ -532,6 +539,6 @@ If we want the smallest checkpoint that proves the project is moving in the righ
 - [x] build one reusable cached dataset
 - [x] execute the three baseline strategies
 - [x] score them with the evaluator
-- [ ] store the results in the archive
+- [x] store the results in the archive
 
 Once this milestone works, the rest of the project becomes much easier to reason about.

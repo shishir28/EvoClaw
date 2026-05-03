@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from evaluator_models import EvaluationResult
-except ModuleNotFoundError:
-    from adas.evaluator_models import EvaluationResult
+    from ..evaluation.models import EvaluationResult
+except ImportError:
+    from evaluation.models import EvaluationResult
 
 
 @dataclass(slots=True)

@@ -1,0 +1,66 @@
+{
+  "skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/baselines/baseline_recency.md",
+  "skill_name": "recency-first",
+  "status": "scored",
+  "total_score": 7.3924,
+  "error": null,
+  "result": {
+    "skill_name": "recency-first",
+    "strategy": "recency",
+    "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
+    "video_count": 49,
+    "dimensions": [
+      {
+        "name": "relevance",
+        "weight": 0.25,
+        "score": 8.0,
+        "detail": "All videos are directly related to AI and entrepreneurship, covering topics such as AI in photography, AI business ideas, and an interview with an agency owner. However, the second video has a slight overlap with the first in terms of AI applications."
+      },
+      {
+        "name": "substance",
+        "weight": 0.25,
+        "score": 7.0,
+        "detail": "The first video offers a specific example of AI in the photography industry, while the second video provides actionable insights on profitable AI business ideas. The third video, although interesting, lacks substantial information and focuses more on personal experiences rather than concrete AI applications or business strategies."
+      },
+      {
+        "name": "freshness",
+        "weight": 0.15,
+        "score": 6.3203,
+        "detail": "TsXhgpZRU2w: 41.71h old -> 6.52; gwsaC3WiCqs: 42.76h old -> 6.44; zOE8nbMjV4c: 65.4h old -> 6.0"
+      },
+      {
+        "name": "diversity",
+        "weight": 0.15,
+        "score": 9.9621,
+        "detail": "3/3 unique channels; avg topical similarity=0.0076"
+      },
+      {
+        "name": "reasoning",
+        "weight": 0.1,
+        "score": 7.0,
+        "detail": "The `why_watch_summary` for the first video accurately reflects its content, focusing on AI in photography. The second video's summary is also accurate, summarizing the key points about AI business ideas. The third video's summary is less precise, as it does not capture the essence of the interview."
+      },
+      {
+        "name": "alignment",
+        "weight": 0.1,
+        "score": 5.0,
+        "detail": "No feedback history yet; using neutral placeholder score."
+      }
+    ],
+    "selected_video_ids": [
+      "TsXhgpZRU2w",
+      "gwsaC3WiCqs",
+      "zOE8nbMjV4c"
+    ],
+    "total_score": 7.3924,
+    "status": "scored",
+    "notes": [
+      "Supports partial scoring until every dimension has a value.",
+      "Weighted aggregation is applied once all dimension scores are assigned.",
+      "Only algorithmic dimensions are scored here; LLM-judged dimensions remain pending.",
+      "Executed recency strategy adapter.",
+      "Selected from 7d fallback pool.",
+      "Applied LLM-judged scores for relevance, substance, and reasoning."
+    ]
+  }
+}

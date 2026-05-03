@@ -12,5 +12,4 @@ __pycache__/
 
 # generated / runtime data
 adas/test_sets/video_cache*.json
-adas/archive/skill_*/
 adas/test_sets/feedback.json

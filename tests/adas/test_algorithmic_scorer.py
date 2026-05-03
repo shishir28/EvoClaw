@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import pytest
 
-from algorithmic_scorer import AlgorithmicScorer
-from evaluator_models import FeedbackEntry, FeedbackPick
+from evaluation.scorer import AlgorithmicScorer
+from evaluation.models import FeedbackEntry, FeedbackPick
 from builders import video, FeedbackFactory, make_request
 
 

@@ -4,7 +4,7 @@ Tests for baseline Step 5 orchestration.
 
 from __future__ import annotations
 
-from baseline_evaluation_runner import BaselineEvaluationRunner
+from baseline.runner import BaselineEvaluationRunner
 from builders import make_result
 
 

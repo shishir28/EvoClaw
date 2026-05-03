@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "adas"))
 
-from evaluator_models import (
+from evaluation.models import (
     DimensionScore,
     EvaluationRequest,
     EvaluationResult,

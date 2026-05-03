@@ -45,6 +45,26 @@ class _StubStore:
         return {"ranking": [{"skill_name": "b"}]}
 
 
+class _StubArchiveService:
+    def __init__(self) -> None:
+        self.calls: list[dict[str, object]] = []
+
+    def archive_records(
+        self,
+        records: list[dict[str, str]],
+        source_type: str,
+        context: dict[str, object],
+    ) -> dict[str, object]:
+        self.calls.append(
+            {
+                "records": records,
+                "source_type": source_type,
+                "context": context,
+            }
+        )
+        return {"best_skill_id": "skill_001", "best_score": 7.5}
+
+
 class TestBaselineComparisonService:
     def test_compare_uses_catalog_runner_and_store(self):
         runner = _StubRunner()
@@ -137,3 +157,35 @@ class TestBaselineComparisonService:
             match="Required input file does not exist: missing-cache.json",
         ):
             service.compare(cache_path="missing-cache.json")
+
+    def test_compare_can_archive_records_after_persisting_step5_results(self):
+        runner = _StubRunner()
+        store = _StubStore()
+        archive_service = _StubArchiveService()
+        service = BaselineComparisonService(
+            catalog=_StubCatalog(),
+            runner=runner,
+            store=store,
+            archive_service=archive_service,
+            default_output_root="/tmp/baseline-results",
+        )
+
+        result = service.compare(
+            cache_path="adas/test_sets/video_cache_w1.json",
+            feedback_path="adas/test_sets/feedback.json",
+            use_llm_judging=True,
+            archive_results=True,
+        )
+
+        assert archive_service.calls == [
+            {
+                "records": [{"skill_path": "a.md"}, {"skill_path": "b.md"}, {"skill_path": "c.md"}],
+                "source_type": "baseline",
+                "context": {
+                    "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
+                    "feedback_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json",
+                    "use_llm_judging": True,
+                },
+            }
+        ]
+        assert result["archive"] == {"best_skill_id": "skill_001", "best_score": 7.5}

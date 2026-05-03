@@ -10,9 +10,9 @@ from pathlib import Path
 from typing import Any, Callable
 
 try:
-    from baseline_evaluation_models import BaselineEvaluationRecord
-except ModuleNotFoundError:
-    from adas.baseline_evaluation_models import BaselineEvaluationRecord
+    from .models import BaselineEvaluationRecord
+except ImportError:
+    from baseline.models import BaselineEvaluationRecord
 
 
 class EvaluationResultStore:

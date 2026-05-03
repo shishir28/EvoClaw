@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import json
 
-from baseline_evaluation_models import BaselineEvaluationRecord
-from evaluation_result_store import EvaluationResultStore
+from baseline.models import BaselineEvaluationRecord
+from baseline.result_store import EvaluationResultStore
 from builders import make_result
 
 

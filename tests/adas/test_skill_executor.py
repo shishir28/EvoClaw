@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from skill_executor import (
+from evaluation.executor import (
     BaselineSkillExecutor,
     EngagementVelocityStrategyExecutor,
     RecencyStrategyExecutor,

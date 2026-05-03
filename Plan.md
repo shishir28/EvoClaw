@@ -12,17 +12,18 @@ The system combines three ideas:
 
 ## Current implementation snapshot
 
-The codebase is currently at the **working fetcher + evaluator + baseline comparison** stage:
+The codebase is currently at the **working fetcher + evaluator + baseline comparison + archive** stage:
 
 - real YouTube fetches work and produce reusable caches
 - the evaluator is implemented and split into focused modules
 - baseline `SKILL.md` files can be executed through a Python adapter over cached videos
 - LLM judging for relevance, substance, and reasoning is implemented
 - Step 5 baseline comparison is implemented and persists JSON results plus a ranking summary
+- Step 6 archive persistence is implemented and now writes `SKILL.md`, `result.json`, `meta.json`, plus best-skill metadata under `adas/archive/`
 - evaluator CLI defaults now run a real scoring flow, default LLM judge setup is lazy, and baseline comparison validates the required cache input up front
-- archive writes, meta-agent orchestration, Telegram automation, and scheduled runtime wiring are still future phases
+- meta-agent orchestration, Telegram automation, and scheduled runtime wiring are still future phases
 
-The immediate next milestone is to turn the Step 5 comparison outputs into the real archive layer for Step 6.
+The immediate next milestone is to make feedback meaningful and then start the first archive-aware meta-agent loop.
 
 ---
 
@@ -73,28 +74,31 @@ The immediate next milestone is to turn the Step 5 comparison outputs into the r
 │
 ├── adas/
 │   ├── algorithmic_scorer.py     ← Deterministic scoring dimensions
+│   ├── archive_models.py         ← Step 6 archive DTOs
+│   ├── archive_service.py        ← Step 6 archive orchestration
+│   ├── archive_store.py          ← Step 6 archive persistence
 │   ├── baseline_catalog.py       ← Ordered baseline skill discovery
 │   ├── baseline_comparison.py    ← Step 5 comparison orchestration and CLI
-│   ├── baseline_evaluation_models.py ← Step 5 result contracts
+│   ├── baseline/models.py        ← Step 5 result contracts
 │   ├── baseline_evaluation_runner.py ← Multi-skill evaluation orchestration
 │   ├── baseline_results/         ← Saved Step 5 comparison outputs
 │   ├── config.py                 ← Topics, scoring weights, model config
 │   ├── evaluation_result_store.py ← Step 5 persistence layer
 │   ├── evaluator.py              ← Evaluator orchestration
 │   ├── evaluator_loader.py       ← Loads skill/cache/feedback inputs
-│   ├── evaluator_models.py       ← DTO-style evaluator contracts
+│   ├── evaluation/models.py      ← DTO-style evaluator contracts
 │   ├── llm_judge.py              ← Prompt-based semantic judging
 │   ├── skill_executor.py         ← Python adapter for baseline skills
 │   ├── youtube_fetcher.py        ← YouTube search + metadata extraction
 │   ├── meta_agent.py             ← Main ADAS loop (planned)
 │   │
 │   ├── archive/
-│   │   ├── index.json            ← Registry stub for discovered skills + scores
-│   │   ├── skill_001/             ← Planned generated archive entry
+│   │   ├── index.json            ← Best-skill metadata + archive registry
+│   │   ├── skill_001/            ← Archived evaluated skill entry
 │   │   │   ├── SKILL.md
-│   │   │   ├── result.json       ← Evaluation scores
-│   │   │   └── meta.json         ← Design rationale from meta agent
-│   │   ├── skill_002/             ← Planned generated archive entry
+│   │   │   ├── result.json       ← Saved evaluation record
+│   │   │   └── meta.json         ← Archive metadata + evaluation context
+│   │   ├── skill_002/            ← Archived evaluated skill entry
 │   │   │   └── ...
 │   │   └── ...
 │   │

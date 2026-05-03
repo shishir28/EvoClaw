@@ -4,7 +4,7 @@ This file explains the **current codebase shape** in plain language so you can u
 
 ## 1. Current architecture in one sentence
 
-EvoClaw currently has a working **fetch -> evaluate -> compare** foundation, with the future **archive -> evolve -> deploy -> deliver** loop still to be built.
+EvoClaw currently has a working **fetch -> evaluate -> compare -> archive** foundation, with the future **evolve -> deploy -> deliver** loop still to be built.
 
 ## 2. Main layers
 
@@ -12,15 +12,10 @@ EvoClaw currently has a working **fetch -> evaluate -> compare** foundation, wit
 | --- | --- | --- |
 | Data collection | Fetch YouTube candidates and cache them locally | `adas/youtube_fetcher.py` |
 | Shared configuration | Centralize env-driven settings, paths, weights, and limits | `adas/config.py` |
-| Evaluation orchestration | Coordinate request loading, skill execution, scoring, and aggregation | `adas/evaluator.py` |
-| Request assembly | Load `SKILL.md`, cache JSON, and feedback JSON into typed request objects | `adas/evaluator_loader.py` |
-| Data contracts | Define evaluator DTO-style models | `adas/evaluator_models.py` |
-| Deterministic scoring | Score freshness, diversity, and placeholder alignment | `adas/algorithmic_scorer.py` |
-| Model judging | Score relevance, substance, and reasoning through an OpenAI-compatible endpoint | `adas/llm_judge.py` |
-| Skill execution | Execute the current baseline skill strategies over cached videos | `adas/skill_executor.py` |
-| Baseline discovery | Provide the ordered list of Step 5 baseline skill files | `adas/baseline_catalog.py` |
-| Baseline comparison orchestration | Run all baseline skills against one cache | `adas/baseline_comparison.py`, `adas/baseline_evaluation_runner.py` |
-| Comparison persistence | Save Step 5 detailed results and ranking summaries | `adas/baseline_evaluation_models.py`, `adas/evaluation_result_store.py` |
+| Evaluation internals | Coordinate request loading, skill execution, scoring, and aggregation | `adas/evaluation/` |
+| Baseline comparison internals | Discover, evaluate, and persist baseline comparison runs | `adas/baseline/` |
+| Archive internals | Save versioned archive entries and best-skill metadata | `adas/archive_runtime/` |
+| CLI compatibility layer | Preserve the remaining manual entrypoints while internals live in grouped packages | `adas/evaluator.py`, `adas/baseline_comparison.py` |
 | Prompt assets | Hold reusable evaluator prompt templates | `adas/prompts/eval_judge.md` |
 | Production skill placeholder | Future deployment target for the best skill | `skills/youtube-curator/SKILL.md` |
 | Scheduler stub | Planned automation entrypoints | `cron/jobs.json` |
@@ -31,61 +26,57 @@ EvoClaw currently has a working **fetch -> evaluate -> compare** foundation, wit
 youtube_fetcher.py
     -> produces cached video datasets in adas/test_sets/
 
-evaluator_loader.py
-    -> loads skill markdown + cached videos + feedback history
-    -> returns EvaluationRequest
+evaluation/
+    models.py
+    loader.py
+    executor.py
+    scorer.py
+    judge.py
+    service.py
 
-skill_executor.py
-    -> selects video IDs for supported baseline strategies
+baseline/
+    models.py
+    catalog.py
+    runner.py
+    result_store.py
+    comparison.py
 
-algorithmic_scorer.py
-    -> scores freshness, diversity, alignment
+archive_runtime/
+    models.py
+    store.py
+    service.py
 
-llm_judge.py
-    -> scores relevance, substance, reasoning
-
-evaluator.py
-    -> orchestrates the full evaluation flow
-    -> returns EvaluationResult
-
-baseline_catalog.py
-    -> returns the baseline skill paths used for Step 5
-
-baseline_evaluation_runner.py
-    -> evaluates all baseline skills against one cache
-
-evaluation_result_store.py
-    -> persists one result file per baseline plus a summary
-
-baseline_comparison.py
-    -> composes catalog + runner + store for the full Step 5 flow
+top-level adas/*.py wrappers
+    -> preserve old imports and CLI entrypoints
 ```
 
 ## 4. Core design choices already visible in the code
 
 ### DTOs are separated from orchestration
 
-If you come from a .NET background, `adas/evaluator_models.py` is the closest thing to a DTO/contracts file. It keeps the request/result shapes away from file I/O and scoring logic.
+If you come from a .NET background, `adas/evaluation/models.py` is the closest thing to a DTO/contracts file.
 
 ### File loading is separate from business logic
 
-`adas/evaluator_loader.py` owns markdown parsing and JSON loading, so `Evaluator` does not need to understand low-level file formats.
+`adas/evaluation/loader.py` owns markdown parsing and JSON loading, so `Evaluator` does not need to understand low-level file formats.
 
-`adas/baseline_comparison.py` now also validates its required cache input before handing off to the loader, which keeps comparison failures closer to the actual caller.
+`adas/baseline/comparison.py` now also validates its required cache input before handing off to the loader, which keeps comparison failures closer to the actual caller.
+
+The Step 6 archive flow is also kept separate: `baseline_comparison.py` can call into `archive_service.py`, but Step 5 result persistence and Step 6 archive persistence remain different modules with different output roots.
 
 ### Scoring is split by responsibility
 
-- `adas/algorithmic_scorer.py` handles deterministic rules
-- `adas/llm_judge.py` handles semantic judging
-- `adas/evaluator.py` only coordinates the flow
+- `adas/evaluation/scorer.py` handles deterministic rules
+- `adas/evaluation/judge.py` handles semantic judging
+- `adas/evaluation/service.py` coordinates the flow
 
 ### Skill execution is replaceable
 
-`adas/skill_executor.py` is intentionally a Python adapter for now. It gives you a working execution path today while keeping the door open for a future real OpenClaw runtime.
+`adas/evaluation/executor.py` is intentionally a Python adapter for now. It gives you a working execution path today while keeping the door open for a future real OpenClaw runtime.
 
 ### Expensive judge setup is lazy
 
-`adas/evaluator.py` keeps the default `LLMJudge` lazy, so baseline-only and algorithmic-only runs do not eagerly create model client state.
+`adas/evaluation/service.py` keeps the default `LLMJudge` lazy, so baseline-only and algorithmic-only runs do not eagerly create model client state.
 
 ### Fetching is internally decomposed
 
@@ -108,6 +99,8 @@ That keeps API access, transcript attachment, cache persistence, and orchestrati
 | `EvaluationRequest` | Combined input for an evaluation run |
 | `DimensionScore` | One weighted score entry in the result |
 | `EvaluationResult` | Final evaluation output, partial or complete |
+| `ArchiveIndexEntry` | One archived skill summary in `adas/archive/index.json` |
+| `ArchiveIndex` | Archive-wide best-skill metadata plus archived entries |
 
 ## 6. What is implemented vs planned
 
@@ -121,11 +114,12 @@ That keeps API access, transcript attachment, cache persistence, and orchestrati
 - optional LLM judging
 - weighted aggregation
 - baseline comparison persistence and ranking on `video_cache_w1.json`
+- archive entry creation under `adas/archive/skill_*`
+- best-skill tracking in `adas/archive/index.json`
 - placeholder production skill
 
 ### Planned later
 
-- archive entry creation under `adas/archive/skill_*`
 - `adas/meta_agent.py`
 - meta-agent prompts beyond `eval_judge.md`
 - promotion of the best skill into `skills/youtube-curator/SKILL.md`
@@ -139,18 +133,20 @@ If you want the easiest learning path through the code:
 1. `README.md`
 2. `WORKFLOW.md`
 3. `adas/README.md`
-4. `adas/evaluator_models.py`
-5. `adas/evaluator_loader.py`
-6. `adas/evaluator.py`
-7. `adas/skill_executor.py`
-8. `adas/algorithmic_scorer.py`
-9. `adas/llm_judge.py`
-10. `adas/baseline_comparison.py`
-11. `adas/youtube_fetcher.py`
+4. `adas/evaluation/models.py`
+5. `adas/evaluation/loader.py`
+6. `adas/evaluation/service.py`
+7. `adas/evaluation/executor.py`
+8. `adas/evaluation/scorer.py`
+9. `adas/evaluation/judge.py`
+10. `adas/baseline/comparison.py`
+11. `adas/archive_runtime/service.py`
+12. `adas/archive_runtime/store.py`
+13. `adas/youtube_fetcher.py`
 
 ## 8. How to run unit tests
 
-The current suite is **142 passing tests**.
+The current suite is **145 passing tests**.
 
 ```bash
 # Activate the virtual environment first

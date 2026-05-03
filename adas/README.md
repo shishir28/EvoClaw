@@ -1,6 +1,13 @@
 # ADAS workspace
 
-This directory holds the **fetch, evaluate, and future archive** side of EvoClaw.
+This directory holds the **fetch, evaluate, compare, and archive** side of EvoClaw.
+
+The package layout was recently reorganized to group internals by domain:
+
+- `evaluation/` holds evaluator internals
+- `baseline/` holds baseline comparison internals
+- `archive_runtime/` holds archive internals
+- top-level CLI files remain for manual runs; most internal imports now target the grouped packages directly
 
 ## What is here now
 
@@ -46,7 +53,9 @@ For readability, `load_settings()` is now composed from smaller section builder 
 
 ### `evaluator.py`
 
-The evaluator now defines:
+`evaluator.py` is now the thin CLI/compatibility layer.
+
+The real evaluator implementation lives under `evaluation/service.py`, and still defines:
 
 - orchestration of the evaluator flow
 - a `score()` orchestration path for explicit selected video IDs or adapter-selected picks
@@ -56,7 +65,7 @@ The evaluator now defines:
 - lazy default `LLMJudge` creation so model client setup only happens when semantic judging is enabled
 - a CLI helper path that always returns a real scored result instead of an empty template shell
 
-### `evaluator_loader.py`
+### `evaluation/loader.py`
 
 Owns request loading concerns that used to sit inside the data contracts:
 
@@ -65,7 +74,7 @@ Owns request loading concerns that used to sit inside the data contracts:
 - feedback history loading
 - assembly of `EvaluationRequest`
 
-### `evaluator_models.py`
+### `evaluation/models.py`
 
 Owns the evaluator DTO-style dataclasses:
 
@@ -75,7 +84,7 @@ Owns the evaluator DTO-style dataclasses:
 - evaluation request/result types
 - dimension score records
 
-### `algorithmic_scorer.py`
+### `evaluation/scorer.py`
 
 Owns the non-LLM evaluator dimensions:
 
@@ -85,7 +94,7 @@ Owns the non-LLM evaluator dimensions:
 
 It now uses explicit evaluator model types instead of loose `Any`-style contracts.
 
-### `llm_judge.py`
+### `evaluation/judge.py`
 
 Owns prompt-based judging for:
 
@@ -99,19 +108,19 @@ It now separates:
 - chat completion transport
 - score parsing and judge orchestration
 
-### `skill_executor.py`
+### `evaluation/executor.py`
 
 Owns Python-adapter execution for the current baseline strategies.
 
 It now uses separate strategy executors behind a registry instead of one central conditional dispatcher.
 
-### `baseline_catalog.py`
+### `baseline/catalog.py`
 
 Owns the ordered list of Step 5 baseline skill files.
 
 This keeps baseline discovery separate from comparison orchestration, so the comparison flow does not need to know where the baseline files live.
 
-### `baseline_evaluation_models.py`
+### `baseline/models.py`
 
 Owns the Step 5 result DTOs:
 
@@ -119,13 +128,13 @@ Owns the Step 5 result DTOs:
 
 This keeps comparison output shape explicit and reusable across the runner and the persistence layer.
 
-### `baseline_evaluation_runner.py`
+### `baseline/runner.py`
 
 Owns multi-skill evaluation orchestration for Step 5.
 
 It loops through a list of baseline skill paths, calls `Evaluator.score(...)`, and records either a scored result or a failure without taking on any file-writing responsibility.
 
-### `evaluation_result_store.py`
+### `baseline/result_store.py`
 
 Owns Step 5 persistence only:
 
@@ -136,7 +145,7 @@ It is intentionally separate from the future Step 6 archive layer.
 
 ### `baseline_comparison.py`
 
-Owns the end-to-end Step 5 comparison flow by composing:
+`baseline_comparison.py` is now the CLI/compatibility layer over `baseline/comparison.py`, which owns the end-to-end Step 5 comparison flow by composing:
 
 1. `BaselineCatalog`
 2. `BaselineEvaluationRunner`
@@ -144,20 +153,47 @@ Owns the end-to-end Step 5 comparison flow by composing:
 
 It also exposes a small CLI for running the three baselines on one cache and saving the outputs.
 
-The comparison service now fails fast when the required cache file is missing, while still treating feedback history as optional.
+The comparison service now fails fast when the required cache file is missing, while still treating feedback history as optional, and it can optionally forward the evaluated records into the Step 6 archive layer with `--archive`.
+
+### `archive_runtime/models.py`
+
+Owns the Step 6 archive DTOs:
+
+- `ArchiveIndex`
+- `ArchiveIndexEntry`
+
+These keep the archive index shape explicit instead of writing anonymous JSON blobs from orchestration code.
+
+### `archive_runtime/store.py`
+
+Owns Step 6 archive persistence:
+
+- loads and saves `adas/archive/index.json`
+- allocates or reuses `skill_###` archive IDs
+- writes `SKILL.md`, `result.json`, and `meta.json` for each archive entry
+
+### `archive_runtime/service.py`
+
+Owns Step 6 archive orchestration:
+
+1. reads evaluated records
+2. builds archive metadata and dedupe keys
+3. writes each archive entry through `ArchiveStore`
+4. updates `best_skill_id` and `best_score`
 
 ### Evaluator runtime path
 
 The evaluator runtime is now split cleanly:
 
-1. `Evaluator` loads request data and orchestrates the flow
-2. `evaluator_loader.py` assembles the request from files
-3. `evaluator_models.py` provides the request/result data structures
-4. `skill_executor.py` selects videos for supported baseline skills
-5. `algorithmic_scorer.py` scores the rule-based dimensions
-6. `llm_judge.py` scores the semantic dimensions
+1. `evaluation/service.py` loads request data and orchestrates the flow
+2. `evaluation/loader.py` assembles the request from files
+3. `evaluation/models.py` provides the request/result data structures
+4. `evaluation/executor.py` selects videos for supported baseline skills
+5. `evaluation/scorer.py` scores the rule-based dimensions
+6. `evaluation/judge.py` scores the semantic dimensions
 7. `Evaluator` aggregates the final result
-8. `baseline_comparison.py` can run all baseline skills against one cache and persist the results
+8. `baseline/comparison.py` can run all baseline skills against one cache and persist the results
+9. `archive_runtime/service.py` can promote those evaluated records into the archive
 
 Current limitation: real OpenClaw execution and the later meta-agent loop are not implemented yet.
 
@@ -177,13 +213,14 @@ These represent three different curation philosophies:
 
 ### `archive/`
 
-Right now this contains only `index.json`, and it is still empty:
+This now holds the Step 6 archive state:
 
-- `best_skill_id` is `null`
-- `best_score` is `0.0`
-- `skills` is an empty list
+- `index.json` tracks archived skills, their evaluation context, and the current best skill
+- `skill_001/` to `skill_003/` store the archived baseline seeds
 
-Archive entry generation is the next later phase; no `archive/skill_*` folders exist yet.
+Current best archive entry:
+
+- `skill_003` → `recency-first` with **7.3924**
 
 ### `baseline_results/`
 
@@ -230,21 +267,21 @@ The current lifecycle inside `adas/` is:
 4. Score algorithmic dimensions first, then optionally apply LLM-judged dimensions.
 5. Aggregate the final weighted result.
 6. Optionally run all baselines against one cache and persist a comparison summary.
+7. Optionally archive those evaluated results into `adas/archive/skill_###/`.
 
 The planned later lifecycle adds:
 
-6. Record score breakdowns and metadata in the archive.
-7. Iterate via a meta agent to discover stronger skills.
-8. Promote the best skill into `skills/youtube-curator/SKILL.md`.
+8. Iterate via a meta agent to discover stronger skills.
+9. Promote the best skill into `skills/youtube-curator/SKILL.md`.
 
 ## Notes
 
-- Runtime-generated data in `test_sets/` and `archive/skill_*/` is gitignored.
+- Runtime-generated caches in `test_sets/` are gitignored, but archive history under `archive/skill_*/` is versioned.
 - Secret values are loaded from the repo root `.env`.
-- The current repo state is **post-evaluator / pre-archive / pre-meta-agent**.
-- Step 5 is now complete for the current `video_cache_w1.json` dataset.
-- The current pytest suite is at **142 passing tests**.
+- The current repo state is **post-evaluator / post-archive / pre-meta-agent**.
+- Step 5 and Step 6 are complete for the current `video_cache_w1.json` dataset.
+- The current pytest suite is at **145 passing tests**.
 - Transcript fetching is **best-effort**: some videos now resolve transcripts, but YouTube may still block others depending on IP/network conditions.
 - The current cache shape is strong enough to begin the evaluator, because it includes `views_per_hour`, `subscriber_count`, and descriptions even when transcripts are missing.
-- The next concrete implementation step is to define the archive layer and promote Step 5 outputs into Step 6 persistence.
+- The next concrete implementation step is to make feedback meaningful before the meta-agent loop starts consuming archive history.
 - See the repo-level `ARCHITECTURE.md` and `WORKFLOW.md` files for the simplest high-level explanation.
