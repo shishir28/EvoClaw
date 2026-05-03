@@ -54,6 +54,12 @@ class TestScoreFreshness:
         score, _ = scorer.score_freshness([v])
         assert score <= 10.0
 
+    def test_future_dated_video_scores_zero(self):
+        v = video().with_id("v1").with_age_hours(-4.0).build()
+        score, detail = scorer.score_freshness([v])
+        assert score == 0.0
+        assert "future publish timestamp" in detail
+
     def test_empty_list_raises_value_error(self):
         with pytest.raises(ValueError):
             scorer.score_freshness([])

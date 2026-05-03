@@ -19,6 +19,7 @@ The codebase is currently at the **working fetcher + evaluator + baseline compar
 - baseline `SKILL.md` files can be executed through a Python adapter over cached videos
 - LLM judging for relevance, substance, and reasoning is implemented
 - Step 5 baseline comparison is implemented and persists JSON results plus a ranking summary
+- evaluator CLI defaults now run a real scoring flow, default LLM judge setup is lazy, and baseline comparison validates the required cache input up front
 - archive writes, meta-agent orchestration, Telegram automation, and scheduled runtime wiring are still future phases
 
 The immediate next milestone is to turn the Step 5 comparison outputs into the real archive layer for Step 6.

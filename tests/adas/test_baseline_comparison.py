@@ -4,6 +4,8 @@ Tests for end-to-end Step 5 orchestration across catalog, runner, and store.
 
 from __future__ import annotations
 
+import pytest
+
 from baseline_comparison import BaselineComparisonService
 
 
@@ -121,3 +123,17 @@ class TestBaselineComparisonService:
         assert runner.calls[0]["cache_path"] == str(cache_file.resolve())
         assert runner.calls[0]["feedback_path"] == str(feedback_file.resolve())
         assert result["cache_path"] == str(cache_file.resolve())
+
+    def test_compare_raises_for_missing_cache_path(self):
+        service = BaselineComparisonService(
+            catalog=_StubCatalog(),
+            runner=_StubRunner(),
+            store=_StubStore(),
+            default_output_root="/tmp/baseline-results",
+        )
+
+        with pytest.raises(
+            FileNotFoundError,
+            match="Required input file does not exist: missing-cache.json",
+        ):
+            service.compare(cache_path="missing-cache.json")

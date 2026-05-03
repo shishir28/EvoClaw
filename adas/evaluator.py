@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
+from typing import Any
 
 try:
     from algorithmic_scorer import AlgorithmicScorer
@@ -47,8 +48,13 @@ class Evaluator:
         self._request_loader = request_loader or EvaluationRequestLoader()
         self._skill_executor = skill_executor or BaselineSkillExecutor()
         self._algorithmic_scorer = algorithmic_scorer or AlgorithmicScorer()
-        self._llm_judge = llm_judge or LLMJudge()
+        self._llm_judge = llm_judge
         self._score_weights = score_weights or SCORE_WEIGHTS
+
+    def _get_llm_judge(self) -> LLMJudge:
+        if self._llm_judge is None:
+            self._llm_judge = LLMJudge()
+        return self._llm_judge
 
     def load_request(
         self,
@@ -241,7 +247,10 @@ class Evaluator:
     ) -> None:
         """Call the LLM judge to score relevance, substance, and reasoning, then write results into the result object."""
         selected_videos = self.resolve_selected_videos(request, result.selected_video_ids)
-        llm_scores, llm_details = self._llm_judge.judge_dimensions(request, selected_videos)
+        llm_scores, llm_details = self._get_llm_judge().judge_dimensions(
+            request,
+            selected_videos,
+        )
         self.apply_dimension_scores(result, llm_scores, details=llm_details)
         result.notes.append("Applied LLM-judged scores for relevance, substance, and reasoning.")
 
@@ -302,6 +311,47 @@ class Evaluator:
         return self._finalize_result(result)
 
 
+def _parse_cli_selected_ids(raw_selected_ids: str | None) -> list[str] | None:
+    if not raw_selected_ids:
+        return None
+    return [
+        video_id.strip()
+        for video_id in raw_selected_ids.split(",")
+        if video_id.strip()
+    ]
+
+
+def _build_cli_output(evaluator: Evaluator, args: Any) -> dict[str, Any]:
+    request = evaluator.load_request(
+        skill_path=args.skill,
+        cache_path=args.cache,
+        feedback_path=args.feedback,
+    )
+    selected_video_ids = _parse_cli_selected_ids(args.selected_ids)
+    extra_scores = json.loads(args.extra_scores_json) if args.extra_scores_json else None
+    extra_details = json.loads(args.extra_details_json) if args.extra_details_json else None
+    result = evaluator.score(
+        skill_path=args.skill,
+        cache_path=args.cache,
+        selected_video_ids=selected_video_ids,
+        feedback_path=args.feedback,
+        extra_scores=extra_scores,
+        extra_details=extra_details,
+        use_llm_judging=args.with_llm_judge,
+    )
+    return {
+        "request": {
+            "skill_name": request.skill.name,
+            "strategy": request.skill.strategy,
+            "video_count": len(request.videos),
+            "feedback_entries": len(request.feedback_history),
+            "cache_path": request.cache_path,
+            "feedback_path": request.feedback_path,
+        },
+        "result": result.to_dict(),
+    }
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -333,43 +383,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     evaluator = Evaluator()
-    request = evaluator.load_request(
-        skill_path=args.skill,
-        cache_path=args.cache,
-        feedback_path=args.feedback,
-    )
-    result = evaluator.build_result_template(request)
-    selected_video_ids = None
-    if args.selected_ids:
-        selected_video_ids = [
-            video_id.strip() for video_id in args.selected_ids.split(",") if video_id.strip()
-        ]
-    extra_scores = json.loads(args.extra_scores_json) if args.extra_scores_json else None
-    extra_details = json.loads(args.extra_details_json) if args.extra_details_json else None
-    if selected_video_ids is not None or args.with_llm_judge:
-        result = evaluator.score(
-            skill_path=args.skill,
-            cache_path=args.cache,
-            selected_video_ids=selected_video_ids,
-            feedback_path=args.feedback,
-            extra_scores=extra_scores,
-            extra_details=extra_details,
-            use_llm_judging=args.with_llm_judge,
-        )
-
-    print(
-        json.dumps(
-            {
-                "request": {
-                    "skill_name": request.skill.name,
-                    "strategy": request.skill.strategy,
-                    "video_count": len(request.videos),
-                    "feedback_entries": len(request.feedback_history),
-                    "cache_path": request.cache_path,
-                    "feedback_path": request.feedback_path,
-                },
-                "result_template": result.to_dict(),
-            },
-            indent=2,
-        )
-    )
+    print(json.dumps(_build_cli_output(evaluator, args), indent=2))

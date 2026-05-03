@@ -41,6 +41,8 @@ class BaselineEvaluationRecord:
         if self.error is not None:
             return "failed"
         if self.result is None:
+            # Reserved for future async/incremental runners that may persist records
+            # before a result or failure has been recorded.
             return "pending"
         return self.result.status
 

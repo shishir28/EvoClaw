@@ -26,6 +26,14 @@ def _first_sentence(text: str) -> str:
 
 
 def _extract_json_object(text: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError:
+        payload = None
+
+    if isinstance(payload, dict):
+        return payload
+
     decoder = json.JSONDecoder()
     for index, char in enumerate(text):
         if char != "{":
@@ -147,6 +155,8 @@ class LLMJudge:
                 "subscriber_count": video.subscriber_count,
                 "views_per_hour": video.views_per_hour,
                 "description": video.description,
+                "has_transcript": video.has_transcript,
+                "content_source": video.content_source,
                 "transcript_excerpt": (video.transcript_or_description or "")[:1500],
                 "why_watch_summary": reasoning_summaries[video.video_id],
             }

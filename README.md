@@ -8,10 +8,12 @@ The repository is currently at the **working fetcher + evaluator + baseline comp
 - a modular evaluator stack with DTO models, request loading, algorithmic scoring, optional LLM judging, and weighted aggregation
 - a Python adapter that executes the current baseline `SKILL.md` strategies over cached videos
 - a Step 5 comparison flow that evaluates all baselines against one cache and persists detailed results
+- lazy default LLM-judge initialization so evaluator construction does not require model client setup unless semantic judging is enabled
+- evaluator and comparison CLIs with safer defaults: evaluator runs a real scoring flow by default, and baseline comparison fails fast when the required cache file is missing
 - typed shared configuration for search, inference, paths, and scoring weights
 - three hand-written baseline skills plus a production `SKILL.md` placeholder
 - a cron configuration stub for future automation
-- a focused pytest suite covering the evaluator path and Step 5 orchestration
+- a focused pytest suite covering the evaluator path and Step 5 orchestration (**142 tests currently passing**)
 
 ## Target architecture
 
@@ -87,7 +89,7 @@ Implemented now:
 - local Step 1 validation: real fetch works and produces a reusable cache in `adas/test_sets/video_cache_w1.json`
 - evaluator architecture cleanup: smaller modules, DTO separation, injected collaborators, and readability-focused helpers
 - baseline comparison results saved under `adas/baseline_results/video_cache_w1/`
-- pytest coverage for evaluator, loader, scorer, executor, and Step 5 comparison modules
+- pytest coverage for evaluator, loader, scorer, executor, and Step 5 comparison modules, including evaluator CLI helpers
 
 Current baseline comparison snapshot on `video_cache_w1.json`:
 
@@ -162,11 +164,13 @@ The evaluator currently supports:
 - a separate evaluator models module for DTO-style dataclasses
 - separated scoring modules for algorithmic logic and LLM judging
 - injectable prompt and chat adapters for LLM judging
+- lazy default `LLMJudge` creation only when LLM judging is requested
 - weighted aggregation
 - algorithmic scoring for `freshness`, `diversity`, and a placeholder `alignment` score
 - stricter typed scoring inputs in `adas/algorithmic_scorer.py`
 - clearer evaluator orchestration through smaller internal helper methods
 - opt-in LLM judging for `relevance`, `substance`, and `reasoning`
+- CLI behavior that returns a real scored result even without explicit `--selected-ids`
 
 It does **not** yet run real OpenClaw execution.
 
@@ -188,6 +192,8 @@ This writes:
 
 - per-baseline result files under `adas/baseline_results/video_cache_w1/results/`
 - a ranking summary in `adas/baseline_results/video_cache_w1/summary.json`
+
+The comparison service now validates the required cache input up front and keeps feedback loading optional.
 
 ## Security and repo hygiene
 

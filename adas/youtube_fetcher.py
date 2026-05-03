@@ -282,6 +282,9 @@ class TranscriptProvider:
 
     def attach(self, videos: list[VideoRecordPayload]) -> list[VideoRecordPayload]:
         """Fetch and attach English transcripts to each video in-place, capped at 3000 characters."""
+        if not self.available:
+            return videos
+
         for video in videos:
             vid_id = video["video_id"]
             try:

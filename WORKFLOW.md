@@ -51,6 +51,8 @@ Supported strategies today:
 
 `adas/evaluator.py` coordinates two scoring paths.
 
+When run from the CLI without explicit `--selected-ids`, it still executes the baseline adapter path and returns a real scored result instead of an empty template payload.
+
 #### 4a. Algorithmic scoring
 
 `adas/algorithmic_scorer.py` scores:
@@ -71,6 +73,8 @@ If LLM judging is enabled, `adas/llm_judge.py` scores:
 
 It builds a prompt from `adas/prompts/eval_judge.md` and calls the configured OpenAI-compatible endpoint.
 
+The default judge client is created lazily, so algorithmic-only runs do not pay setup cost for the LLM path.
+
 ### Step 5: Aggregate the result
 
 `adas/evaluator.py`:
@@ -88,6 +92,8 @@ It builds a prompt from `adas/prompts/eval_judge.md` and calls the configured Op
 2. asks `BaselineEvaluationRunner` to evaluate each one against the same cache
 3. asks `EvaluationResultStore` to persist one result file per skill
 4. writes a `summary.json` ranking file under `adas/baseline_results/`
+
+The required cache path is validated up front here; optional feedback still falls back to an empty history when absent.
 
 Current saved baseline comparison on `video_cache_w1.json`:
 

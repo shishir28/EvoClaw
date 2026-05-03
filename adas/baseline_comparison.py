@@ -60,8 +60,8 @@ class BaselineComparisonService:
         feedback_path: str | None = FEEDBACK_FILE,
         use_llm_judging: bool = True,
     ) -> dict[str, Any]:
-        resolved_cache_path = self._resolve_existing_input_path(cache_path)
-        resolved_feedback_path = self._resolve_existing_input_path(feedback_path)
+        resolved_cache_path = self._resolve_required_input_path(cache_path)
+        resolved_feedback_path = self._resolve_optional_input_path(feedback_path)
         skill_paths = self._catalog.skill_paths()
         records = self._runner.run(
             skill_paths=skill_paths,
@@ -83,7 +83,14 @@ class BaselineComparisonService:
         return self._default_output_root / Path(cache_path).stem
 
     @staticmethod
-    def _resolve_existing_input_path(path: str | None) -> str | None:
+    def _resolve_required_input_path(path: str) -> str:
+        candidate = Path(path)
+        if candidate.exists():
+            return str(candidate.resolve())
+        raise FileNotFoundError(f"Required input file does not exist: {path}")
+
+    @staticmethod
+    def _resolve_optional_input_path(path: str | None) -> str | None:
         if path is None:
             return None
         candidate = Path(path)

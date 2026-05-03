@@ -80,6 +80,11 @@ def _age_hours(published_at: str) -> float:
         0.0,
     )
 
+
+def _is_future_timestamp(published_at: str) -> bool:
+    return _parse_timestamp(published_at) > datetime.now(timezone.utc)
+
+
 def _extract_topic_terms(video: VideoRecord) -> set[str]:
     source = " ".join(
         [
@@ -111,6 +116,10 @@ class AlgorithmicScorer:
 
         per_video_scores: list[tuple[str, float, float]] = []
         for video in videos:
+            if _is_future_timestamp(video.published_at):
+                per_video_scores.append((video.video_id, 0.0, 0.0))
+                continue
+
             age_hours = _age_hours(video.published_at)
             base_score = 6.0 if age_hours <= 168 else max(0.0, 6.0 * (720 - age_hours) / 552)
             bonus = max(0.0, 4.0 * (48 - min(age_hours, 48.0)) / 48.0)
@@ -122,8 +131,12 @@ class AlgorithmicScorer:
             4,
         )
         detail = "; ".join(
-            f"{video_id}: {hours}h old -> {round(score, 2)}"
-            for video_id, hours, score in per_video_scores
+            (
+                f"{video.video_id}: future publish timestamp -> 0.0"
+                if _is_future_timestamp(video.published_at)
+                else f"{video_id}: {hours}h old -> {round(score, 2)}"
+            )
+            for video, (video_id, hours, score) in zip(videos, per_video_scores, strict=True)
         )
         return average_score, detail
 
@@ -134,6 +147,8 @@ class AlgorithmicScorer:
             return 10.0, "Only one selected video; diversity defaults to 10.0."
 
         unique_channels = len({video.channel_id for video in videos})
+        # Normalize channel spread so the score is 0 when all selected videos come
+        # from the same channel and 10 when every selected video comes from a different channel.
         channel_score = 10.0 * (unique_channels - 1) / (len(videos) - 1)
 
         topic_terms = {video.video_id: _extract_topic_terms(video) for video in videos}

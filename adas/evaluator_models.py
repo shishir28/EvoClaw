@@ -91,6 +91,14 @@ class VideoRecord:
     def transcript_or_description(self) -> str:
         return self.transcript or self.description
 
+    @property
+    def has_transcript(self) -> bool:
+        return bool(self.transcript)
+
+    @property
+    def content_source(self) -> str:
+        return "transcript" if self.has_transcript else "description"
+
 
 @dataclass(slots=True)
 class FeedbackPick:

@@ -71,6 +71,8 @@ If you come from a .NET background, `adas/evaluator_models.py` is the closest th
 
 `adas/evaluator_loader.py` owns markdown parsing and JSON loading, so `Evaluator` does not need to understand low-level file formats.
 
+`adas/baseline_comparison.py` now also validates its required cache input before handing off to the loader, which keeps comparison failures closer to the actual caller.
+
 ### Scoring is split by responsibility
 
 - `adas/algorithmic_scorer.py` handles deterministic rules
@@ -80,6 +82,10 @@ If you come from a .NET background, `adas/evaluator_models.py` is the closest th
 ### Skill execution is replaceable
 
 `adas/skill_executor.py` is intentionally a Python adapter for now. It gives you a working execution path today while keeping the door open for a future real OpenClaw runtime.
+
+### Expensive judge setup is lazy
+
+`adas/evaluator.py` keeps the default `LLMJudge` lazy, so baseline-only and algorithmic-only runs do not eagerly create model client state.
 
 ### Fetching is internally decomposed
 
@@ -144,27 +150,27 @@ If you want the easiest learning path through the code:
 
 ## 8. How to run unit tests
 
+The current suite is **142 passing tests**.
+
 ```bash
-# Activate the virtual environment first                                                                                                                                                    
-  source .venv/bin/activate                                                                                                                                                                   
-                                                                                                                                                                                              
-  # Run all tests                                                                                                                                                                             
-  python3 -m pytest tests/ -v                                                                                                                                                                 
-                                                                                                                                                                                              
-  Useful variants:                                                                                                                                                                            
-                                                                                                                                                                                              
-  # Run a single test file
-  python3 -m pytest tests/adas/test_algorithmic_scorer.py -v                                                                                                                                  
-   
-  # Run a single test class                                                                                                                                                                   
-  python3 -m pytest tests/adas/test_skill_executor.py::TestLooksEnglish -v
-                                                                                                                                                                                              
-  # Run a single test
-  python3 -m pytest tests/adas/test_evaluator.py::TestAggregateWeightedScore::test_all_tens_gives_10 -v                                                                                       
-                                                                                                                                                                                              
-  # Stop on first failure
-  python3 -m pytest tests/ -v -x                                                                                                                                                              
-                                                                                                                                                                                              
-  # Show just a summary (no per-test output)
-  python3 -m pytest tests/        
+# Activate the virtual environment first
+source .venv/bin/activate
+
+# Run all tests
+python3 -m pytest tests/ -v
+
+# Run a single test file
+python3 -m pytest tests/adas/test_algorithmic_scorer.py -v
+
+# Run a single test class
+python3 -m pytest tests/adas/test_skill_executor.py::TestLooksEnglish -v
+
+# Run a single test
+python3 -m pytest tests/adas/test_evaluator.py::TestAggregateWeightedScore::test_all_tens_gives_10 -v
+
+# Stop on first failure
+python3 -m pytest tests/ -v -x
+
+# Show just a summary (no per-test output)
+python3 -m pytest tests/
 ```

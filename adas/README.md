@@ -53,6 +53,8 @@ The evaluator now defines:
 - composition of the smaller evaluator components listed below
 - constructor injection points for the main evaluator collaborators
 - smaller private helper methods so the main score path reads top-down
+- lazy default `LLMJudge` creation so model client setup only happens when semantic judging is enabled
+- a CLI helper path that always returns a real scored result instead of an empty template shell
 
 ### `evaluator_loader.py`
 
@@ -141,6 +143,8 @@ Owns the end-to-end Step 5 comparison flow by composing:
 3. `EvaluationResultStore`
 
 It also exposes a small CLI for running the three baselines on one cache and saving the outputs.
+
+The comparison service now fails fast when the required cache file is missing, while still treating feedback history as optional.
 
 ### Evaluator runtime path
 
@@ -239,6 +243,7 @@ The planned later lifecycle adds:
 - Secret values are loaded from the repo root `.env`.
 - The current repo state is **post-evaluator / pre-archive / pre-meta-agent**.
 - Step 5 is now complete for the current `video_cache_w1.json` dataset.
+- The current pytest suite is at **142 passing tests**.
 - Transcript fetching is **best-effort**: some videos now resolve transcripts, but YouTube may still block others depending on IP/network conditions.
 - The current cache shape is strong enough to begin the evaluator, because it includes `views_per_hour`, `subscriber_count`, and descriptions even when transcripts are missing.
 - The next concrete implementation step is to define the archive layer and promote Step 5 outputs into Step 6 persistence.

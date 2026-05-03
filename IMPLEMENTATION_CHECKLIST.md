@@ -39,7 +39,8 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] cron config stub in `cron/jobs.json`
 - [x] repository documentation in `README.md` files
 - [x] high-level orientation docs in `ARCHITECTURE.md` and `WORKFLOW.md`
-- [x] unit tests for evaluator, loader, scorer, executor, and Step 5 comparison flow
+- [x] unit tests for evaluator, loader, scorer, executor, evaluator CLI helpers, and Step 5 comparison flow
+- [x] current full pytest suite passing (`142 passed`)
 
 ### Not implemented yet
 
@@ -148,7 +149,9 @@ The evaluator now has:
 - weighted aggregation once dimension scores are assigned
 - algorithmic scoring for freshness, diversity, and a neutral-feedback alignment placeholder
 - `score()` orchestration for explicit selected video IDs
+- a CLI path that now returns a real scored result even without explicit selected IDs
 - LLM-judged scoring for relevance, substance, and reasoning
+- lazy default LLM judge construction so non-LLM runs avoid eager model client setup
 - a result template and execution hooks for end-to-end evaluator scoring
 
 Current limitation:
@@ -276,6 +279,7 @@ Interpretation:
 - recency and engagement-velocity are close, which makes sense because they share two strong picks
 - the substance proxy baseline scores lower because its current heuristic picks do not hold up as strongly under the LLM judge
 - no weight tuning was applied yet, because the result did not look obviously wrong
+- baseline comparison now also fails fast when the required cache input is missing, while keeping feedback optional
 
 ### Files involved
 
