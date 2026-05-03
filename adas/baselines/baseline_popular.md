@@ -31,10 +31,10 @@ Keep only videos whose title or description contains at least one of:
 - AI, artificial intelligence, machine learning, LLM, agents, GPT
 - AND at least one of: startup, founder, entrepreneur, SaaS, product, funding, business
 
-### 3. Apply quality floor
+### 4. Apply quality floor
 Discard videos from channels with fewer than **10,000 subscribers**. This removes low-quality spam while still allowing mid-size creators to surface.
 
-### 4. Compute engagement velocity
+### 5. Compute engagement velocity
 For each remaining candidate, compute:
 
 ```
@@ -43,16 +43,16 @@ views_per_hour = view_count / hours_since_publish
 
 Use at least 1 hour as the denominator to avoid division edge cases for brand-new uploads.
 
-### 5. Sort and select
+### 6. Sort and select
 Sort by `views_per_hour` descending.
 Pick the top 3.
 
-### 6. Generate summaries
+### 7. Generate summaries
 For each of the 3 picks, write a 1-2 sentence "why watch" summary that explains:
 - What makes this video relevant to an AI founder or entrepreneur
 - Any specific claim, metric, or insight visible in the title/description
 
-### 7. Format the Telegram message
+### 8. Format the Telegram message
 Return the result in this exact format:
 
 ```

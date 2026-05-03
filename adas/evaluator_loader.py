@@ -76,7 +76,7 @@ class EvaluationRequestLoader:
         resolved_feedback_path: Path | None = None
         feedback_history: list[FeedbackEntry] = []
         if feedback_path:
-            resolved_feedback_path = _resolve_path(feedback_path, base_dir="")
+            resolved_feedback_path = _resolve_path(feedback_path)
             feedback_history = self.load_feedback_history(str(resolved_feedback_path))
 
         return EvaluationRequest(

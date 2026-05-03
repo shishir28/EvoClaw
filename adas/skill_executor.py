@@ -8,6 +8,7 @@ from a cached dataset so the evaluator can run end to end.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Protocol
@@ -80,10 +81,14 @@ def _looks_english(video: VideoRecord) -> bool:
     return ascii_chars / alpha_chars >= 0.85
 
 
+def _term_matches(term: str, source: str) -> bool:
+    return bool(re.search(r"\b" + re.escape(term) + r"\b", source))
+
+
 def _is_relevant(video: VideoRecord) -> bool:
     source = _text(video)
-    return any(term in source for term in _AI_TERMS) and any(
-        term in source for term in _BUSINESS_TERMS
+    return any(_term_matches(term, source) for term in _AI_TERMS) and any(
+        _term_matches(term, source) for term in _BUSINESS_TERMS
     )
 
 

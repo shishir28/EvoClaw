@@ -30,7 +30,7 @@ Discard any video where the title or description appears to be written in a non-
 ### 3. Enrich with transcripts (best-effort)
 For each candidate, attempt to fetch the auto-generated English transcript via `youtube-transcript-api`. If unavailable, fall back to using the video description only.
 
-### 3. Score each candidate with Nemotron
+### 4. Score each candidate with Nemotron
 Send each candidate to local Nemotron (via Ollama)/vLLM with the following prompt:
 
 ---
@@ -53,14 +53,14 @@ Respond with JSON only: {"score": <int>, "reason": "<one sentence>"}
 
 Collect the score and one-sentence reason for each candidate.
 
-### 4. Sort and select
+### 5. Sort and select
 Sort candidates by `substance_score` descending.
 Pick the top 3.
 
-### 5. Generate summaries
+### 6. Generate summaries
 For each of the 3 picks, write the "why watch" summary using the Nemotron-generated reason as a starting point. Make it direct and specific — name the insight, not just the topic.
 
-### 6. Format the Telegram message
+### 7. Format the Telegram message
 Return the result in this exact format:
 
 ```

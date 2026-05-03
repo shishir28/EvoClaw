@@ -57,18 +57,21 @@ class FilePromptTemplateLoader:
 
 class OpenAIChatCompletionClient:
     def __init__(self, base_url: str = LLM_BASE_URL, model: str = LLM_MODEL) -> None:
-        self._base_url = base_url
+        try:
+            from openai import OpenAI
+        except ImportError as exc:
+            raise RuntimeError("The 'openai' package is required for LLM judging.") from exc
+        self._client = OpenAI(api_key="local", base_url=base_url)
         self._model = model
 
     def complete(self, system_prompt: str, user_prompt: str) -> str:
         try:
-            from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
+            from openai import APIConnectionError, APIStatusError, APITimeoutError
         except ImportError as exc:
             raise RuntimeError("The 'openai' package is required for LLM judging.") from exc
 
-        client = OpenAI(api_key="local", base_url=self._base_url)
         try:
-            response = client.chat.completions.create(
+            response = self._client.chat.completions.create(
                 model=self._model,
                 temperature=0.0,
                 messages=[
@@ -104,7 +107,7 @@ class LLMJudge:
     ) -> dict[str, str]:
         summaries: dict[str, str] = {}
         for video in selected_videos:
-            desc = _first_sentence(video.description)
+            desc = _first_sentence(video.transcript_or_description)
             if request.skill.strategy == "recency":
                 summaries[video.video_id] = (
                     desc
@@ -149,11 +152,12 @@ class LLMJudge:
             }
             for video in selected_videos
         ]
-        return prompt_template.format(
-            skill_name=request.skill.name or Path(request.skill.path).stem,
-            skill_strategy=request.skill.strategy or "unknown",
-            skill_description=request.skill.description or "",
-            selected_videos_json=json.dumps(selected_payload, indent=2, ensure_ascii=False),
+        return (
+            prompt_template
+            .replace("SKILL_NAME", request.skill.name or Path(request.skill.path).stem)
+            .replace("SKILL_STRATEGY", request.skill.strategy or "unknown")
+            .replace("SKILL_DESCRIPTION", request.skill.description or "")
+            .replace("SELECTED_VIDEOS_JSON", json.dumps(selected_payload, indent=2, ensure_ascii=False))
         )
 
     def judge_dimensions(

@@ -26,8 +26,6 @@ The planned end-to-end loop is:
 
 ```text
 EvoClaw/
-├── ARCHITECTURE.md                # High-level codebase structure
-├── WORKFLOW.md                    # Current and planned execution flows
 ├── adas/
 │   ├── algorithmic_scorer.py     # Deterministic evaluator dimensions
 │   ├── archive/                  # Archive index and future generated skills
@@ -166,8 +164,6 @@ python3 evaluator.py --skill baselines/baseline_popular.md --cache video_cache_w
 
 ## References
 
-- `ARCHITECTURE.md` explains the current module boundaries and responsibilities.
-- `WORKFLOW.md` explains what you can run today and how the full loop is intended to evolve.
 - `Plan.md` describes the full intended design, phases, and success metrics.
 - `adas/README.md` documents the ADAS workspace in more detail.
 - `skills/youtube-curator/README.md` explains the production skill directory.

@@ -124,3 +124,30 @@ If you want the easiest learning path through the code:
 8. `adas/algorithmic_scorer.py`
 9. `adas/llm_judge.py`
 10. `adas/youtube_fetcher.py`
+
+## 8. How to run unit tests
+
+```bash
+# Activate the virtual environment first                                                                                                                                                    
+  source .venv/bin/activate                                                                                                                                                                   
+                                                                                                                                                                                              
+  # Run all tests                                                                                                                                                                             
+  python3 -m pytest tests/ -v                                                                                                                                                                 
+                                                                                                                                                                                              
+  Useful variants:                                                                                                                                                                            
+                                                                                                                                                                                              
+  # Run a single test file
+  python3 -m pytest tests/adas/test_algorithmic_scorer.py -v                                                                                                                                  
+   
+  # Run a single test class                                                                                                                                                                   
+  python3 -m pytest tests/adas/test_skill_executor.py::TestLooksEnglish -v
+                                                                                                                                                                                              
+  # Run a single test
+  python3 -m pytest tests/adas/test_evaluator.py::TestAggregateWeightedScore::test_all_tens_gives_10 -v                                                                                       
+                                                                                                                                                                                              
+  # Stop on first failure
+  python3 -m pytest tests/ -v -x                                                                                                                                                              
+                                                                                                                                                                                              
+  # Show just a summary (no per-test output)
+  python3 -m pytest tests/        
+```

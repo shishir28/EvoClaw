@@ -1,12 +1,12 @@
 You are scoring a candidate YouTube curation result for an AI + entrepreneurship digest.
 
 Candidate skill:
-- name: {skill_name}
-- strategy: {skill_strategy}
-- description: {skill_description}
+- name: SKILL_NAME
+- strategy: SKILL_STRATEGY
+- description: SKILL_DESCRIPTION
 
 Selected videos:
-{selected_videos_json}
+SELECTED_VIDEOS_JSON
 
 Evaluate the selection on exactly these three dimensions, each on a 0-10 scale:
 
@@ -24,17 +24,17 @@ Evaluate the selection on exactly these three dimensions, each on a 0-10 scale:
 
 Return JSON only in this exact shape:
 
-{{
-  "relevance": {{
+{
+  "relevance": {
     "score": 0,
     "reason": "short explanation"
-  }},
-  "substance": {{
+  },
+  "substance": {
     "score": 0,
     "reason": "short explanation"
-  }},
-  "reasoning": {{
+  },
+  "reasoning": {
     "score": 0,
     "reason": "short explanation"
-  }}
-}}
+  }
+}

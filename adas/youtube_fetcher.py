@@ -88,6 +88,7 @@ class YouTubeAPIClient:
         if not api_key:
             raise ValueError("YOUTUBE_API_KEY is not set. Export it as an env variable.")
         self._yt = build("youtube", "v3", developerKey=api_key)
+        self._subscriber_count_cache: dict[str, int | None] = {}
 
     def _build_video_stub(self, item: dict, query: str) -> VideoStub:
         snippet = item["snippet"]
@@ -128,6 +129,24 @@ class YouTubeAPIClient:
             "url": f"https://www.youtube.com/watch?v={stub['video_id']}",
         }
 
+    def _payload_from_stub(
+        self,
+        stub: VideoStub,
+        channel_subscribers: dict[str, int | None],
+    ) -> VideoRecordPayload:
+        return {
+            **stub,
+            "views": 0,
+            "likes": 0,
+            "subscriber_count": channel_subscribers.get(stub["channel_id"]),
+            "duration_seconds": 0,
+            "tags": [],
+            "category_id": "",
+            "views_per_hour": 0.0,
+            "url": f"https://www.youtube.com/watch?v={stub['video_id']}",
+            "transcript": None,
+        }
+
     def search(
         self,
         query: str,
@@ -159,10 +178,10 @@ class YouTubeAPIClient:
 
     def enrich(self, stubs: list[VideoStub]) -> list[VideoRecordPayload]:
         enriched: list[VideoRecordPayload] = []
+        channel_subscribers = self.channel_subscriber_counts(stubs)
         for i in range(0, len(stubs), 50):
             batch = stubs[i : i + 50]
             ids = ",".join(v["video_id"] for v in batch)
-            channel_subscribers = self.channel_subscriber_counts(batch)
             try:
                 resp = (
                     self._yt.videos()
@@ -170,15 +189,14 @@ class YouTubeAPIClient:
                     .execute()
                 )
             except HttpError as e:
-                print(f"[enrich] HttpError: {e}", file=sys.stderr)
-                enriched.extend(batch)
+                print(f"[enrich] HttpError for batch, skipping {len(batch)} videos: {e}", file=sys.stderr)
                 continue
 
             detail_map = {item["id"]: item for item in resp.get("items", [])}
             for stub in batch:
                 detail = detail_map.get(stub["video_id"])
                 if not detail:
-                    enriched.append(stub)
+                    print(f"[enrich] skipping {stub['video_id']}: no detail returned by API", file=sys.stderr)
                     continue
 
                 enriched.append(self._merge_video_details(stub, detail, channel_subscribers))
@@ -192,9 +210,13 @@ class YouTubeAPIClient:
         if not channel_ids:
             return {}
 
-        subscribers: dict[str, int | None] = {}
-        for i in range(0, len(channel_ids), 50):
-            batch = channel_ids[i : i + 50]
+        missing_channel_ids = [
+            channel_id
+            for channel_id in channel_ids
+            if channel_id not in self._subscriber_count_cache
+        ]
+        for i in range(0, len(missing_channel_ids), 50):
+            batch = missing_channel_ids[i : i + 50]
             try:
                 resp = (
                     self._yt.channels()
@@ -204,18 +226,23 @@ class YouTubeAPIClient:
             except HttpError as e:
                 print(f"[channels] HttpError: {e}", file=sys.stderr)
                 for channel_id in batch:
-                    subscribers[channel_id] = None
+                    self._subscriber_count_cache[channel_id] = None
                 continue
 
             for item in resp.get("items", []):
                 stats = item.get("statistics", {})
                 subs_raw = stats.get("subscriberCount")
-                subscribers[item["id"]] = int(subs_raw) if subs_raw is not None else None
+                self._subscriber_count_cache[item["id"]] = (
+                    int(subs_raw) if subs_raw is not None else None
+                )
 
             for channel_id in batch:
-                subscribers.setdefault(channel_id, None)
+                self._subscriber_count_cache.setdefault(channel_id, None)
 
-        return subscribers
+        return {
+            channel_id: self._subscriber_count_cache.get(channel_id)
+            for channel_id in channel_ids
+        }
 
 class TranscriptProvider:
     def __init__(self, pacing_seconds: float = 0.2) -> None:

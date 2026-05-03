@@ -27,22 +27,22 @@ Discard any video where the title or description appears to be written in a non-
 
 ### 3. Filter for relevance
 Discard any video where the title or description does NOT mention at least one of:
-- AI, artificial intelligence, machine learning, LLM, GPT, agent
+- AI, artificial intelligence, machine learning, LLM, GPT, agent, Claude, AGI or similar AI terms
 - startup, founder, entrepreneur, SaaS, venture, funding
 
-### 3. Filter for minimum quality
+### 4. Filter for minimum quality
 Discard videos from channels with fewer than **1,000 subscribers** (use channel subscriber count if available; skip this check if the data is missing).
 
-### 4. Sort and select
+### 5. Sort and select
 Sort the remaining candidates by `published_at` descending (newest first).
 Pick the top 3.
 
-### 5. Generate summaries
+### 6. Generate summaries
 For each of the 3 picks, write a 1-2 sentence "why watch" summary that:
 - Names the specific topic or insight covered
 - Does NOT just paraphrase the title
 
-### 6. Format the Telegram message
+### 7. Format the Telegram message
 Return the result in this exact format:
 
 ```

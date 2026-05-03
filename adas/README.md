@@ -27,7 +27,7 @@ Example:
 
 ```bash
 cd adas
-python youtube_fetcher.py --days 7 --max-per-query 10 --output video_cache_w1.json
+python3 youtube_fetcher.py --days 7 --max-per-query 10 --output video_cache_w1.json
 ```
 
 ### `config.py`
