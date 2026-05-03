@@ -14,7 +14,7 @@ The repository is currently at the **working fetcher + evaluator + baseline comp
 - typed shared configuration for search, inference, paths, and scoring weights
 - three hand-written baseline skills plus a production `SKILL.md` placeholder
 - a cron configuration stub for future automation
-- a focused pytest suite covering the evaluator path plus Step 5 and Step 6 orchestration (**145 tests currently passing**)
+- a focused pytest suite covering the evaluator path plus Step 5 and Step 6 orchestration (**147 tests currently passing**)
 
 ## Target architecture
 

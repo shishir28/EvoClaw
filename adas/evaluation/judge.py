@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 try:
     from ..config import LLM_BASE_URL, LLM_MODEL, PROMPTS_DIR
@@ -101,12 +101,21 @@ class LLMJudge:
         self,
         prompt_loader: PromptTemplateLoader | None = None,
         chat_client: ChatCompletionClient | None = None,
+        chat_client_factory: Callable[[], ChatCompletionClient] | None = None,
         prompt_dir: str = PROMPTS_DIR,
         base_url: str = LLM_BASE_URL,
         model: str = LLM_MODEL,
     ) -> None:
         self._prompt_loader = prompt_loader or FilePromptTemplateLoader(prompt_dir)
-        self._chat_client = chat_client or OpenAIChatCompletionClient(base_url, model)
+        self._chat_client = chat_client
+        self._chat_client_factory = chat_client_factory or (
+            lambda: OpenAIChatCompletionClient(base_url, model)
+        )
+
+    def _get_chat_client(self) -> ChatCompletionClient:
+        if self._chat_client is None:
+            self._chat_client = self._chat_client_factory()
+        return self._chat_client
 
     def _build_reasoning_summaries(
         self,
@@ -176,7 +185,7 @@ class LLMJudge:
         selected_videos: list[VideoRecord],
     ) -> tuple[dict[str, float], dict[str, str]]:
         prompt = self._build_judge_prompt(request, selected_videos)
-        content = self._chat_client.complete(
+        content = self._get_chat_client().complete(
             system_prompt="You are a strict evaluation judge. Return JSON only.",
             user_prompt=prompt,
         )

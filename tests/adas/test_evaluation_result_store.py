@@ -8,15 +8,7 @@ import json
 
 from baseline.models import BaselineEvaluationRecord
 from baseline.result_store import EvaluationResultStore
-from builders import make_result
-
-
-def _scored_result(skill_name: str, total_score: float):
-    result = make_result()
-    result.skill_name = skill_name
-    result.total_score = total_score
-    result.status = "scored"
-    return result
+from builders import make_scored_result
 
 
 class TestEvaluationResultStore:
@@ -25,7 +17,7 @@ class TestEvaluationResultStore:
         records = [
             BaselineEvaluationRecord(
                 skill_path="adas/baselines/baseline_recency.md",
-                result=_scored_result("recency-first", 6.5),
+                result=make_scored_result("recency-first", 6.5),
             ),
             BaselineEvaluationRecord(
                 skill_path="adas/baselines/baseline_popular.md",
@@ -51,11 +43,11 @@ class TestEvaluationResultStore:
         records = [
             BaselineEvaluationRecord(
                 skill_path="adas/baselines/baseline_recency.md",
-                result=_scored_result("recency-first", 6.5),
+                result=make_scored_result("recency-first", 6.5),
             ),
             BaselineEvaluationRecord(
                 skill_path="adas/baselines/baseline_popular.md",
-                result=_scored_result("engagement-velocity", 7.5),
+                result=make_scored_result("engagement-velocity", 7.5),
             ),
             BaselineEvaluationRecord(
                 skill_path="adas/baselines/baseline_curated.md",

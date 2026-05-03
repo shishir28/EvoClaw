@@ -47,6 +47,9 @@ class ArchiveIndexEntry:
 @dataclass(slots=True)
 class ArchiveIndex:
     best_skill_id: str | None = None
+    # best_skill_id is the canonical signal for whether the archive has a winner.
+    # best_score stays at 0.0 for the empty archive so index.json keeps a simple,
+    # numeric shape for callers and stored snapshots.
     best_score: float = 0.0
     skills: list[ArchiveIndexEntry] = field(default_factory=list)
 

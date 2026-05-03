@@ -53,6 +53,8 @@ class ArchiveService:
         source_type: str,
         context: dict[str, Any],
     ) -> None:
+        # Failed records are archived intentionally so the archive keeps an audit
+        # trail of attempted evaluations, not just successful winners.
         resolved_skill_path = self._resolve_skill_path(record.skill_path)
         skill_text = Path(resolved_skill_path).read_text()
         archive_key = self._build_archive_key(source_type, resolved_skill_path, context)
@@ -73,6 +75,9 @@ class ArchiveService:
             error=record.error,
             context=dict(context),
         )
+        # This write order is not atomic: entry files are written before the index
+        # is updated and saved. That leaves a small orphaned-files risk on later
+        # failures, but keeps each archive entry self-contained on disk.
         self._store.write_entry_files(
             skill_id=skill_id,
             skill_text=skill_text,
@@ -114,6 +119,7 @@ class ArchiveService:
             return
         best_entry = sorted(
             scored_entries,
+            # Ties fall back to skill_id for deterministic ordering across runs.
             key=lambda item: (-float(item.total_score), item.skill_id),
         )[0]
         index.best_skill_id = best_entry.skill_id

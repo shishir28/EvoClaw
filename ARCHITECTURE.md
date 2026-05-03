@@ -146,7 +146,7 @@ If you want the easiest learning path through the code:
 
 ## 8. How to run unit tests
 
-The current suite is **145 passing tests**.
+The current suite is **147 passing tests**.
 
 ```bash
 # Activate the virtual environment first

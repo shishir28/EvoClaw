@@ -39,6 +39,9 @@ class ArchiveStore:
         for entry in index.skills:
             if entry.archive_key == archive_key:
                 return entry.skill_id
+        # The archive key intentionally includes evaluation context. Re-running the
+        # same skill against a different cache or feedback setup creates a new
+        # archive entry instead of overwriting the prior observation.
         return self._next_skill_id(index)
 
     def write_entry_files(

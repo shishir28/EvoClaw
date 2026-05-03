@@ -5,7 +5,7 @@ Tests for baseline Step 5 orchestration.
 from __future__ import annotations
 
 from baseline.runner import BaselineEvaluationRunner
-from builders import make_result
+from builders import make_scored_result
 
 
 class _StubEvaluator:
@@ -37,20 +37,12 @@ class _StubEvaluator:
         return outcome
 
 
-def _scored_result(skill_name: str, total_score: float):
-    result = make_result()
-    result.skill_name = skill_name
-    result.total_score = total_score
-    result.status = "scored"
-    return result
-
-
 class TestBaselineEvaluationRunner:
     def test_runs_all_skill_paths_in_order(self):
         evaluator = _StubEvaluator(
             {
-                "a.md": _scored_result("a", 6.5),
-                "b.md": _scored_result("b", 7.5),
+                "a.md": make_scored_result("a", 6.5),
+                "b.md": make_scored_result("b", 7.5),
             }
         )
         runner = BaselineEvaluationRunner(evaluator)
@@ -66,7 +58,7 @@ class TestBaselineEvaluationRunner:
         assert [call["skill_path"] for call in evaluator.calls] == ["a.md", "b.md"]
 
     def test_passes_cache_feedback_and_llm_flags_to_evaluator(self):
-        evaluator = _StubEvaluator({"a.md": _scored_result("a", 6.5)})
+        evaluator = _StubEvaluator({"a.md": make_scored_result("a", 6.5)})
         runner = BaselineEvaluationRunner(evaluator)
 
         runner.run(
@@ -88,9 +80,9 @@ class TestBaselineEvaluationRunner:
     def test_records_failures_and_continues(self):
         evaluator = _StubEvaluator(
             {
-                "a.md": _scored_result("a", 6.5),
+                "a.md": make_scored_result("a", 6.5),
                 "broken.md": ValueError("bad skill"),
-                "b.md": _scored_result("b", 7.5),
+                "b.md": make_scored_result("b", 7.5),
             }
         )
         runner = BaselineEvaluationRunner(evaluator)

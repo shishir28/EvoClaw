@@ -44,7 +44,7 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] repository documentation in `README.md` files
 - [x] high-level orientation docs in `ARCHITECTURE.md` and `WORKFLOW.md`
 - [x] unit tests for evaluator, loader, scorer, executor, evaluator CLI helpers, and Step 5 comparison flow
-- [x] current full pytest suite passing (`145 passed`)
+- [x] current full pytest suite passing (`147 passed`)
 
 ### Not implemented yet
 

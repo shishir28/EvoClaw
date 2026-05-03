@@ -9,19 +9,11 @@ import json
 from archive_runtime.service import ArchiveService
 from archive_runtime.store import ArchiveStore
 from baseline.models import BaselineEvaluationRecord
-from builders import make_result
+from builders import make_scored_result
 
 
 def _write_skill_file(path, title: str) -> None:
     path.write_text(f"---\nname: {title}\nstrategy: recency\n---\n\n# {title}\n")
-
-
-def _scored_result(skill_name: str, total_score: float):
-    result = make_result()
-    result.skill_name = skill_name
-    result.total_score = total_score
-    result.status = "scored"
-    return result
 
 
 class TestArchiveService:
@@ -41,11 +33,11 @@ class TestArchiveService:
         records = [
             BaselineEvaluationRecord(
                 skill_path=str(recency_skill),
-                result=_scored_result("recency-first", 6.5),
+                result=make_scored_result("recency-first", 6.5),
             ),
             BaselineEvaluationRecord(
                 skill_path=str(popular_skill),
-                result=_scored_result("engagement-velocity", 7.5),
+                result=make_scored_result("engagement-velocity", 7.5),
             ),
             BaselineEvaluationRecord(
                 skill_path=str(broken_skill),
@@ -110,7 +102,7 @@ class TestArchiveService:
             records=[
                 BaselineEvaluationRecord(
                     skill_path=str(skill_path),
-                    result=_scored_result("recency-first", 6.5),
+                    result=make_scored_result("recency-first", 6.5),
                 )
             ],
             source_type="baseline",
@@ -120,7 +112,7 @@ class TestArchiveService:
             records=[
                 BaselineEvaluationRecord(
                     skill_path=str(skill_path),
-                    result=_scored_result("recency-first", 7.0),
+                    result=make_scored_result("recency-first", 7.0),
                 )
             ],
             source_type="baseline",

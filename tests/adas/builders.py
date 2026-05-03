@@ -153,6 +153,10 @@ class SkillDocumentBuilder:
         self._strategy = strategy
         return self
 
+    def with_description(self, description: str) -> "SkillDocumentBuilder":
+        self._description = description
+        return self
+
     def build(self) -> SkillDocument:
         return SkillDocument(
             path=self._path,
@@ -238,3 +242,11 @@ def make_result(
         dimensions=[DimensionScore(name=n, weight=w) for n, w in weights.items()],
         selected_video_ids=selected_video_ids or [],
     )
+
+
+def make_scored_result(skill_name: str, total_score: float) -> EvaluationResult:
+    result = make_result()
+    result.skill_name = skill_name
+    result.total_score = total_score
+    result.status = "scored"
+    return result
