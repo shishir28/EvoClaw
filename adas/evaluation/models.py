@@ -101,10 +101,52 @@ class VideoRecord:
 
 
 @dataclass(slots=True)
+class FeedbackVideoSnapshot:
+    title: str
+    channel: str
+    channel_id: str
+    published_at: str
+    description: str
+    query_matched: str
+    duration_seconds: int = 0
+    tags: list[str] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "FeedbackVideoSnapshot":
+        return cls(
+            title=payload.get("title", ""),
+            channel=payload.get("channel", ""),
+            channel_id=payload.get("channel_id", ""),
+            published_at=payload.get("published_at", ""),
+            description=payload.get("description", ""),
+            query_matched=payload.get("query_matched", ""),
+            duration_seconds=int(payload.get("duration_seconds", 0) or 0),
+            tags=list(payload.get("tags", [])),
+        )
+
+    @classmethod
+    def from_video(cls, video: VideoRecord) -> "FeedbackVideoSnapshot":
+        return cls(
+            title=video.title,
+            channel=video.channel,
+            channel_id=video.channel_id,
+            published_at=video.published_at,
+            description=video.description,
+            query_matched=video.query_matched,
+            duration_seconds=video.duration_seconds,
+            tags=list(video.tags),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(slots=True)
 class FeedbackPick:
     video_id: str
     reaction: str | None
     skill_version: str | None = None
+    snapshot: FeedbackVideoSnapshot | None = None
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "FeedbackPick":
@@ -112,7 +154,24 @@ class FeedbackPick:
             video_id=payload["video_id"],
             reaction=payload.get("reaction"),
             skill_version=payload.get("skill_version"),
+            snapshot=(
+                FeedbackVideoSnapshot.from_dict(payload["snapshot"])
+                if isinstance(payload.get("snapshot"), dict)
+                else None
+            ),
         )
+
+    def to_dict(self) -> dict[str, Any]:
+        # snapshot is omitted when None so legacy feedback files without
+        # a snapshot key round-trip cleanly through from_dict / to_dict.
+        payload: dict[str, Any] = {
+            "video_id": self.video_id,
+            "reaction": self.reaction,
+            "skill_version": self.skill_version,
+        }
+        if self.snapshot is not None:
+            payload["snapshot"] = self.snapshot.to_dict()
+        return payload
 
 
 @dataclass(slots=True)
@@ -126,6 +185,12 @@ class FeedbackEntry:
             date=payload.get("date", ""),
             picks=[FeedbackPick.from_dict(pick) for pick in payload.get("picks", [])],
         )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "date": self.date,
+            "picks": [pick.to_dict() for pick in self.picks],
+        }
 
 
 @dataclass(slots=True)

@@ -1,12 +1,13 @@
 # ADAS workspace
 
-This directory holds the **fetch, evaluate, compare, and archive** side of EvoClaw.
+This directory holds the **fetch, evaluate, compare, archive, and feedback** side of EvoClaw.
 
 The package layout was recently reorganized to group internals by domain:
 
 - `evaluation/` holds evaluator internals
 - `baseline/` holds baseline comparison internals
 - `archive_runtime/` holds archive internals
+- `feedback/` holds Step 7 feedback persistence and append logic
 - top-level CLI files remain for manual runs; most internal imports now target the grouped packages directly
 
 ## What is here now
@@ -90,9 +91,33 @@ Owns the non-LLM evaluator dimensions:
 
 - freshness — base 6.0 for ≤168 h, linear decay to 0 at 720 h, +4.0 bonus for ≤48 h; future-dated `published_at` scores 0.0
 - diversity — channel uniqueness ratio + Jaccard topical similarity, averaged
-- alignment placeholder — feedback history lookup; neutral 5.0 when no history
+- alignment — exact historical matches first, then heuristic similarity over channel, topic, and duration using persisted feedback snapshots
+
+Alignment thresholds are declared as named module-level constants (`_MIN_ALIGNMENT_SIMILARITY`, `_CHANNEL_WEIGHT`, `_TOPIC_WEIGHT`, `_DURATION_WEIGHT`) so they are tunable without hunting through arithmetic expressions.
 
 It now uses explicit evaluator model types instead of loose `Any`-style contracts.
+
+### `feedback/store.py`
+
+Owns Step 7 feedback persistence:
+
+- loads `adas/test_sets/feedback.json`
+- saves the stable `{ "history": [...] }` wrapper via an atomic temp-file rename so a crash mid-write cannot corrupt the file
+- keeps one source of truth for feedback history reads/writes
+
+### `feedback/service.py`
+
+Owns Step 7 manual feedback ingestion:
+
+1. validates reactions at input time against `VALID_REACTIONS` frozenset — unknown strings (e.g. `"thumbs up"` with a space) raise `ValueError` immediately rather than silently scoring as neutral
+2. validates empty date, empty picks list, empty video ID, unknown video IDs, and duplicate video IDs
+3. resolves video IDs against an available cache dataset
+4. stores a `FeedbackVideoSnapshot` of the reacted video for future alignment scoring
+5. appends the new entry through `FeedbackStore`
+
+### `feedback_cli.py`
+
+Manual CLI entrypoint for Step 7. It appends feedback entries using a cache file so stored picks include a reusable video snapshot.
 
 ### `evaluation/judge.py`
 
@@ -195,6 +220,7 @@ The evaluator runtime is now split cleanly:
 7. `Evaluator` aggregates the final result
 8. `baseline/comparison.py` can run all baseline skills against one cache and persist the results
 9. `archive_runtime/service.py` can promote those evaluated records into the archive
+10. `feedback/service.py` can append manual feedback entries for later alignment scoring
 
 Current limitation: real OpenClaw execution and the later meta-agent loop are not implemented yet.
 
@@ -248,7 +274,7 @@ Current contents are:
 
 - `video_cache_test.json`
 - `video_cache_w1.json` generated locally for Step 1 validation
-- `feedback.json` with an empty `history` list
+- `feedback.json` with a stable `history` wrapper for stored feedback entries
 
 ## Planned additions
 
@@ -279,7 +305,7 @@ The planned later lifecycle adds:
 
 The test suite lives in `tests/adas/` and mirrors the source layout. Shared builder utilities live in `tests/adas/builders.py`.
 
-**Current status: 147 tests passing.**
+**Current status: 165 tests passing.**
 
 | Test file | Covers |
 |---|---|
@@ -296,6 +322,7 @@ The test suite lives in `tests/adas/` and mirrors the source layout. Shared buil
 | `test_evaluation_result_store.py` | JSON persistence, ranking order |
 | `test_baseline_comparison.py` | end-to-end orchestration, archive wiring |
 | `test_archive_service.py` | archive writes, ID reuse, best-skill tracking |
+| `test_feedback_store.py` | feedback persistence and manual append flow |
 
 Builder utilities available to all tests:
 
@@ -318,8 +345,8 @@ python3 -m pytest tests/adas/test_archive_service.py -v  # one file
 - Secret values are loaded from the repo root `.env`.
 - The current repo state is **post-evaluator / post-archive / pre-meta-agent**.
 - Step 5 and Step 6 are complete for the current `video_cache_w1.json` dataset.
-- The current pytest suite is at **147 passing tests**.
+- The current pytest suite is at **165 passing tests**.
 - Transcript fetching is **best-effort**: some videos now resolve transcripts, but YouTube may still block others depending on IP/network conditions.
 - The current cache shape is strong enough to begin the evaluator, because it includes `views_per_hour`, `subscriber_count`, and descriptions even when transcripts are missing.
-- The next concrete implementation step is to make feedback meaningful before the meta-agent loop starts consuming archive history.
+- The next concrete implementation step is to add the meta-agent prompt assets now that feedback is part of evaluator scoring.
 - See the repo-level `ARCHITECTURE.md` and `WORKFLOW.md` files for the simplest high-level explanation.

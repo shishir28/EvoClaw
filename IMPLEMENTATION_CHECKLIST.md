@@ -39,17 +39,20 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] versioned archive entries under `adas/archive/skill_*/`
 - [x] sample cache in `adas/test_sets/video_cache_test.json`
 - [x] reusable local cache in `adas/test_sets/video_cache_w1.json`
-- [x] feedback history stub in `adas/test_sets/feedback.json`
+- [x] feedback history file in `adas/test_sets/feedback.json`
+- [x] `adas/feedback/store.py`
+- [x] `adas/feedback/service.py`
+- [x] `adas/feedback_cli.py`
 - [x] cron config stub in `cron/jobs.json`
 - [x] repository documentation in `README.md` files
 - [x] high-level orientation docs in `ARCHITECTURE.md` and `WORKFLOW.md`
 - [x] unit tests for evaluator, loader, scorer, executor, evaluator CLI helpers, and Step 5 comparison flow
-- [x] current full pytest suite passing (`147 passed`)
+- [x] current full pytest suite passing (`165 passed`)
 
 ### Not implemented yet
 
 - [ ] `adas/meta_agent.py`
-- [ ] generated archive entries under `adas/archive/skill_*`
+- [ ] generated candidate archive entries beyond the current baseline seeds
 - [ ] automatic deployment of winning skill
 - [ ] Telegram digest sender
 - [ ] Telegram reaction capture / feedback ingestion automation
@@ -129,7 +132,7 @@ Current dataset notes:
 - [x] implement algorithmic scoring first:
   - [x] freshness
   - [x] diversity
-  - [x] alignment placeholder
+  - [x] alignment
 
 ### Why this matters
 
@@ -151,7 +154,7 @@ The evaluator now has:
   - `adas/evaluation/scorer.py` for rule-based scoring
   - `adas/evaluation/judge.py` for model-based judging
 - weighted aggregation once dimension scores are assigned
-- algorithmic scoring for freshness, diversity, and a neutral-feedback alignment placeholder
+- algorithmic scoring for freshness, diversity, and a feedback-driven alignment heuristic
 - `score()` orchestration for explicit selected video IDs
 - a CLI path that now returns a real scored result even without explicit selected IDs
 - LLM-judged scoring for relevance, substance, and reasoning
@@ -331,19 +334,45 @@ The archive is the memory of the improvement loop.
 
 ### Tasks
 
-- [ ] define the final feedback schema clearly
-- [ ] add a simple manual way to append feedback
-- [ ] update evaluator alignment scoring to read it
-- [ ] start with a lightweight heuristic for alignment
+- [x] define the final feedback schema clearly
+- [x] add a simple manual way to append feedback
+- [x] update evaluator alignment scoring to read it
+- [x] start with a lightweight heuristic for alignment
+- [x] validate reactions at ingestion time against `VALID_REACTIONS`
+- [x] make feedback writes atomic (temp-file rename) to prevent corruption
+- [x] name alignment heuristic constants (`_MIN_ALIGNMENT_SIMILARITY`, `_CHANNEL_WEIGHT`, etc.)
+- [x] fix `_signal_reason` to reflect the blended weighted score, not just the top signal's sentiment
 
 ### Why this matters
 
 This separates preference learning from Telegram integration and keeps iteration simple.
 
+### Step 7 progress
+
+Step 7 is complete for the current implementation scope.
+
+The alignment scorer now:
+
+- looks up exact historical video matches first
+- falls back to a weighted similarity blend across channel identity (0.4), topic overlap (0.4), and duration closeness (0.2)
+- requires a minimum similarity threshold (`_MIN_ALIGNMENT_SIMILARITY = 0.25`) before applying heuristic influence
+- returns a neutral 5.0 when feedback history is empty or no signal clears the threshold
+
+The feedback ingestion service now:
+
+- validates reactions against `VALID_REACTIONS` at input time
+- stores a `FeedbackVideoSnapshot` with each pick so later runs can score similarity even if the video is no longer in the live cache
+- writes `feedback.json` via an atomic temp-file rename
+
 ### Files involved
 
 - `adas/test_sets/feedback.json`
-- `adas/evaluator.py`
+- `adas/evaluation/models.py` — `FeedbackVideoSnapshot`, `FeedbackPick`, `FeedbackEntry`
+- `adas/evaluation/scorer.py` — `score_alignment`, alignment constants
+- `adas/evaluation/topic_terms.py` — shared topic extraction used by scorer and feedback
+- `adas/feedback/store.py` — atomic persistence
+- `adas/feedback/service.py` — validation and snapshot assembly
+- `adas/feedback_cli.py` — manual append CLI
 
 ---
 
@@ -520,7 +549,7 @@ If the goal is to understand what is happening as you build, use this order:
 - [x] Step 4 - LLM judging
 - [x] Step 5 - baseline scoring runs
 - [x] Step 6 - archive writes
-- [ ] Step 7 - feedback ingestion
+- [x] Step 7 - feedback ingestion
 - [ ] Step 8 - meta-agent prompts
 - [ ] Step 9 - meta-agent loop
 - [ ] Step 10 - deployment

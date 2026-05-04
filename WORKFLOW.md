@@ -4,7 +4,7 @@ This file explains **what actually happens today** in the codebase, and **what t
 
 ## 1. Current runnable workflow
 
-Today, EvoClaw supports a complete **fetch -> evaluate -> compare -> archive** workflow.
+Today, EvoClaw supports a complete **fetch -> evaluate -> compare -> archive -> feedback** workflow.
 
 ### Step 1: Fetch candidate videos
 
@@ -61,7 +61,7 @@ When run from the CLI without explicit `--selected-ids`, it still executes the b
 - `diversity`
 - `alignment`
 
-`alignment` is still a lightweight placeholder that becomes neutral when there is no feedback history.
+`alignment` now uses exact historical matches first, then a lightweight snapshot-similarity heuristic. It still falls back to neutral when there is no feedback history.
 
 #### 4b. Optional LLM judging
 
@@ -116,44 +116,56 @@ Current archive snapshot:
 2. `skill_002` (`engagement-velocity`) — `7.1419`
 3. `skill_001` (`llm-substance-judge`) — `5.7784`
 
+### Step 8: Append feedback history
+
+`adas/feedback/service.py` and `adas/feedback/store.py`:
+
+1. resolve manual feedback picks against a cache file
+2. store `skill_version` plus a reusable snapshot of each reacted video
+3. append the entry into `adas/test_sets/feedback.json`
+4. let later evaluator runs use that history for `alignment`
+
 ## 2. Current workflow as a diagram
 
 ```text
 SKILL.md + cache JSON + feedback JSON
                 |
                 v
-      evaluator_loader.py
+      evaluation/loader.py
                 |
                 v
         EvaluationRequest
                 |
                 v
-         skill_executor.py
+       evaluation/executor.py
                 |
                 v
       selected_video_ids + notes
                 |
                 v
-      algorithmic_scorer.py ----> llm_judge.py (optional)
+      evaluation/scorer.py ----> evaluation/judge.py (optional)
                 \                  /
                  \                /
                   v              v
-                    evaluator.py
+                 evaluation/service.py
                         |
                         v
                   EvaluationResult
                         |
                         v
-             baseline_comparison.py
+            baseline/comparison.py
                         |
                         v
        baseline_results/<cache-stem>/summary.json
                         |
                         v
-             archive_service.py
+         archive_runtime/service.py
                         |
                         v
-            archive/index.json + skill_###/
+             archive/index.json + skill_###/
+                        |
+                        v
+            feedback/store.py + feedback.json
 ```
 
 ## 3. What is not in the workflow yet
@@ -165,7 +177,7 @@ The following steps are still planned, not implemented:
 3. deploy the winning skill automatically
 4. run the production skill on a schedule
 5. send the digest to Telegram
-6. capture Telegram reactions back into feedback history
+6. replace manual feedback append with Telegram reaction capture
 
 ## 4. Planned future full workflow
 
@@ -214,12 +226,19 @@ cd /home/shishirmishra/Learnings/EvoClaw
 .venv/bin/python adas/baseline_comparison.py --cache adas/test_sets/video_cache_w1.json --archive
 ```
 
+Append a manual feedback entry:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python adas/feedback_cli.py --date 2026-05-04 --cache adas/test_sets/video_cache_w1.json --skill-version skill_003 --pick TsXhgpZRU2w=up
+```
+
 ## 6. Immediate next workflow milestone
 
 The next useful workflow to add is:
 
-1. make feedback history influence `alignment` meaningfully
-2. add the meta-agent prompt assets
-3. start the first archive-aware candidate generation loop
+1. add the meta-agent prompt assets
+2. start the first archive-aware candidate generation loop
+3. later replace manual feedback append with Telegram reaction capture
 
 That is the next missing step before the meta-agent loop becomes runnable.

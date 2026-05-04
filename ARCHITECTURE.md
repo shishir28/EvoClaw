@@ -4,7 +4,7 @@ This file explains the **current codebase shape** in plain language so you can u
 
 ## 1. Current architecture in one sentence
 
-EvoClaw currently has a working **fetch -> evaluate -> compare -> archive** foundation, with the future **evolve -> deploy -> deliver** loop still to be built.
+EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> feedback** foundation, with the future **evolve -> deploy -> deliver** loop still to be built.
 
 ## 2. Main layers
 
@@ -15,7 +15,8 @@ EvoClaw currently has a working **fetch -> evaluate -> compare -> archive** foun
 | Evaluation internals | Coordinate request loading, skill execution, scoring, and aggregation | `adas/evaluation/` |
 | Baseline comparison internals | Discover, evaluate, and persist baseline comparison runs | `adas/baseline/` |
 | Archive internals | Save versioned archive entries and best-skill metadata | `adas/archive_runtime/` |
-| CLI compatibility layer | Preserve the remaining manual entrypoints while internals live in grouped packages | `adas/evaluator.py`, `adas/baseline_comparison.py` |
+| Feedback internals | Persist feedback history and append manual feedback entries | `adas/feedback/` |
+| CLI compatibility layer | Preserve the remaining manual entrypoints while internals live in grouped packages | `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py` |
 | Prompt assets | Hold reusable evaluator prompt templates | `adas/prompts/eval_judge.md` |
 | Production skill placeholder | Future deployment target for the best skill | `skills/youtube-curator/SKILL.md` |
 | Scheduler stub | Planned automation entrypoints | `cron/jobs.json` |
@@ -46,8 +47,12 @@ archive_runtime/
     store.py
     service.py
 
-top-level adas/*.py wrappers
-    -> preserve old imports and CLI entrypoints
+feedback/
+    store.py
+    service.py
+
+top-level CLI entrypoints
+    -> preserve the remaining manual command surfaces
 ```
 
 ## 4. Core design choices already visible in the code
@@ -69,6 +74,16 @@ The Step 6 archive flow is also kept separate: `baseline_comparison.py` can call
 - `adas/evaluation/scorer.py` handles deterministic rules
 - `adas/evaluation/judge.py` handles semantic judging
 - `adas/evaluation/service.py` coordinates the flow
+
+### Feedback ingestion is validated at the boundary
+
+`adas/feedback/service.py` validates reactions against a `VALID_REACTIONS` set before writing to disk. Unknown reaction strings (e.g. `"thumbs up"` with a space) raise `ValueError` at input time rather than silently scoring as neutral inside the scorer.
+
+`adas/feedback/store.py` writes feedback via an atomic temp-file rename so a crash mid-write cannot corrupt `feedback.json`.
+
+### Alignment scoring uses explicit named constants
+
+`adas/evaluation/scorer.py` defines `_MIN_ALIGNMENT_SIMILARITY`, `_CHANNEL_WEIGHT`, `_TOPIC_WEIGHT`, and `_DURATION_WEIGHT` as named module-level constants so the heuristic thresholds are visible and tunable without hunting through arithmetic expressions.
 
 ### Skill execution is replaceable
 
@@ -95,6 +110,7 @@ That keeps API access, transcript attachment, cache persistence, and orchestrati
 | --- | --- |
 | `SkillDocument` | Parsed `SKILL.md` plus YAML frontmatter metadata |
 | `VideoRecord` | Normalized cached YouTube video record |
+| `FeedbackVideoSnapshot` | Stored video snapshot used for later alignment scoring |
 | `FeedbackEntry` | One feedback history record from `feedback.json` |
 | `EvaluationRequest` | Combined input for an evaluation run |
 | `DimensionScore` | One weighted score entry in the result |
@@ -116,6 +132,7 @@ That keeps API access, transcript attachment, cache persistence, and orchestrati
 - baseline comparison persistence and ranking on `video_cache_w1.json`
 - archive entry creation under `adas/archive/skill_*`
 - best-skill tracking in `adas/archive/index.json`
+- feedback persistence plus snapshot-based alignment scoring
 - placeholder production skill
 
 ### Planned later
@@ -142,11 +159,13 @@ If you want the easiest learning path through the code:
 10. `adas/baseline/comparison.py`
 11. `adas/archive_runtime/service.py`
 12. `adas/archive_runtime/store.py`
-13. `adas/youtube_fetcher.py`
+13. `adas/feedback/service.py`
+14. `adas/feedback/store.py`
+15. `adas/youtube_fetcher.py`
 
 ## 8. How to run unit tests
 
-The current suite is **147 passing tests**.
+The current suite is **165 passing tests**.
 
 ```bash
 # Activate the virtual environment first

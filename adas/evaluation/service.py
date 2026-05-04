@@ -182,7 +182,7 @@ class Evaluator:
 
         freshness_score, freshness_detail = self._algorithmic_scorer.score_freshness(selected_videos)
         diversity_score, diversity_detail = self._algorithmic_scorer.score_diversity(selected_videos)
-        alignment_score, alignment_detail = self._algorithmic_scorer.score_alignment_placeholder(
+        alignment_score, alignment_detail = self._algorithmic_scorer.score_alignment(
             request,
             selected_videos,
         )

@@ -9,10 +9,12 @@ from pathlib import Path
 
 try:
     from ..config import FEEDBACK_FILE, TEST_SETS_DIR
+    from ..feedback.store import FeedbackStore
     from ..youtube_fetcher import VideoCacheRepository
     from .models import EvaluationRequest, FeedbackEntry, SkillDocument, VideoRecord
 except ImportError:
     from config import FEEDBACK_FILE, TEST_SETS_DIR
+    from feedback.store import FeedbackStore
     from youtube_fetcher import VideoCacheRepository
     from evaluation.models import EvaluationRequest, FeedbackEntry, SkillDocument, VideoRecord
 
@@ -47,8 +49,13 @@ def _parse_frontmatter(markdown: str) -> tuple[dict[str, str], str]:
 
 
 class EvaluationRequestLoader:
-    def __init__(self, cache_repository: VideoCacheRepository | None = None) -> None:
+    def __init__(
+        self,
+        cache_repository: VideoCacheRepository | None = None,
+        feedback_store: FeedbackStore | None = None,
+    ) -> None:
         self._cache_repository = cache_repository or VideoCacheRepository()
+        self._feedback_store = feedback_store or FeedbackStore()
 
     def load_request(
         self,
@@ -84,10 +91,4 @@ class EvaluationRequestLoader:
         return SkillDocument.from_markdown(str(resolved), raw_text, body, metadata)
 
     def load_feedback_history(self, feedback_path: str) -> list[FeedbackEntry]:
-        resolved = Path(feedback_path)
-        if not resolved.exists():
-            return []
-
-        raw_feedback = json.loads(resolved.read_text())
-        history = raw_feedback.get("history", [])
-        return [FeedbackEntry.from_dict(entry) for entry in history]
+        return self._feedback_store.load_history(feedback_path)

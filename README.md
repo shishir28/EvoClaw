@@ -2,19 +2,20 @@
 
 EvoClaw is an **ADAS-style, self-improving YouTube curator** for AI and entrepreneurship content. The target system runs inside a NemoClaw/OpenClaw environment, fetches candidate videos, evaluates curation strategies, evolves better `SKILL.md` prompts over time, and eventually delivers a daily top-3 digest to Telegram.
 
-The repository is currently at the **working fetcher + evaluator + baseline comparison + archive stage**:
+The repository is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback stage**:
 
 - a YouTube fetcher with caching, `subscriber_count` enrichment, and best-effort transcript support
 - a modular evaluator stack with DTO models, request loading, algorithmic scoring, optional LLM judging, and weighted aggregation
 - a Python adapter that executes the current baseline `SKILL.md` strategies over cached videos
 - a Step 5 comparison flow that evaluates all baselines against one cache and persists detailed results
 - a Step 6 archive flow that writes `SKILL.md`, `result.json`, `meta.json`, and best-skill metadata under `adas/archive/`
+- a Step 7 feedback flow that validates reactions, persists video snapshots atomically, and turns `alignment` into a real heuristic preference signal using channel, topic, and duration similarity
 - lazy default LLM-judge initialization so evaluator construction does not require model client setup unless semantic judging is enabled
 - evaluator and comparison CLIs with safer defaults: evaluator runs a real scoring flow by default, and baseline comparison fails fast when the required cache file is missing
 - typed shared configuration for search, inference, paths, and scoring weights
 - three hand-written baseline skills plus a production `SKILL.md` placeholder
 - a cron configuration stub for future automation
-- a focused pytest suite covering the evaluator path plus Step 5 and Step 6 orchestration (**147 tests currently passing**)
+- a focused pytest suite covering the evaluator path plus Step 5, Step 6, and Step 7 orchestration (**165 tests currently passing**)
 
 ## Target architecture
 
@@ -39,8 +40,10 @@ EvoClaw/
 │   ├── baselines/                # Seed curation strategies
 │   ├── config.py                 # Shared configuration
 │   ├── evaluation/               # Evaluator models, loader, scorer, judge, executor, service
+│   ├── feedback/                 # Step 7 feedback store and append service
 │   ├── baseline_comparison.py    # CLI entrypoint and compatibility wrapper
 │   ├── evaluator.py              # CLI entrypoint and compatibility wrapper
+│   ├── feedback_cli.py           # Manual feedback append CLI
 │   ├── prompts/                  # Evaluator prompts
 │   ├── test_sets/                # Local caches and feedback artifacts
 │   └── youtube_fetcher.py        # YouTube data collection and caching
@@ -68,7 +71,8 @@ Implemented now:
 - `adas/evaluation/` for evaluator internals grouped by domain
 - `adas/baseline/` for baseline comparison internals grouped by domain
 - `adas/archive_runtime/` for Step 6 archive internals grouped by domain
-- top-level `adas/evaluator.py` and `adas/baseline_comparison.py` as CLI entrypoints
+- `adas/feedback/` for Step 7 feedback persistence and append logic
+- top-level `adas/evaluator.py`, `adas/baseline_comparison.py`, and `adas/feedback_cli.py` as CLI entrypoints
 - `adas/prompts/eval_judge.md`
 - `adas/baselines/*.md`
 - `adas/baseline_results/video_cache_w1/summary.json`
@@ -92,11 +96,17 @@ Current archive snapshot:
 - `skill_001` to `skill_003` store the three baseline seeds with `SKILL.md`, `result.json`, and `meta.json`
 - `adas/archive/index.json` now tracks archive context and best-skill metadata
 
+Current feedback snapshot:
+
+- `adas/test_sets/feedback.json` now uses a stable `{ "history": [...] }` wrapper
+- feedback entries can persist `skill_version` plus a per-pick video snapshot for later alignment scoring
+- alignment now uses exact history matches first, then snapshot similarity over channel/topic/duration signals
+
 Current next milestone:
 
-- make `feedback.json` a real signal instead of a neutral placeholder
 - add the meta-agent prompt assets
 - start the first generate -> reflect -> evaluate -> archive loop
+- later connect Telegram reactions to the same Step 7 feedback schema
 
 Planned but not yet implemented:
 
@@ -160,13 +170,13 @@ The evaluator currently supports:
 - injectable prompt and chat adapters for LLM judging
 - lazy default `LLMJudge` creation only when LLM judging is requested
 - weighted aggregation
-- algorithmic scoring for `freshness`, `diversity`, and a placeholder `alignment` score
+- algorithmic scoring for `freshness`, `diversity`, and a feedback-driven `alignment` score
 - stricter typed scoring inputs in `adas/evaluation/scorer.py`
 - clearer evaluator orchestration through smaller internal helper methods
 - opt-in LLM judging for `relevance`, `substance`, and `reasoning`
 - CLI behavior that returns a real scored result even without explicit `--selected-ids`
 
-Internally, those evaluator concerns now live under `adas/evaluation/`; the old flat module names are retained as compatibility wrappers.
+Internally, those evaluator concerns now live under `adas/evaluation/`.
 
 It does **not** yet run real OpenClaw execution.
 
@@ -205,6 +215,13 @@ This additionally writes:
 - `adas/archive/skill_###/result.json`
 - `adas/archive/skill_###/meta.json`
 
+Append manual feedback into Step 7:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python adas/feedback_cli.py --date 2026-05-04 --cache adas/test_sets/video_cache_w1.json --skill-version skill_003 --pick TsXhgpZRU2w=up --pick gwsaC3WiCqs=down
+```
+
 ## Security and repo hygiene
 
 - `.env` is intentionally ignored and should never be committed.
@@ -216,7 +233,7 @@ This additionally writes:
 
 - `Plan.md` describes the full intended design, phases, and success metrics.
 - `adas/README.md` documents the ADAS workspace in more detail.
-- `ARCHITECTURE.md` explains the current module layout, including the Step 6 archive modules.
-- `WORKFLOW.md` explains the runnable fetch -> evaluate -> compare -> archive flow.
+- `ARCHITECTURE.md` explains the current module layout, including the Step 6 and Step 7 modules.
+- `WORKFLOW.md` explains the runnable fetch -> evaluate -> compare -> archive -> feedback flow.
 - `skills/youtube-curator/README.md` explains the production skill directory.
 - `cron/README.md` explains the planned scheduler wiring.

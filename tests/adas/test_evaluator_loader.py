@@ -140,7 +140,21 @@ class TestLoadFeedbackHistory:
         f.write_text(json.dumps({"history": [{
             "date": "2026-04-30",
             "picks": [
-                {"video_id": "vid1", "reaction": "up", "skill_version": "skill_001"},
+                {
+                    "video_id": "vid1",
+                    "reaction": "up",
+                    "skill_version": "skill_001",
+                    "snapshot": {
+                        "title": "AI startup guide",
+                        "channel": "TechCasts",
+                        "channel_id": "ch1",
+                        "published_at": "2026-04-29T10:00:00Z",
+                        "description": "A practical guide.",
+                        "query_matched": "AI startup 2026",
+                        "duration_seconds": 900,
+                        "tags": [],
+                    },
+                },
                 {"video_id": "vid2", "reaction": "down"},
             ],
         }]}))
@@ -148,6 +162,7 @@ class TestLoadFeedbackHistory:
         assert len(history) == 1
         assert history[0].date == "2026-04-30"
         assert history[0].picks[0].reaction == "up"
+        assert history[0].picks[0].snapshot is not None
         assert history[0].picks[1].reaction == "down"
 
     def test_missing_file_returns_empty_list(self, tmp_path):

@@ -120,13 +120,13 @@ class TestScoreDiversity:
 
 
 # ---------------------------------------------------------------------------
-# AlgorithmicScorer.score_alignment_placeholder
+# AlgorithmicScorer.score_alignment
 # ---------------------------------------------------------------------------
 
-class TestScoreAlignmentPlaceholder:
+class TestScoreAlignment:
     def test_no_feedback_returns_neutral_5(self, three_diverse_videos):
         request = make_request(videos=three_diverse_videos, feedback_history=[])
-        score, detail = scorer.score_alignment_placeholder(request, three_diverse_videos)
+        score, detail = scorer.score_alignment(request, three_diverse_videos)
         assert score == 5.0
         assert "neutral" in detail.lower()
 
@@ -136,8 +136,9 @@ class TestScoreAlignmentPlaceholder:
             videos=three_diverse_videos,
             feedback_history=FeedbackFactory.all_up(ids),
         )
-        score, _ = scorer.score_alignment_placeholder(request, three_diverse_videos)
+        score, detail = scorer.score_alignment(request, three_diverse_videos)
         assert score == 10.0
+        assert "exact historical match" in detail
 
     def test_all_thumbs_down_returns_0(self, three_diverse_videos):
         ids = [v.video_id for v in three_diverse_videos]
@@ -145,32 +146,97 @@ class TestScoreAlignmentPlaceholder:
             videos=three_diverse_videos,
             feedback_history=FeedbackFactory.all_down(ids),
         )
-        score, _ = scorer.score_alignment_placeholder(request, three_diverse_videos)
+        score, _ = scorer.score_alignment(request, three_diverse_videos)
         assert score == 0.0
 
-    def test_unknown_video_gets_neutral_score(self, three_diverse_videos):
+    def test_unrelated_video_gets_neutral_score(self, three_diverse_videos):
         ids = [v.video_id for v in three_diverse_videos]
-        unknown = video().with_id("unknown_vid").build()
+        unknown = (
+            video()
+            .with_id("unknown_vid")
+            .with_title("Space exploration documentary")
+            .with_description("Astronomy and rockets.")
+            .with_tags(["space", "mars"])
+            .with_query_matched("space documentary")
+            .with_channel("SpaceTV", "space_ch")
+            .build()
+        )
         request = make_request(
             videos=three_diverse_videos + [unknown],
             feedback_history=FeedbackFactory.all_up(ids),
         )
-        score, detail = scorer.score_alignment_placeholder(request, [unknown])
+        score, detail = scorer.score_alignment(request, [unknown])
         assert score == 5.0
         assert "neutral" in detail
 
-    def test_mixed_up_down_none_averages_to_5(self, three_diverse_videos):
+    def test_mixed_up_down_none_averages_to_5_on_exact_matches(self, three_diverse_videos):
         request = make_request(
             videos=three_diverse_videos,
             feedback_history=FeedbackFactory.mixed({"v1": "up", "v2": "down", "v3": None}),
         )
-        score, _ = scorer.score_alignment_placeholder(request, three_diverse_videos)
+        score, _ = scorer.score_alignment(request, three_diverse_videos)
         assert abs(score - 5.0) < 0.001
 
     def test_empty_videos_list_raises_value_error(self):
         request = make_request()
         with pytest.raises(ValueError):
-            scorer.score_alignment_placeholder(request, [])
+            scorer.score_alignment(request, [])
+
+    def test_topic_and_duration_similarity_to_liked_video_scores_above_neutral(self):
+        historical = (
+            video()
+            .with_id("liked")
+            .with_title("AI startup pricing tactics")
+            .with_description("Practical founder pricing playbook.")
+            .with_channel("FoundersFM", "ch_like")
+            .with_duration_seconds(720)
+            .build()
+        )
+        candidate = (
+            video()
+            .with_id("candidate")
+            .with_title("AI startup pricing strategy")
+            .with_description("Founder pricing lessons and tactics.")
+            .with_channel("NewChannel", "ch_new")
+            .with_duration_seconds(780)
+            .build()
+        )
+        request = make_request(
+            videos=[historical, candidate],
+            feedback_history=FeedbackFactory.all_up(["liked"]),
+        )
+
+        score, detail = scorer.score_alignment(request, [candidate])
+
+        assert score > 5.0
+        assert "liked precedent" in detail
+
+    def test_channel_match_to_disliked_video_scores_below_neutral(self):
+        historical = (
+            video()
+            .with_id("disliked")
+            .with_title("AI hype for founders")
+            .with_description("Generic advice.")
+            .with_channel("HotTakes", "same_channel")
+            .build()
+        )
+        candidate = (
+            video()
+            .with_id("candidate")
+            .with_title("Another founder hot take")
+            .with_description("More generic advice.")
+            .with_channel("HotTakes", "same_channel")
+            .build()
+        )
+        request = make_request(
+            videos=[historical, candidate],
+            feedback_history=FeedbackFactory.all_down(["disliked"]),
+        )
+
+        score, detail = scorer.score_alignment(request, [candidate])
+
+        assert score < 5.0
+        assert "channel match" in detail
 
     @pytest.mark.parametrize("reaction,expected", [
         ("up", 10.0), ("thumbs_up", 10.0), ("like", 10.0),
@@ -185,5 +251,5 @@ class TestScoreAlignmentPlaceholder:
             picks=[FeedbackPick(video_id="v1", reaction=reaction)],
         )]
         request = make_request(videos=[v], feedback_history=feedback)
-        score, _ = scorer.score_alignment_placeholder(request, [v])
+        score, _ = scorer.score_alignment(request, [v])
         assert score == expected

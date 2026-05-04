@@ -12,7 +12,7 @@ The system combines three ideas:
 
 ## Current implementation snapshot
 
-The codebase is currently at the **working fetcher + evaluator + baseline comparison + archive** stage:
+The codebase is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback** stage:
 
 - real YouTube fetches work and produce reusable caches
 - the evaluator is implemented and split into focused modules
@@ -20,10 +20,11 @@ The codebase is currently at the **working fetcher + evaluator + baseline compar
 - LLM judging for relevance, substance, and reasoning is implemented
 - Step 5 baseline comparison is implemented and persists JSON results plus a ranking summary
 - Step 6 archive persistence is implemented and now writes `SKILL.md`, `result.json`, `meta.json`, plus best-skill metadata under `adas/archive/`
+- Step 7 feedback persistence is implemented and now stores feedback entries under `adas/test_sets/feedback.json` with reusable video snapshots for alignment scoring
 - evaluator CLI defaults now run a real scoring flow, default LLM judge setup is lazy, and baseline comparison validates the required cache input up front
 - meta-agent orchestration, Telegram automation, and scheduled runtime wiring are still future phases
 
-The immediate next milestone is to make feedback meaningful and then start the first archive-aware meta-agent loop.
+The immediate next milestone is to add meta-agent prompt assets and then start the first archive-aware meta-agent loop.
 
 ---
 
@@ -73,24 +74,25 @@ The immediate next milestone is to make feedback meaningful and then start the f
 │       └── SKILL.md              ← The "production" skill (best from archive)
 │
 ├── adas/
-│   ├── algorithmic_scorer.py     ← Deterministic scoring dimensions
-│   ├── archive_models.py         ← Step 6 archive DTOs
-│   ├── archive_service.py        ← Step 6 archive orchestration
-│   ├── archive_store.py          ← Step 6 archive persistence
-│   ├── baseline_catalog.py       ← Ordered baseline skill discovery
 │   ├── baseline_comparison.py    ← Step 5 comparison orchestration and CLI
-│   ├── baseline/models.py        ← Step 5 result contracts
-│   ├── baseline_evaluation_runner.py ← Multi-skill evaluation orchestration
 │   ├── baseline_results/         ← Saved Step 5 comparison outputs
 │   ├── config.py                 ← Topics, scoring weights, model config
-│   ├── evaluation_result_store.py ← Step 5 persistence layer
 │   ├── evaluator.py              ← Evaluator orchestration
-│   ├── evaluator_loader.py       ← Loads skill/cache/feedback inputs
-│   ├── evaluation/models.py      ← DTO-style evaluator contracts
-│   ├── llm_judge.py              ← Prompt-based semantic judging
-│   ├── skill_executor.py         ← Python adapter for baseline skills
+│   ├── feedback_cli.py           ← Step 7 manual feedback append CLI
 │   ├── youtube_fetcher.py        ← YouTube search + metadata extraction
 │   ├── meta_agent.py             ← Main ADAS loop (planned)
+│   │
+│   ├── archive_runtime/
+│   │   ├── models.py             ← Step 6 archive DTOs
+│   │   ├── service.py            ← Step 6 archive orchestration
+│   │   └── store.py              ← Step 6 archive persistence
+│   │
+│   ├── baseline/
+│   │   ├── catalog.py            ← Ordered baseline skill discovery
+│   │   ├── comparison.py         ← Step 5 comparison core flow
+│   │   ├── models.py             ← Step 5 result contracts
+│   │   ├── result_store.py       ← Step 5 persistence layer
+│   │   └── runner.py             ← Multi-skill evaluation orchestration
 │   │
 │   ├── archive/
 │   │   ├── index.json            ← Best-skill metadata + archive registry
@@ -107,9 +109,21 @@ The immediate next milestone is to make feedback meaningful and then start the f
 │   │   ├── baseline_popular.md   ← Seed skill 2: sort by view velocity
 │   │   └── baseline_curated.md   ← Seed skill 3: LLM judges substance
 │   │
+│   ├── evaluation/
+│   │   ├── executor.py           ← Python adapter for baseline skills
+│   │   ├── judge.py              ← Prompt-based semantic judging
+│   │   ├── loader.py             ← Loads skill/cache/feedback inputs
+│   │   ├── models.py             ← DTO-style evaluator contracts
+│   │   ├── scorer.py             ← Deterministic scoring dimensions
+│   │   └── service.py            ← Evaluator orchestration
+│   │
+│   ├── feedback/
+│   │   ├── service.py            ← Step 7 feedback append flow
+│   │   └── store.py              ← Step 7 feedback persistence
+│   │
 │   ├── test_sets/
 │   │   ├── video_cache_w1.json   ← Cached YouTube results for eval
-│   │   └── feedback.json         ← Your 👍/👎 history from Telegram
+│   │   └── feedback.json         ← Your 👍/👎 history, stored as {"history":[...]}
 │   │
 │   └── prompts/
 │       ├── eval_judge.md         ← LLM-as-judge prompt for scoring
@@ -298,14 +312,19 @@ React 👍 or 👎 to each to help me improve picks.
 - Reactions are stored in `test_sets/feedback.json` as:
   ```json
   {
-    "date": "2026-04-29",
-    "picks": [
-      {"video_id": "xxx", "reaction": "up", "skill_version": "skill_012"},
-      {"video_id": "yyy", "reaction": "down", "skill_version": "skill_012"},
-      {"video_id": "zzz", "reaction": null, "skill_version": "skill_012"}
+    "history": [
+      {
+        "date": "2026-04-29",
+        "picks": [
+          {"video_id": "xxx", "reaction": "up", "skill_version": "skill_012"},
+          {"video_id": "yyy", "reaction": "down", "skill_version": "skill_012"},
+          {"video_id": "zzz", "reaction": null, "skill_version": "skill_012"}
+        ]
+      }
     ]
   }
   ```
+- Each stored pick can also include a lightweight `snapshot` of the video metadata so later alignment scoring can compare new candidates to prior liked/disliked picks even when only the historical feedback file is available.
 - The evaluation harness uses this feedback for the "alignment" scoring dimension
 - Over time, the meta agent learns patterns: you prefer tactical/practical over thought-leadership, short over long, etc.
 
