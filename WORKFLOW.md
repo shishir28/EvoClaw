@@ -237,8 +237,8 @@ cd /home/shishirmishra/Learnings/EvoClaw
 
 The next useful workflow to add is:
 
-1. add the meta-agent prompt assets
-2. start the first archive-aware candidate generation loop
+1. start the first archive-aware candidate generation loop
+2. build `adas/meta_agent.py` around generate -> reflect -> evaluate -> archive
 3. later replace manual feedback append with Telegram reaction capture
 
 That is the next missing step before the meta-agent loop becomes runnable.

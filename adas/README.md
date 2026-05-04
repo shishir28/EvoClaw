@@ -281,7 +281,6 @@ Current contents are:
 The design in `Plan.md` expects this directory to grow with:
 
 - `meta_agent.py` for the overnight improvement loop
-- additional prompts for the meta-agent loop (`meta_system.md`, `meta_design.md`, `meta_reflect.md`)
 - further generated archive folders as the meta-agent proposes new skills
 
 ## Data flow
@@ -348,5 +347,5 @@ python3 -m pytest tests/adas/test_archive_service.py -v  # one file
 - The current pytest suite is at **165 passing tests**.
 - Transcript fetching is **best-effort**: some videos now resolve transcripts, but YouTube may still block others depending on IP/network conditions.
 - The current cache shape is strong enough to begin the evaluator, because it includes `views_per_hour`, `subscriber_count`, and descriptions even when transcripts are missing.
-- The next concrete implementation step is to add the meta-agent prompt assets now that feedback is part of evaluator scoring.
+- The next concrete implementation step is to build `meta_agent.py` now that the prompt assets exist.
 - See the repo-level `ARCHITECTURE.md` and `WORKFLOW.md` files for the simplest high-level explanation.

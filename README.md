@@ -74,6 +74,7 @@ Implemented now:
 - `adas/feedback/` for Step 7 feedback persistence and append logic
 - top-level `adas/evaluator.py`, `adas/baseline_comparison.py`, and `adas/feedback_cli.py` as CLI entrypoints
 - `adas/prompts/eval_judge.md`
+- `adas/prompts/meta_system.md`, `adas/prompts/meta_design.md`, and `adas/prompts/meta_reflect.md`
 - `adas/baselines/*.md`
 - `adas/baseline_results/video_cache_w1/summary.json`
 - `adas/archive/index.json`
@@ -104,7 +105,6 @@ Current feedback snapshot:
 
 Current next milestone:
 
-- add the meta-agent prompt assets
 - start the first generate -> reflect -> evaluate -> archive loop
 - later connect Telegram reactions to the same Step 7 feedback schema
 
@@ -112,7 +112,6 @@ Planned but not yet implemented:
 
 - real OpenClaw execution
 - `adas/meta_agent.py`
-- meta-agent prompts
 - Telegram reaction capture
 - automated best-skill deployment
 - end-to-end cron-driven runtime wiring

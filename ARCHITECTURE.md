@@ -17,7 +17,7 @@ EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> fee
 | Archive internals | Save versioned archive entries and best-skill metadata | `adas/archive_runtime/` |
 | Feedback internals | Persist feedback history and append manual feedback entries | `adas/feedback/` |
 | CLI compatibility layer | Preserve the remaining manual entrypoints while internals live in grouped packages | `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py` |
-| Prompt assets | Hold reusable evaluator prompt templates | `adas/prompts/eval_judge.md` |
+| Prompt assets | Hold reusable evaluator and meta-agent prompt templates | `adas/prompts/eval_judge.md`, `adas/prompts/meta_system.md`, `adas/prompts/meta_design.md`, `adas/prompts/meta_reflect.md` |
 | Production skill placeholder | Future deployment target for the best skill | `skills/youtube-curator/SKILL.md` |
 | Scheduler stub | Planned automation entrypoints | `cron/jobs.json` |
 
@@ -138,7 +138,6 @@ That keeps API access, transcript attachment, cache persistence, and orchestrati
 ### Planned later
 
 - `adas/meta_agent.py`
-- meta-agent prompts beyond `eval_judge.md`
 - promotion of the best skill into `skills/youtube-curator/SKILL.md`
 - Telegram sending and feedback capture
 - cron-driven end-to-end automation

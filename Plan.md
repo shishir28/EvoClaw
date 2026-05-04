@@ -24,7 +24,7 @@ The codebase is currently at the **working fetcher + evaluator + baseline compar
 - evaluator CLI defaults now run a real scoring flow, default LLM judge setup is lazy, and baseline comparison validates the required cache input up front
 - meta-agent orchestration, Telegram automation, and scheduled runtime wiring are still future phases
 
-The immediate next milestone is to add meta-agent prompt assets and then start the first archive-aware meta-agent loop.
+The immediate next milestone is to start the first archive-aware meta-agent loop in `adas/meta_agent.py`.
 
 ---
 
@@ -127,9 +127,9 @@ The immediate next milestone is to add meta-agent prompt assets and then start t
 │   │
 │   └── prompts/
 │       ├── eval_judge.md         ← LLM-as-judge prompt for scoring
-│       ├── meta_system.md        ← System prompt for the meta agent (planned)
-│       ├── meta_design.md        ← "Design a new curation skill" prompt (planned)
-│       └── meta_reflect.md       ← Self-reflection prompt for novelty (planned)
+│       ├── meta_system.md        ← Shared system contract for meta-agent outputs
+│       ├── meta_design.md        ← Candidate skill design prompt
+│       └── meta_reflect.md       ← Candidate reflection and repair prompt
 │
 └── cron/
     └── jobs.json                 ← Cron entries for ADAS + daily delivery
@@ -413,7 +413,7 @@ egress_rules:
 - [ ] Build the feedback ingestion from Telegram reactions
 
 ### Phase 3: Meta agent loop (day 5-7)
-- [ ] Write meta agent prompts (design, reflect, debug)
+- [x] Write meta agent prompts (design, reflect, debug)
 - [ ] Build `meta_agent.py` with the full loop
 - [ ] Run 5 iterations manually, inspect generated skills
 - [ ] Verify archive grows correctly with scores and metadata

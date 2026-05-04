@@ -33,6 +33,9 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] `adas/archive_runtime/store.py`
 - [x] `adas/archive_runtime/service.py`
 - [x] `adas/prompts/eval_judge.md`
+- [x] `adas/prompts/meta_system.md`
+- [x] `adas/prompts/meta_design.md`
+- [x] `adas/prompts/meta_reflect.md`
 - [x] baseline skills in `adas/baselines/`
 - [x] production skill placeholder in `skills/youtube-curator/SKILL.md`
 - [x] populated archive index in `adas/archive/index.json`
@@ -382,23 +385,36 @@ The feedback ingestion service now:
 
 ### Tasks
 
-- [ ] create `adas/prompts/meta_system.md`
-- [ ] create `adas/prompts/meta_design.md`
-- [ ] create `adas/prompts/meta_reflect.md`
-- [ ] define the JSON output contract:
-  - [ ] `thought`
-  - [ ] `name`
-  - [ ] `skill_md`
-- [ ] define reflection checks for novelty and correctness
-- [ ] define debug instructions for broken outputs
+- [x] create `adas/prompts/meta_system.md`
+- [x] create `adas/prompts/meta_design.md`
+- [x] create `adas/prompts/meta_reflect.md`
+- [x] define the JSON output contract:
+  - [x] `thought`
+  - [x] `name`
+  - [x] `skill_md`
+- [x] define reflection checks for novelty and correctness
+- [x] define debug instructions for broken outputs
 
 ### Why this matters
 
 Good prompt contracts make the loop much easier to build and debug.
 
+### Step 8 progress
+
+Step 8 is complete for the current implementation scope.
+
+The prompt set now provides:
+
+- a shared system contract for candidate generation and repair
+- a design prompt constrained to the currently supported executable strategies
+- a reflection prompt with explicit correctness, novelty, and runtime-fit checks
+- debug/repair instructions for malformed candidate outputs
+
 ### Files involved
 
-- `adas/prompts/`
+- `adas/prompts/meta_system.md`
+- `adas/prompts/meta_design.md`
+- `adas/prompts/meta_reflect.md`
 
 ---
 
@@ -550,7 +566,7 @@ If the goal is to understand what is happening as you build, use this order:
 - [x] Step 5 - baseline scoring runs
 - [x] Step 6 - archive writes
 - [x] Step 7 - feedback ingestion
-- [ ] Step 8 - meta-agent prompts
+- [x] Step 8 - meta-agent prompts
 - [ ] Step 9 - meta-agent loop
 - [ ] Step 10 - deployment
 - [ ] Step 11 - Telegram sending
