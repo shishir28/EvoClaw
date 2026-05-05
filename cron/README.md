@@ -21,7 +21,7 @@ In the current file, those schedules are set to:
 
 The schedule file is present, but the underlying automation is not wired yet:
 
-- `adas/meta_agent.py` does not exist yet
+- `adas/meta_agent.py` exists, but the cron job has not been exercised as a production scheduler yet
 - Telegram delivery and feedback capture are not implemented yet
 - the scheduled workflow should be treated as a design stub, not a production-ready scheduler
 - the commands point at future runtime entrypoints rather than currently exercised daily jobs

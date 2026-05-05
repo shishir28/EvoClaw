@@ -231,3 +231,11 @@ FEEDBACK_FILE = SETTINGS.paths.feedback_file
 
 DAILY_SEARCH_BUDGET = SETTINGS.quotas.daily_search_budget
 DAILY_VIDEO_DETAIL_BUDGET = SETTINGS.quotas.daily_video_detail_budget
+
+# Meta-agent settings (read from environment, not stored in AppSettings)
+META_REFLECT_PASSES: int = int(os.environ.get("META_REFLECT_PASSES", "2"))
+META_MAX_CYCLES: int = int(os.environ.get("META_MAX_CYCLES", "1"))
+META_CANDIDATE_TEMP_DIR: str = os.environ.get(
+    "META_CANDIDATE_TEMP_DIR",
+    str(Path(__file__).resolve().parent / ".meta_tmp"),
+)

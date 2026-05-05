@@ -222,7 +222,29 @@ The evaluator runtime is now split cleanly:
 9. `archive_runtime/service.py` can promote those evaluated records into the archive
 10. `feedback/service.py` can append manual feedback entries for later alignment scoring
 
-Current limitation: real OpenClaw execution and the later meta-agent loop are not implemented yet.
+Current limitation: the meta-agent runs a local generate→reflect→evaluate→archive loop but is not yet scheduled or connected to the production deployment step.
+
+### `meta/`
+
+Owns Step 9 meta-agent internals:
+
+- `context.py` builds compact archive and feedback summaries for prompt inputs
+- `generator.py` composes `meta_system.md` + `meta_design.md` and extracts candidate JSON
+- `reflector.py` runs `meta_reflect.md` and returns a repaired candidate plus verdict/checks
+- `parser.py` validates candidate JSON and YAML frontmatter locally before evaluation
+- `dedupe.py` prevents trivial archive duplicates based on normalized skill-body hashes
+- `loop.py` orchestrates generate -> reflect -> validate -> evaluate -> archive
+
+### `meta_agent.py`
+
+Step 9 CLI entrypoint for the first local meta-agent loop. It supports:
+
+- `--cache`
+- `--feedback`
+- `--archive-dir`
+- `--design-goal`
+- `--reflect-passes`
+- `--cycles`
 
 ### `baselines/`
 
@@ -280,8 +302,8 @@ Current contents are:
 
 The design in `Plan.md` expects this directory to grow with:
 
-- `meta_agent.py` for the overnight improvement loop
-- further generated archive folders as the meta-agent proposes new skills
+- further generated archive folders as the meta-agent proposes and archives new skills
+- a production deployment step that promotes the best archived skill into `skills/youtube-curator/SKILL.md`
 
 ## Data flow
 
@@ -295,16 +317,20 @@ The current lifecycle inside `adas/` is:
 6. Optionally run all baselines against one cache and persist a comparison summary.
 7. Optionally archive those evaluated results into `adas/archive/skill_###/`.
 
-The planned later lifecycle adds:
+The current lifecycle now also adds:
 
-8. Iterate via a meta agent to discover stronger skills.
-9. Promote the best skill into `skills/youtube-curator/SKILL.md`.
+8. Build archive + feedback prompt context for the meta-agent.
+9. Generate a candidate skill, run reflection passes, validate it, then evaluate and archive it.
+
+The planned later lifecycle still adds:
+
+10. Promote the best skill into `skills/youtube-curator/SKILL.md`.
 
 ## Unit tests
 
 The test suite lives in `tests/adas/` and mirrors the source layout. Shared builder utilities live in `tests/adas/builders.py`.
 
-**Current status: 165 tests passing.**
+**Current status: 248 tests passing.**
 
 | Test file | Covers |
 |---|---|
@@ -322,6 +348,13 @@ The test suite lives in `tests/adas/` and mirrors the source layout. Shared buil
 | `test_baseline_comparison.py` | end-to-end orchestration, archive wiring |
 | `test_archive_service.py` | archive writes, ID reuse, best-skill tracking |
 | `test_feedback_store.py` | feedback persistence and manual append flow |
+| `test_meta_context.py` | archive/feedback summary building for prompt context |
+| `test_meta_generator.py` | meta prompt composition and candidate extraction |
+| `test_meta_reflector.py` | reflection verdicts, repairs, and prompt composition |
+| `test_meta_parser.py` | JSON extraction and local candidate/frontmatter validation |
+| `test_meta_dedupe.py` | normalized duplicate-skill detection |
+| `test_meta_loop.py` | generate/reflect/evaluate/archive orchestration |
+| `test_meta_agent_cli.py` | CLI forwarding for cycles and reflection passes |
 
 Builder utilities available to all tests:
 
@@ -342,10 +375,10 @@ python3 -m pytest tests/adas/test_archive_service.py -v  # one file
 
 - Runtime-generated caches in `test_sets/` are gitignored, but archive history under `archive/skill_*/` is versioned.
 - Secret values are loaded from the repo root `.env`.
-- The current repo state is **post-evaluator / post-archive / pre-meta-agent**.
+- The current repo state is **post-evaluator / post-archive / first meta-agent loop**.
 - Step 5 and Step 6 are complete for the current `video_cache_w1.json` dataset.
-- The current pytest suite is at **165 passing tests**.
+- The current pytest suite is at **248 passing tests**.
 - Transcript fetching is **best-effort**: some videos now resolve transcripts, but YouTube may still block others depending on IP/network conditions.
 - The current cache shape is strong enough to begin the evaluator, because it includes `views_per_hour`, `subscriber_count`, and descriptions even when transcripts are missing.
-- The next concrete implementation step is to build `meta_agent.py` now that the prompt assets exist.
+- The next concrete implementation step is Step 10: promote the winning archived skill into `skills/youtube-curator/SKILL.md`.
 - See the repo-level `ARCHITECTURE.md` and `WORKFLOW.md` files for the simplest high-level explanation.

@@ -12,7 +12,7 @@ The system combines three ideas:
 
 ## Current implementation snapshot
 
-The codebase is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback** stage:
+The codebase is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback + meta-agent** stage:
 
 - real YouTube fetches work and produce reusable caches
 - the evaluator is implemented and split into focused modules
@@ -21,10 +21,11 @@ The codebase is currently at the **working fetcher + evaluator + baseline compar
 - Step 5 baseline comparison is implemented and persists JSON results plus a ranking summary
 - Step 6 archive persistence is implemented and now writes `SKILL.md`, `result.json`, `meta.json`, plus best-skill metadata under `adas/archive/`
 - Step 7 feedback persistence is implemented and now stores feedback entries under `adas/test_sets/feedback.json` with reusable video snapshots for alignment scoring
+- Step 9 meta-agent orchestration is implemented and can build prompt context, generate a candidate, run reflection passes, validate it locally, evaluate it, and archive it
 - evaluator CLI defaults now run a real scoring flow, default LLM judge setup is lazy, and baseline comparison validates the required cache input up front
-- meta-agent orchestration, Telegram automation, and scheduled runtime wiring are still future phases
+- Telegram automation and scheduled runtime wiring are still future phases
 
-The immediate next milestone is to start the first archive-aware meta-agent loop in `adas/meta_agent.py`.
+The immediate next milestone is Step 10: promote the best archived skill into `skills/youtube-curator/SKILL.md`.
 
 ---
 
@@ -80,7 +81,7 @@ The immediate next milestone is to start the first archive-aware meta-agent loop
 │   ├── evaluator.py              ← Evaluator orchestration
 │   ├── feedback_cli.py           ← Step 7 manual feedback append CLI
 │   ├── youtube_fetcher.py        ← YouTube search + metadata extraction
-│   ├── meta_agent.py             ← Main ADAS loop (planned)
+│   ├── meta_agent.py             ← Step 9 meta-agent CLI
 │   │
 │   ├── archive_runtime/
 │   │   ├── models.py             ← Step 6 archive DTOs
@@ -120,6 +121,15 @@ The immediate next milestone is to start the first archive-aware meta-agent loop
 │   ├── feedback/
 │   │   ├── service.py            ← Step 7 feedback append flow
 │   │   └── store.py              ← Step 7 feedback persistence
+│   │
+│   ├── meta/
+│   │   ├── client.py             ← Meta-agent chat client wrapper
+│   │   ├── context.py            ← Archive + feedback prompt context builder
+│   │   ├── dedupe.py             ← Duplicate-skill detection
+│   │   ├── generator.py          ← Candidate generation over Step 8 prompts
+│   │   ├── loop.py               ← Generate → reflect → evaluate → archive orchestration
+│   │   ├── parser.py             ← Candidate JSON/frontmatter validation
+│   │   └── reflector.py          ← Candidate reflection and repair
 │   │
 │   ├── test_sets/
 │   │   ├── video_cache_w1.json   ← Cached YouTube results for eval
@@ -216,7 +226,16 @@ The ADAS paper showed that LLM-as-judge ensembles are effective even with modest
 
 ### Component 4: Meta agent loop (meta_agent.py)
 
-The core ADAS algorithm. Runs overnight via cron.
+The first Step 9 version now exists as a local CLI-driven loop. It is not yet the final overnight production workflow, but it already performs the core single-run sequence:
+
+1. build archive + feedback prompt context
+2. generate one candidate
+3. run one or more reflection passes
+4. validate the candidate locally
+5. evaluate it with the existing evaluator
+6. archive the result
+
+The later production form still needs deployment, cron wiring, Telegram delivery, and multi-iteration operational hardening.
 
 **Configuration:**
 - Iterations per night: 5 (start conservative, increase as you gain confidence)
@@ -224,40 +243,24 @@ The core ADAS algorithm. Runs overnight via cron.
 - Max self-reflection rounds: 2 (per the paper)
 - Max debug retries on error: 3
 
-**Loop pseudocode:**
+**Current local-loop pseudocode:**
 
 ```
-load archive from archive/index.json
+context = build_context(archive, feedback)
+candidate = generator.generate(context)
 
-for i in range(iterations_per_night):
+for round in range(reflect_passes):
+    reflection = reflector.reflect(candidate, context)
+    candidate = reflection.candidate
+    if reflection.verdict == "accept":
+        break
 
-    # Step 1: Design
-    prompt = build_design_prompt(archive)
-    new_skill = meta_agent.generate(prompt)
-    # Returns: { thought, name, skill_md }
+validate_candidate(candidate)
 
-    # Step 2: Self-reflect for novelty (2 rounds)
-    for round in [1, 2]:
-        reflection = meta_agent.reflect(new_skill, archive)
-        new_skill = reflection.revised_skill
-
-    # Step 3: Validate
-    write new_skill.md to temp directory
-    try:
-        scores = evaluator.score(new_skill, test_set)
-    except Error as e:
-        # Debug loop (up to 3 retries)
-        new_skill = meta_agent.debug(new_skill, error=e)
-        scores = evaluator.score(new_skill, test_set)
-
-    # Step 4: Archive
-    save to archive/skill_{id}/
-    update archive/index.json with scores
-
-    # Step 5: Deploy winner (if new best)
-    if scores.total > archive.best_score:
-        copy SKILL.md → skills/youtube-curator/SKILL.md
-        log "New best skill deployed: {name} (score: {total})"
+if not is_duplicate(candidate.skill_md, archive):
+    write temp skill file
+    scores = evaluator.score(candidate, test_set)
+    archive_service.archive_records(...)
 ```
 
 **Meta agent prompt structure:**
@@ -414,7 +417,7 @@ egress_rules:
 
 ### Phase 3: Meta agent loop (day 5-7)
 - [x] Write meta agent prompts (design, reflect, debug)
-- [ ] Build `meta_agent.py` with the full loop
+- [x] Build the first local `meta_agent.py` loop
 - [ ] Run 5 iterations manually, inspect generated skills
 - [ ] Verify archive grows correctly with scores and metadata
 - [ ] Test auto-deployment of winning skill

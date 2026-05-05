@@ -2,7 +2,7 @@
 
 EvoClaw is an **ADAS-style, self-improving YouTube curator** for AI and entrepreneurship content. The target system runs inside a NemoClaw/OpenClaw environment, fetches candidate videos, evaluates curation strategies, evolves better `SKILL.md` prompts over time, and eventually delivers a daily top-3 digest to Telegram.
 
-The repository is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback stage**:
+The repository is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback + meta-agent stage**:
 
 - a YouTube fetcher with caching, `subscriber_count` enrichment, and best-effort transcript support
 - a modular evaluator stack with DTO models, request loading, algorithmic scoring, optional LLM judging, and weighted aggregation
@@ -10,12 +10,13 @@ The repository is currently at the **working fetcher + evaluator + baseline comp
 - a Step 5 comparison flow that evaluates all baselines against one cache and persists detailed results
 - a Step 6 archive flow that writes `SKILL.md`, `result.json`, `meta.json`, and best-skill metadata under `adas/archive/`
 - a Step 7 feedback flow that validates reactions, persists video snapshots atomically, and turns `alignment` into a real heuristic preference signal using channel, topic, and duration similarity
+- a Step 9 meta-agent flow that builds prompt context, generates a candidate skill, runs reflection passes, validates the candidate locally, evaluates it, and archives successful runs
 - lazy default LLM-judge initialization so evaluator construction does not require model client setup unless semantic judging is enabled
 - evaluator and comparison CLIs with safer defaults: evaluator runs a real scoring flow by default, and baseline comparison fails fast when the required cache file is missing
 - typed shared configuration for search, inference, paths, and scoring weights
 - three hand-written baseline skills plus a production `SKILL.md` placeholder
 - a cron configuration stub for future automation
-- a focused pytest suite covering the evaluator path plus Step 5, Step 6, and Step 7 orchestration (**165 tests currently passing**)
+- a focused pytest suite covering the evaluator path plus Step 5 through Step 9 orchestration (**247 tests currently passing**)
 
 ## Target architecture
 
@@ -41,9 +42,11 @@ EvoClaw/
 │   ├── config.py                 # Shared configuration
 │   ├── evaluation/               # Evaluator models, loader, scorer, judge, executor, service
 │   ├── feedback/                 # Step 7 feedback store and append service
+│   ├── meta/                     # Step 9 meta-agent context, generation, reflection, parsing
 │   ├── baseline_comparison.py    # CLI entrypoint and compatibility wrapper
 │   ├── evaluator.py              # CLI entrypoint and compatibility wrapper
 │   ├── feedback_cli.py           # Manual feedback append CLI
+│   ├── meta_agent.py             # Step 9 meta-agent CLI entrypoint
 │   ├── prompts/                  # Evaluator prompts
 │   ├── test_sets/                # Local caches and feedback artifacts
 │   └── youtube_fetcher.py        # YouTube data collection and caching
@@ -72,7 +75,8 @@ Implemented now:
 - `adas/baseline/` for baseline comparison internals grouped by domain
 - `adas/archive_runtime/` for Step 6 archive internals grouped by domain
 - `adas/feedback/` for Step 7 feedback persistence and append logic
-- top-level `adas/evaluator.py`, `adas/baseline_comparison.py`, and `adas/feedback_cli.py` as CLI entrypoints
+- `adas/meta/` for Step 9 meta-agent orchestration internals
+- top-level `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py`, and `adas/meta_agent.py` as CLI entrypoints
 - `adas/prompts/eval_judge.md`
 - `adas/prompts/meta_system.md`, `adas/prompts/meta_design.md`, and `adas/prompts/meta_reflect.md`
 - `adas/baselines/*.md`
@@ -105,13 +109,12 @@ Current feedback snapshot:
 
 Current next milestone:
 
-- start the first generate -> reflect -> evaluate -> archive loop
+- deploy the winning archived skill into `skills/youtube-curator/SKILL.md`
 - later connect Telegram reactions to the same Step 7 feedback schema
 
 Planned but not yet implemented:
 
 - real OpenClaw execution
-- `adas/meta_agent.py`
 - Telegram reaction capture
 - automated best-skill deployment
 - end-to-end cron-driven runtime wiring
@@ -214,6 +217,13 @@ This additionally writes:
 - `adas/archive/skill_###/result.json`
 - `adas/archive/skill_###/meta.json`
 
+Run the Step 9 meta-agent:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python adas/meta_agent.py --cache adas/test_sets/video_cache_w1.json --reflect-passes 2
+```
+
 Append manual feedback into Step 7:
 
 ```bash
@@ -232,7 +242,7 @@ cd /home/shishirmishra/Learnings/EvoClaw
 
 - `Plan.md` describes the full intended design, phases, and success metrics.
 - `adas/README.md` documents the ADAS workspace in more detail.
-- `ARCHITECTURE.md` explains the current module layout, including the Step 6 and Step 7 modules.
-- `WORKFLOW.md` explains the runnable fetch -> evaluate -> compare -> archive -> feedback flow.
+- `ARCHITECTURE.md` explains the current module layout, including the Step 6 to Step 9 modules.
+- `WORKFLOW.md` explains the runnable fetch -> evaluate -> compare -> archive -> feedback -> meta-agent flow.
 - `skills/youtube-curator/README.md` explains the production skill directory.
 - `cron/README.md` explains the planned scheduler wiring.

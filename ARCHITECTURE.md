@@ -133,11 +133,11 @@ That keeps API access, transcript attachment, cache persistence, and orchestrati
 - archive entry creation under `adas/archive/skill_*`
 - best-skill tracking in `adas/archive/index.json`
 - feedback persistence plus snapshot-based alignment scoring
+- first-pass meta-agent orchestration for generate -> reflect -> evaluate -> archive
 - placeholder production skill
 
 ### Planned later
 
-- `adas/meta_agent.py`
 - promotion of the best skill into `skills/youtube-curator/SKILL.md`
 - Telegram sending and feedback capture
 - cron-driven end-to-end automation
@@ -164,7 +164,7 @@ If you want the easiest learning path through the code:
 
 ## 8. How to run unit tests
 
-The current suite is **165 passing tests**.
+The current suite is **247 passing tests**.
 
 ```bash
 # Activate the virtual environment first

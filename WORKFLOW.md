@@ -125,6 +125,22 @@ Current archive snapshot:
 3. append the entry into `adas/test_sets/feedback.json`
 4. let later evaluator runs use that history for `alignment`
 
+### Step 9: Meta-agent generate → reflect → evaluate → archive cycle
+
+`adas/meta_agent.py` is the CLI entrypoint; `adas/meta/loop.py` orchestrates each cycle.
+
+One cycle does:
+
+1. Build a `MetaContext` from archive state and feedback history (`adas/meta/context.py`)
+2. Ask the LLM to generate a candidate skill JSON (`adas/meta/generator.py`)
+3. Run up to `--reflect-passes` reflection rounds; each round may repair the candidate (`adas/meta/reflector.py`)
+4. Validate the accepted candidate's frontmatter and name consistency locally (`adas/meta/parser.py`)
+5. Check the candidate body hash against every archived SKILL.md to skip duplicates (`adas/meta/dedupe.py`)
+6. Write the candidate to a temporary SKILL.md and evaluate it with the standard evaluator
+7. Archive the evaluated result and return a `CycleResult` with outcome, score, and skill ID
+
+Supported outcomes: `success`, `dedupe`, `parse_failure`, `reflect_exhausted`, `eval_error`.
+
 ## 2. Current workflow as a diagram
 
 ```text
@@ -166,18 +182,37 @@ SKILL.md + cache JSON + feedback JSON
                         |
                         v
             feedback/store.py + feedback.json
+                        |
+                        v
+        meta/context.py (archive + feedback → MetaContext)
+                        |
+                        v
+              meta/generator.py (LLM → candidate JSON)
+                        |
+                        v
+            meta/reflector.py (LLM → verdict + repair)
+                        |
+                        v
+       meta/parser.py (local validation + dedupe check)
+                        |
+                        v
+         evaluation/service.py (score candidate skill)
+                        |
+                        v
+         archive_runtime/service.py (archive result)
+                        |
+                        v
+                CycleResult (outcome + skill_id + score)
 ```
 
 ## 3. What is not in the workflow yet
 
 The following steps are still planned, not implemented:
 
-1. generate new candidate skills through `adas/meta_agent.py`
-2. compare candidates against archived history
-3. deploy the winning skill automatically
-4. run the production skill on a schedule
-5. send the digest to Telegram
-6. replace manual feedback append with Telegram reaction capture
+1. deploy the winning skill automatically
+2. run the production skill on a schedule
+3. send the digest to Telegram
+4. replace manual feedback append with Telegram reaction capture
 
 ## 4. Planned future full workflow
 
@@ -233,12 +268,19 @@ cd /home/shishirmishra/Learnings/EvoClaw
 .venv/bin/python adas/feedback_cli.py --date 2026-05-04 --cache adas/test_sets/video_cache_w1.json --skill-version skill_003 --pick TsXhgpZRU2w=up
 ```
 
+Run the Step 9 meta-agent loop:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python adas/meta_agent.py --cache adas/test_sets/video_cache_w1.json --reflect-passes 2
+```
+
 ## 6. Immediate next workflow milestone
 
 The next useful workflow to add is:
 
-1. start the first archive-aware candidate generation loop
-2. build `adas/meta_agent.py` around generate -> reflect -> evaluate -> archive
-3. later replace manual feedback append with Telegram reaction capture
+1. promote the best archived skill into production
+2. later replace manual feedback append with Telegram reaction capture
+3. then wire the full scheduled runtime
 
-That is the next missing step before the meta-agent loop becomes runnable.
+That is the next missing step before EvoClaw becomes a true end-to-end daily system.

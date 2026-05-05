@@ -36,6 +36,13 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] `adas/prompts/meta_system.md`
 - [x] `adas/prompts/meta_design.md`
 - [x] `adas/prompts/meta_reflect.md`
+- [x] `adas/meta_agent.py`
+- [x] `adas/meta/context.py`
+- [x] `adas/meta/generator.py`
+- [x] `adas/meta/reflector.py`
+- [x] `adas/meta/parser.py`
+- [x] `adas/meta/dedupe.py`
+- [x] `adas/meta/loop.py`
 - [x] baseline skills in `adas/baselines/`
 - [x] production skill placeholder in `skills/youtube-curator/SKILL.md`
 - [x] populated archive index in `adas/archive/index.json`
@@ -50,11 +57,10 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] repository documentation in `README.md` files
 - [x] high-level orientation docs in `ARCHITECTURE.md` and `WORKFLOW.md`
 - [x] unit tests for evaluator, loader, scorer, executor, evaluator CLI helpers, and Step 5 comparison flow
-- [x] current full pytest suite passing (`165 passed`)
+- [x] current full pytest suite passing (`247 passed`)
 
 ### Not implemented yet
 
-- [ ] `adas/meta_agent.py`
 - [ ] generated candidate archive entries beyond the current baseline seeds
 - [ ] automatic deployment of winning skill
 - [ ] Telegram digest sender
@@ -424,23 +430,39 @@ The prompt set now provides:
 
 ### Tasks
 
-- [ ] create `adas/meta_agent.py`
-- [ ] load archive history
-- [ ] generate a candidate skill
-- [ ] run one or two reflection passes
-- [ ] validate candidate format
-- [ ] evaluate the candidate
-- [ ] archive the result
-- [ ] update best skill metadata
+- [x] create `adas/meta_agent.py`
+- [x] load archive history
+- [x] generate a candidate skill
+- [x] run one or two reflection passes
+- [x] validate candidate format
+- [x] evaluate the candidate
+- [x] archive the result
+- [x] update best skill metadata
 
 ### Why this matters
 
 This is the actual ADAS loop.
 
+### Step 9 progress
+
+Step 9 is complete for the current implementation scope.
+
+The meta-agent now provides:
+
+- archive + feedback context building for prompts
+- candidate generation through the Step 8 prompt set
+- one or more reflection passes with repaired candidate handoff
+- local candidate/frontmatter validation before evaluation
+- duplicate detection against archived skill bodies
+- evaluation through the existing evaluator
+- archival through the existing archive service
+- a CLI that supports `--cache`, `--feedback`, `--archive-dir`, `--design-goal`, `--reflect-passes`, and `--cycles`
+
 ### Files involved
 
 - `adas/meta_agent.py`
-- `adas/evaluator.py`
+- `adas/meta/`
+- `adas/evaluation/`
 - `adas/archive/`
 - `adas/prompts/`
 
@@ -567,7 +589,7 @@ If the goal is to understand what is happening as you build, use this order:
 - [x] Step 6 - archive writes
 - [x] Step 7 - feedback ingestion
 - [x] Step 8 - meta-agent prompts
-- [ ] Step 9 - meta-agent loop
+- [x] Step 9 - meta-agent loop
 - [ ] Step 10 - deployment
 - [ ] Step 11 - Telegram sending
 - [ ] Step 12 - Telegram feedback capture
