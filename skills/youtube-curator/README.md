@@ -4,17 +4,17 @@ This directory is meant to hold the **production OpenClaw skill** used for the d
 
 ## Current state
 
-`SKILL.md` exists and acts as the current production placeholder. Right now it reflects a hand-written **recency-style baseline** rather than a skill that has been promoted automatically from the Step 6 archive.
+`SKILL.md` exists as the current production skill target. It can now be updated by the Step 10 `SkillPromoter` when the archive winner beats the recorded production deployment.
 
 Today this path is mainly useful as:
 
-- the canonical future deployment target for the best archived skill
+- the canonical deployment target for the best archived skill
 - a concrete example of the `SKILL.md` shape the evaluator is built around
-- a placeholder production skill while automatic archive promotion does not exist yet
+- the live file read by the future scheduled daily digest
 
 ## Intended role
 
-Once the full system is implemented, this file will be updated automatically whenever a newly evaluated skill outperforms the current best archived skill.
+This file is updated by `adas/deployment/promoter.py` whenever a newly evaluated archive winner outperforms the current deployment record.
 
 Expected workflow:
 
@@ -22,9 +22,10 @@ Expected workflow:
 2. `adas/evaluator.py` scores it on cached video sets.
 3. The result is stored in `adas/archive/skill_xxx/`.
 4. If it becomes the new best performer, its `SKILL.md` is copied here.
-5. The scheduled delivery job runs this production skill.
+5. `deployment.json` records the deployed skill ID, score, timestamp, and previous deployment.
+6. The scheduled delivery job eventually runs this production skill.
 
-Current limitation: archive persistence now exists, but generation, archive promotion, and scheduled delivery are still future steps.
+Current limitation: promotion exists, but scheduled delivery and Telegram sending are still future steps.
 
 ## Output contract
 

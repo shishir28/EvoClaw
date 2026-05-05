@@ -139,7 +139,21 @@ One cycle does:
 6. Write the candidate to a temporary SKILL.md and evaluate it with the standard evaluator
 7. Archive the evaluated result and return a `CycleResult` with outcome, score, and skill ID
 
-Supported outcomes: `success`, `dedupe`, `parse_failure`, `reflect_exhausted`, `eval_error`.
+Supported outcomes: `success`, `dedupe`, `parse_failure`, `reflect_exhausted`, `eval_error`, `deploy_error`.
+
+### Step 10: Promote the archive winner into production
+
+`adas/deployment/promoter.py` owns the production promotion rule.
+
+It:
+
+1. reads `adas/archive/index.json`
+2. resolves the current `best_skill_id`
+3. compares archive `best_score` against the recorded production deployment
+4. copies the winning archived `SKILL.md` into `skills/youtube-curator/SKILL.md` only when it improves production
+5. writes `deployment.json` beside the production skill
+
+The meta-agent keeps promotion opt-in through `--deploy-best`.
 
 ## 2. Current workflow as a diagram
 
@@ -202,21 +216,23 @@ SKILL.md + cache JSON + feedback JSON
          archive_runtime/service.py (archive result)
                         |
                         v
-                CycleResult (outcome + skill_id + score)
+          deployment/promoter.py (--deploy-best)
+                        |
+                        v
+                CycleResult (outcome + skill_id + score + promotion)
 ```
 
 ## 3. What is not in the workflow yet
 
 The following steps are still planned, not implemented:
 
-1. deploy the winning skill automatically
-2. run the production skill on a schedule
-3. send the digest to Telegram
-4. replace manual feedback append with Telegram reaction capture
+1. run the production skill on a schedule
+2. send the digest to Telegram
+3. replace manual feedback append with Telegram reaction capture
 
-## 4. Planned future full workflow
+## 4. Full End-To-End Workflow Shape
 
-The intended long-term workflow is:
+The intended long-term workflow is below. Step 8 now exists as opt-in promotion through `--deploy-best`; the scheduled delivery and Telegram pieces are still future work.
 
 1. fetch fresh YouTube candidates
 2. evaluate baseline and generated skills against cached sets
@@ -275,12 +291,20 @@ cd /home/shishirmishra/Learnings/EvoClaw
 .venv/bin/python adas/meta_agent.py --cache adas/test_sets/video_cache_w1.json --reflect-passes 2
 ```
 
+Run the meta-agent loop and promote the best archived skill if it beats production:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python adas/meta_agent.py --cache adas/test_sets/video_cache_w1.json --reflect-passes 2 --deploy-best
+```
+
 ## 6. Immediate next workflow milestone
 
 The next useful workflow to add is:
 
-1. promote the best archived skill into production
-2. later replace manual feedback append with Telegram reaction capture
-3. then wire the full scheduled runtime
+1. run the production skill against fresh candidates
+2. send the production picks to Telegram
+3. later replace manual feedback append with Telegram reaction capture
+4. then wire the full scheduled runtime
 
 That is the next missing step before EvoClaw becomes a true end-to-end daily system.

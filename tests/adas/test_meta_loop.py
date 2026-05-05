@@ -249,6 +249,76 @@ class TestDedupeSkipCycle:
         archive_svc.archive_records.assert_not_called()
 
 
+class TestPromotionCycle:
+    def _run_success_with_promoter(self, tmp_path, promoter, promote_best: bool):
+        gen = MagicMock()
+        gen.generate.return_value = _CANDIDATE
+        ref = MagicMock()
+        ref.reflect.return_value = _ACCEPT
+        ev = MagicMock()
+        ev.score.return_value = _make_eval_result()
+        archive_svc = MagicMock()
+        archive_svc.archive_records.side_effect = lambda records, **kw: _make_archive_result(
+            records[0].skill_path
+        )
+
+        return run_cycle(
+            cache_path=str(tmp_path / "cache.json"),
+            archive_dir=str(tmp_path / "archive"),
+            feedback_path=str(tmp_path / "feedback.json"),
+            temp_dir=str(tmp_path / "tmp"),
+            reflect_passes=1,
+            generator=gen,
+            reflector=ref,
+            evaluator=ev,
+            archive_service=archive_svc,
+            skill_promoter=promoter,
+            promote_best=promote_best,
+            context=_make_context(),
+        )
+
+    def test_promoter_is_called_when_promotion_is_enabled(self, tmp_path):
+        promoter = MagicMock()
+        promoter.promote_best_skill.return_value = {"promoted": True}
+
+        result = self._run_success_with_promoter(
+            tmp_path=tmp_path,
+            promoter=promoter,
+            promote_best=True,
+        )
+
+        promoter.promote_best_skill.assert_called_once()
+        assert result.outcome == "success"
+        assert result.promotion_result == {"promoted": True}
+
+    def test_promoter_is_not_called_when_promotion_is_disabled(self, tmp_path):
+        promoter = MagicMock()
+
+        result = self._run_success_with_promoter(
+            tmp_path=tmp_path,
+            promoter=promoter,
+            promote_best=False,
+        )
+
+        promoter.promote_best_skill.assert_not_called()
+        assert result.outcome == "success"
+        assert result.promotion_result is None
+
+    def test_promoter_error_returns_deploy_error(self, tmp_path):
+        promoter = MagicMock()
+        promoter.promote_best_skill.side_effect = RuntimeError("copy failed")
+
+        result = self._run_success_with_promoter(
+            tmp_path=tmp_path,
+            promoter=promoter,
+            promote_best=True,
+        )
+
+        assert result.outcome == "deploy_error"
+        assert result.skill_id == "skill_001"
+        assert "copy failed" in (result.error or "")
+
+
 class TestParseFailureCycle:
     def test_generate_raises_returns_parse_failure(self, tmp_path):
         gen = MagicMock()
@@ -446,6 +516,36 @@ class TestInvalidReflectPasses:
             )
 
 
+class TestZeroReflectPasses:
+    def test_reflect_passes_zero_skips_reflection(self, tmp_path):
+        gen = MagicMock()
+        gen.generate.return_value = _CANDIDATE
+        ref = MagicMock()
+        ev = MagicMock()
+        ev.score.return_value = _make_eval_result()
+        archive_svc = MagicMock()
+        archive_svc.archive_records.side_effect = lambda records, **kw: _make_archive_result(
+            records[0].skill_path
+        )
+
+        result = run_cycle(
+            cache_path=str(tmp_path / "cache.json"),
+            archive_dir=str(tmp_path / "archive"),
+            feedback_path=str(tmp_path / "feedback.json"),
+            temp_dir=str(tmp_path / "tmp"),
+            reflect_passes=0,
+            generator=gen,
+            reflector=ref,
+            evaluator=ev,
+            archive_service=archive_svc,
+            context=_make_context(),
+        )
+
+        assert result.outcome == "success"
+        ref.reflect.assert_not_called()
+        ev.score.assert_called_once()
+
+
 class TestEvalErrorCycle:
     def test_evaluator_raises_returns_eval_error(self, tmp_path):
         gen = MagicMock()
@@ -470,6 +570,35 @@ class TestEvalErrorCycle:
 
         assert result.outcome == "eval_error"
         assert "evaluator crashed" in (result.error or "")
+
+
+    def test_archive_failure_carries_eval_result(self, tmp_path):
+        gen = MagicMock()
+        gen.generate.return_value = _CANDIDATE
+        ref = MagicMock()
+        ref.reflect.return_value = _ACCEPT
+        ev = MagicMock()
+        ev.score.return_value = _make_eval_result(7.5)
+        archive_svc = MagicMock()
+        archive_svc.archive_records.side_effect = RuntimeError("disk full")
+
+        result = run_cycle(
+            cache_path=str(tmp_path / "cache.json"),
+            archive_dir=str(tmp_path / "archive"),
+            feedback_path=str(tmp_path / "feedback.json"),
+            temp_dir=str(tmp_path / "tmp"),
+            reflect_passes=1,
+            generator=gen,
+            reflector=ref,
+            evaluator=ev,
+            archive_service=archive_svc,
+            context=_make_context(),
+        )
+
+        assert result.outcome == "eval_error"
+        assert result.eval_result is not None
+        assert result.eval_result.total_score == 7.5
+        assert "disk full" in (result.error or "")
 
 
 class TestCandidateValidationCycle:

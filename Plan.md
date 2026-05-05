@@ -12,7 +12,7 @@ The system combines three ideas:
 
 ## Current implementation snapshot
 
-The codebase is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback + meta-agent** stage:
+The codebase is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback + meta-agent + skill promotion** stage:
 
 - real YouTube fetches work and produce reusable caches
 - the evaluator is implemented and split into focused modules
@@ -22,10 +22,11 @@ The codebase is currently at the **working fetcher + evaluator + baseline compar
 - Step 6 archive persistence is implemented and now writes `SKILL.md`, `result.json`, `meta.json`, plus best-skill metadata under `adas/archive/`
 - Step 7 feedback persistence is implemented and now stores feedback entries under `adas/test_sets/feedback.json` with reusable video snapshots for alignment scoring
 - Step 9 meta-agent orchestration is implemented and can build prompt context, generate a candidate, run reflection passes, validate it locally, evaluate it, and archive it
+- Step 10 skill promotion is implemented and can copy the archive winner into `skills/youtube-curator/SKILL.md` when it beats the recorded production deployment
 - evaluator CLI defaults now run a real scoring flow, default LLM judge setup is lazy, and baseline comparison validates the required cache input up front
 - Telegram automation and scheduled runtime wiring are still future phases
 
-The immediate next milestone is Step 10: promote the best archived skill into `skills/youtube-curator/SKILL.md`.
+The immediate next milestone is Step 11: run the production skill and send a Telegram digest.
 
 ---
 
@@ -82,6 +83,9 @@ The immediate next milestone is Step 10: promote the best archived skill into `s
 │   ├── feedback_cli.py           ← Step 7 manual feedback append CLI
 │   ├── youtube_fetcher.py        ← YouTube search + metadata extraction
 │   ├── meta_agent.py             ← Step 9 meta-agent CLI
+│   │
+│   ├── deployment/
+│   │   └── promoter.py           ← Step 10 production skill promotion
 │   │
 │   ├── archive_runtime/
 │   │   ├── models.py             ← Step 6 archive DTOs
@@ -235,7 +239,7 @@ The first Step 9 version now exists as a local CLI-driven loop. It is not yet th
 5. evaluate it with the existing evaluator
 6. archive the result
 
-The later production form still needs deployment, cron wiring, Telegram delivery, and multi-iteration operational hardening.
+The later production form still needs cron wiring, Telegram delivery, and multi-iteration operational hardening.
 
 **Configuration:**
 - Iterations per night: 5 (start conservative, increase as you gain confidence)
@@ -420,7 +424,7 @@ egress_rules:
 - [x] Build the first local `meta_agent.py` loop
 - [ ] Run 5 iterations manually, inspect generated skills
 - [ ] Verify archive grows correctly with scores and metadata
-- [ ] Test auto-deployment of winning skill
+- [x] Test auto-deployment of winning skill
 
 ### Phase 4: Automation and feedback (day 8-10)
 - [ ] Configure cron jobs in NemoClaw (2 AM evolution, 7 AM delivery)

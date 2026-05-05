@@ -1,6 +1,6 @@
 # ADAS workspace
 
-This directory holds the **fetch, evaluate, compare, archive, and feedback** side of EvoClaw.
+This directory holds the **fetch, evaluate, compare, archive, feedback, evolve, and promote** side of EvoClaw.
 
 The package layout was recently reorganized to group internals by domain:
 
@@ -8,6 +8,7 @@ The package layout was recently reorganized to group internals by domain:
 - `baseline/` holds baseline comparison internals
 - `archive_runtime/` holds archive internals
 - `feedback/` holds Step 7 feedback persistence and append logic
+- `deployment/` holds Step 10 production skill promotion
 - top-level CLI files remain for manual runs; most internal imports now target the grouped packages directly
 
 ## What is here now
@@ -167,7 +168,7 @@ Owns Step 5 persistence only:
 - writes one JSON file per baseline result
 - writes a `summary.json` ranking file
 
-It is intentionally separate from the future Step 6 archive layer.
+It is intentionally separate from the Step 6 archive layer.
 
 ### `baseline_comparison.py`
 
@@ -219,10 +220,11 @@ The evaluator runtime is now split cleanly:
 6. `evaluation/judge.py` scores the semantic dimensions
 7. `Evaluator` aggregates the final result
 8. `baseline/comparison.py` can run all baseline skills against one cache and persist the results
-9. `archive_runtime/service.py` can promote those evaluated records into the archive
+9. `archive_runtime/service.py` can persist those evaluated records into the archive
 10. `feedback/service.py` can append manual feedback entries for later alignment scoring
+11. `deployment/promoter.py` can promote the archive winner into production
 
-Current limitation: the meta-agent runs a local generate→reflect→evaluate→archive loop but is not yet scheduled or connected to the production deployment step.
+Current limitation: the meta-agent runs a local generate→reflect→evaluate→archive loop with opt-in promotion, but it is not yet scheduled or connected to Telegram delivery.
 
 ### `meta/`
 
@@ -234,6 +236,7 @@ Owns Step 9 meta-agent internals:
 - `parser.py` validates candidate JSON and YAML frontmatter locally before evaluation
 - `dedupe.py` prevents trivial archive duplicates based on normalized skill-body hashes
 - `loop.py` orchestrates generate -> reflect -> validate -> evaluate -> archive
+- `loop.py` can optionally call the Step 10 promoter after successful archive writes
 
 ### `meta_agent.py`
 
@@ -245,6 +248,19 @@ Step 9 CLI entrypoint for the first local meta-agent loop. It supports:
 - `--design-goal`
 - `--reflect-passes`
 - `--cycles`
+- `--deploy-best`
+- `--production-skill`
+- `--deployment-record`
+
+### `deployment/promoter.py`
+
+Owns Step 10 production skill promotion:
+
+1. reads archive best-skill metadata
+2. resolves the archived winner's `SKILL.md`
+3. compares it against the current deployment metadata
+4. copies the winner into `skills/youtube-curator/SKILL.md` only when the score improves
+5. writes `deployment.json` beside the production skill
 
 ### `baselines/`
 
@@ -273,7 +289,7 @@ Current best archive entry:
 
 ### `baseline_results/`
 
-Holds Step 5 comparison outputs that are intentionally separate from the future archive layer.
+Holds Step 5 comparison outputs that are intentionally separate from the archive layer.
 
 Current saved output:
 
@@ -303,7 +319,7 @@ Current contents are:
 The design in `Plan.md` expects this directory to grow with:
 
 - further generated archive folders as the meta-agent proposes and archives new skills
-- a production deployment step that promotes the best archived skill into `skills/youtube-curator/SKILL.md`
+- Telegram delivery and feedback capture around the production skill
 
 ## Data flow
 
@@ -321,16 +337,17 @@ The current lifecycle now also adds:
 
 8. Build archive + feedback prompt context for the meta-agent.
 9. Generate a candidate skill, run reflection passes, validate it, then evaluate and archive it.
+10. Optionally promote the archive winner into `skills/youtube-curator/SKILL.md` with `--deploy-best`.
 
 The planned later lifecycle still adds:
 
-10. Promote the best skill into `skills/youtube-curator/SKILL.md`.
+11. Run the production skill on a schedule and send the picks to Telegram.
 
 ## Unit tests
 
 The test suite lives in `tests/adas/` and mirrors the source layout. Shared builder utilities live in `tests/adas/builders.py`.
 
-**Current status: 248 tests passing.**
+**Current status: 261 tests passing.**
 
 | Test file | Covers |
 |---|---|
@@ -353,8 +370,9 @@ The test suite lives in `tests/adas/` and mirrors the source layout. Shared buil
 | `test_meta_reflector.py` | reflection verdicts, repairs, and prompt composition |
 | `test_meta_parser.py` | JSON extraction and local candidate/frontmatter validation |
 | `test_meta_dedupe.py` | normalized duplicate-skill detection |
-| `test_meta_loop.py` | generate/reflect/evaluate/archive orchestration |
-| `test_meta_agent_cli.py` | CLI forwarding for cycles and reflection passes |
+| `test_meta_loop.py` | generate/reflect/evaluate/archive orchestration and opt-in promotion |
+| `test_meta_agent_cli.py` | CLI forwarding for cycles, reflection passes, and deployment flags |
+| `test_skill_promoter.py` | production promotion rules and deployment metadata |
 
 Builder utilities available to all tests:
 
@@ -375,10 +393,10 @@ python3 -m pytest tests/adas/test_archive_service.py -v  # one file
 
 - Runtime-generated caches in `test_sets/` are gitignored, but archive history under `archive/skill_*/` is versioned.
 - Secret values are loaded from the repo root `.env`.
-- The current repo state is **post-evaluator / post-archive / first meta-agent loop**.
+- The current repo state is **post-evaluator / post-archive / first meta-agent loop / Step 10 promoter**.
 - Step 5 and Step 6 are complete for the current `video_cache_w1.json` dataset.
-- The current pytest suite is at **248 passing tests**.
+- The current pytest suite is at **261 passing tests**.
 - Transcript fetching is **best-effort**: some videos now resolve transcripts, but YouTube may still block others depending on IP/network conditions.
 - The current cache shape is strong enough to begin the evaluator, because it includes `views_per_hour`, `subscriber_count`, and descriptions even when transcripts are missing.
-- The next concrete implementation step is Step 10: promote the winning archived skill into `skills/youtube-curator/SKILL.md`.
+- The next concrete implementation step is Step 11: run the production skill and deliver the Telegram digest.
 - See the repo-level `ARCHITECTURE.md` and `WORKFLOW.md` files for the simplest high-level explanation.

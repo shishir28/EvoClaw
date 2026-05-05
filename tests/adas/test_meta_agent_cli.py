@@ -65,3 +65,34 @@ def test_cycles_runs_multiple_times(monkeypatch, capsys):
     assert call_count["count"] == 2
     output = json.loads(capsys.readouterr().out)
     assert len(output) == 2
+
+
+def test_deploy_best_flags_forwarded(monkeypatch, capsys):
+    calls: list[dict[str, object]] = []
+
+    def _fake_run_cycle(**kwargs):
+        calls.append(kwargs)
+        return CycleResult(outcome="success", candidate=_CANDIDATE)
+
+    monkeypatch.setattr(meta_agent, "run_cycle", _fake_run_cycle)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "meta_agent.py",
+            "--cache",
+            "adas/test_sets/video_cache_w1.json",
+            "--deploy-best",
+            "--production-skill",
+            "/tmp/youtube-curator/SKILL.md",
+            "--deployment-record",
+            "/tmp/youtube-curator/deployment.json",
+        ],
+    )
+
+    meta_agent.main()
+
+    assert calls[0]["promote_best"] is True
+    assert calls[0]["production_skill_path"] == "/tmp/youtube-curator/SKILL.md"
+    assert calls[0]["deployment_record_path"] == "/tmp/youtube-curator/deployment.json"
+    output = json.loads(capsys.readouterr().out)
+    assert output[0]["outcome"] == "success"

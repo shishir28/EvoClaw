@@ -5,6 +5,7 @@ Step 5 orchestration for running and persisting baseline comparisons.
 from __future__ import annotations
 
 import json
+import argparse
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -127,6 +128,7 @@ class BaselineComparisonService:
 
 
 def build_default_service() -> BaselineComparisonService:
+    """Compose the default baseline comparison service for CLI usage."""
     return BaselineComparisonService(
         catalog=BaselineCatalog(),
         runner=BaselineEvaluationRunner(Evaluator()),
@@ -135,9 +137,8 @@ def build_default_service() -> BaselineComparisonService:
     )
 
 
-def main() -> None:
-    import argparse
-
+def _build_parser() -> argparse.ArgumentParser:
+    """Build the baseline comparison CLI parser."""
     parser = argparse.ArgumentParser(
         description="Run Step 5 baseline comparisons against one cache."
     )
@@ -170,16 +171,25 @@ def main() -> None:
         action="store_true",
         help="Also archive the evaluated skill outputs into adas/archive/skill_### entries.",
     )
-    args = parser.parse_args()
+    return parser
 
+
+def _run_comparison_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    """Execute a baseline comparison from parsed CLI arguments."""
     service = build_default_service()
-    result = service.compare(
+    return service.compare(
         cache_path=args.cache,
         output_dir=args.output_dir,
         feedback_path=None if args.no_feedback else args.feedback,
         use_llm_judging=not args.no_llm_judge,
         archive_results=args.archive,
     )
+
+
+def main() -> None:
+    """Parse CLI args, run baseline comparison, and print JSON output."""
+    args = _build_parser().parse_args()
+    result = _run_comparison_from_args(args)
     print(json.dumps(result, indent=2, ensure_ascii=False))
 
 

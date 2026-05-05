@@ -4,7 +4,7 @@ This file explains the **current codebase shape** in plain language so you can u
 
 ## 1. Current architecture in one sentence
 
-EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> feedback** foundation, with the future **evolve -> deploy -> deliver** loop still to be built.
+EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> feedback -> evolve -> promote** foundation, with Telegram delivery and scheduled runtime still to be built.
 
 ## 2. Main layers
 
@@ -16,9 +16,10 @@ EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> fee
 | Baseline comparison internals | Discover, evaluate, and persist baseline comparison runs | `adas/baseline/` |
 | Archive internals | Save versioned archive entries and best-skill metadata | `adas/archive_runtime/` |
 | Feedback internals | Persist feedback history and append manual feedback entries | `adas/feedback/` |
+| Deployment internals | Promote the archive winner into the production skill path | `adas/deployment/` |
 | CLI compatibility layer | Preserve the remaining manual entrypoints while internals live in grouped packages | `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py` |
 | Prompt assets | Hold reusable evaluator and meta-agent prompt templates | `adas/prompts/eval_judge.md`, `adas/prompts/meta_system.md`, `adas/prompts/meta_design.md`, `adas/prompts/meta_reflect.md` |
-| Production skill placeholder | Future deployment target for the best skill | `skills/youtube-curator/SKILL.md` |
+| Production skill target | Live deployment target for the best skill | `skills/youtube-curator/SKILL.md` |
 | Scheduler stub | Planned automation entrypoints | `cron/jobs.json` |
 
 ## 3. How the modules relate
@@ -47,6 +48,9 @@ archive_runtime/
     store.py
     service.py
 
+deployment/
+    promoter.py
+
 feedback/
     store.py
     service.py
@@ -68,6 +72,8 @@ If you come from a .NET background, `adas/evaluation/models.py` is the closest t
 `adas/baseline/comparison.py` now also validates its required cache input before handing off to the loader, which keeps comparison failures closer to the actual caller.
 
 The Step 6 archive flow is also kept separate: `baseline_comparison.py` can call into `archive_service.py`, but Step 5 result persistence and Step 6 archive persistence remain different modules with different output roots.
+
+Step 10 production promotion is also isolated in `adas/deployment/promoter.py`. The promoter reads archive state through a narrow protocol, writes deployment metadata through a small store, and copies the winning skill only when its score beats the current production record.
 
 ### Scoring is split by responsibility
 
@@ -134,11 +140,10 @@ That keeps API access, transcript attachment, cache persistence, and orchestrati
 - best-skill tracking in `adas/archive/index.json`
 - feedback persistence plus snapshot-based alignment scoring
 - first-pass meta-agent orchestration for generate -> reflect -> evaluate -> archive
-- placeholder production skill
+- opt-in production skill promotion with `deployment.json` metadata
 
 ### Planned later
 
-- promotion of the best skill into `skills/youtube-curator/SKILL.md`
 - Telegram sending and feedback capture
 - cron-driven end-to-end automation
 
@@ -158,13 +163,14 @@ If you want the easiest learning path through the code:
 10. `adas/baseline/comparison.py`
 11. `adas/archive_runtime/service.py`
 12. `adas/archive_runtime/store.py`
-13. `adas/feedback/service.py`
-14. `adas/feedback/store.py`
-15. `adas/youtube_fetcher.py`
+13. `adas/deployment/promoter.py`
+14. `adas/feedback/service.py`
+15. `adas/feedback/store.py`
+16. `adas/youtube_fetcher.py`
 
 ## 8. How to run unit tests
 
-The current suite is **247 passing tests**.
+The current suite is **261 passing tests**.
 
 ```bash
 # Activate the virtual environment first

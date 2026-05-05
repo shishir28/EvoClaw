@@ -43,8 +43,9 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] `adas/meta/parser.py`
 - [x] `adas/meta/dedupe.py`
 - [x] `adas/meta/loop.py`
+- [x] `adas/deployment/promoter.py`
 - [x] baseline skills in `adas/baselines/`
-- [x] production skill placeholder in `skills/youtube-curator/SKILL.md`
+- [x] production skill target in `skills/youtube-curator/SKILL.md`
 - [x] populated archive index in `adas/archive/index.json`
 - [x] versioned archive entries under `adas/archive/skill_*/`
 - [x] sample cache in `adas/test_sets/video_cache_test.json`
@@ -57,12 +58,12 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] repository documentation in `README.md` files
 - [x] high-level orientation docs in `ARCHITECTURE.md` and `WORKFLOW.md`
 - [x] unit tests for evaluator, loader, scorer, executor, evaluator CLI helpers, and Step 5 comparison flow
-- [x] current full pytest suite passing (`247 passed`)
+- [x] `tests/adas/test_skill_promoter.py`
+- [x] current full pytest suite passing (`261 passed`)
 
 ### Not implemented yet
 
 - [ ] generated candidate archive entries beyond the current baseline seeds
-- [ ] automatic deployment of winning skill
 - [ ] Telegram digest sender
 - [ ] Telegram reaction capture / feedback ingestion automation
 - [ ] actual scheduled runtime wiring
@@ -474,9 +475,23 @@ The meta-agent now provides:
 
 ### Tasks
 
-- [ ] copy winning `SKILL.md` to `skills/youtube-curator/SKILL.md`
-- [ ] only deploy when the new score is better
-- [ ] record which skill version was deployed
+- [x] copy winning `SKILL.md` to `skills/youtube-curator/SKILL.md`
+- [x] only deploy when the new score is better
+- [x] record which skill version was deployed
+
+### Step 10 progress
+
+Step 10 is complete for the current implementation scope.
+
+The production promoter now:
+
+- lives in `adas/deployment/promoter.py`
+- reads archive best-skill metadata through a narrow `ArchiveIndexReader` protocol
+- stores deployment metadata through `DeploymentRecordStore`
+- copies the archive winner into `skills/youtube-curator/SKILL.md` only when the archive score beats the recorded deployment score
+- writes `deployment.json` beside the production skill with deployed skill ID, score, timestamp, source path, production path, and previous deployment metadata
+- is opt-in from `adas/meta_agent.py` through `--deploy-best`
+- supports custom `--production-skill` and `--deployment-record` paths for tests or alternate runtimes
 
 ### Why this matters
 
@@ -485,7 +500,9 @@ This is how experimentation becomes production behavior.
 ### Files involved
 
 - `adas/meta_agent.py`
+- `adas/deployment/promoter.py`
 - `skills/youtube-curator/SKILL.md`
+- `skills/youtube-curator/deployment.json` (created on first promotion)
 
 ---
 
@@ -590,7 +607,7 @@ If the goal is to understand what is happening as you build, use this order:
 - [x] Step 7 - feedback ingestion
 - [x] Step 8 - meta-agent prompts
 - [x] Step 9 - meta-agent loop
-- [ ] Step 10 - deployment
+- [x] Step 10 - deployment
 - [ ] Step 11 - Telegram sending
 - [ ] Step 12 - Telegram feedback capture
 - [ ] Step 13 - cron automation

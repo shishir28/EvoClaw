@@ -75,6 +75,14 @@ class _HistoricalFeedbackSignal:
     snapshot: FeedbackVideoSnapshot
 
 
+@dataclass(frozen=True, slots=True)
+class _AlignmentHistory:
+    """Precomputed feedback lookup data used by the alignment scorer."""
+
+    feedback_by_video: dict[str, list[float]]
+    historical_signals: list[_HistoricalFeedbackSignal]
+
+
 _MIN_ALIGNMENT_SIMILARITY = 0.25
 
 # Feature similarity weights for the alignment heuristic.
@@ -204,11 +212,22 @@ class AlgorithmicScorer:
         request: EvaluationRequest,
         videos: list[VideoRecord],
     ) -> tuple[float, str]:
+        """Score selected videos against exact and similar historical feedback."""
         if not videos:
             raise ValueError("score_alignment requires at least one selected video.")
         if not request.feedback_history:
             return 5.0, "No feedback history yet; using neutral placeholder score."
 
+        history = self._build_alignment_history(request)
+        per_video_scores = [
+            self._score_video_alignment(video, history)
+            for video in videos
+        ]
+        return self._summarize_alignment_scores(per_video_scores)
+
+    @staticmethod
+    def _build_alignment_history(request: EvaluationRequest) -> _AlignmentHistory:
+        """Build exact-match and snapshot-similarity inputs from feedback history."""
         videos_by_id = {video.video_id: video for video in request.videos}
         feedback_by_video: dict[str, list[float]] = {}
         historical_signals: list[_HistoricalFeedbackSignal] = []
@@ -227,42 +246,77 @@ class AlgorithmicScorer:
                             snapshot=snapshot,
                         )
                     )
+        return _AlignmentHistory(
+            feedback_by_video=feedback_by_video,
+            historical_signals=historical_signals,
+        )
 
-        per_video_scores: list[tuple[str, float, str]] = []
-        for video in videos:
-            historical_scores = feedback_by_video.get(video.video_id)
-            if historical_scores:
-                score = sum(historical_scores) / len(historical_scores)
-                source = "exact historical match"
-            else:
-                similar_signals = [
-                    (signal, _feature_similarity(video, signal.snapshot))
-                    for signal in historical_signals
-                    if signal.video_id != video.video_id
-                ]
-                similar_signals = [
-                    (signal, similarity)
-                    for signal, similarity in similar_signals
-                    if similarity > 0.0
-                ]
-                if not similar_signals or max(
-                    similarity for _, similarity in similar_signals
-                ) < _MIN_ALIGNMENT_SIMILARITY:
-                    score = 5.0
-                    source = "neutral"
-                else:
-                    total_similarity = sum(similarity for _, similarity in similar_signals)
-                    score = sum(
-                        signal.reaction_score * similarity
-                        for signal, similarity in similar_signals
-                    ) / total_similarity
-                    top_signal = sorted(
-                        similar_signals,
-                        key=lambda item: (-item[1], item[0].video_id),
-                    )[0][0]
-                    source = _signal_reason(video, top_signal, score)
-            per_video_scores.append((video.video_id, score, source))
+    @staticmethod
+    def _score_video_alignment(
+        video: VideoRecord,
+        history: _AlignmentHistory,
+    ) -> tuple[str, float, str]:
+        """Score one selected video using exact history before similarity fallback."""
+        historical_scores = history.feedback_by_video.get(video.video_id)
+        if historical_scores:
+            score = sum(historical_scores) / len(historical_scores)
+            return video.video_id, score, "exact historical match"
 
+        similar_signals = AlgorithmicScorer._similar_feedback_signals(
+            video,
+            history.historical_signals,
+        )
+        if not AlgorithmicScorer._has_enough_similarity(similar_signals):
+            return video.video_id, 5.0, "neutral"
+
+        score, source = AlgorithmicScorer._score_similar_feedback(video, similar_signals)
+        return video.video_id, score, source
+
+    @staticmethod
+    def _similar_feedback_signals(
+        video: VideoRecord,
+        historical_signals: list[_HistoricalFeedbackSignal],
+    ) -> list[tuple[_HistoricalFeedbackSignal, float]]:
+        """Return positive-similarity historical signals excluding exact matches."""
+        return [
+            (signal, similarity)
+            for signal in historical_signals
+            if signal.video_id != video.video_id
+            for similarity in [_feature_similarity(video, signal.snapshot)]
+            if similarity > 0.0
+        ]
+
+    @staticmethod
+    def _has_enough_similarity(
+        similar_signals: list[tuple[_HistoricalFeedbackSignal, float]],
+    ) -> bool:
+        """Check whether similar feedback clears the heuristic influence threshold."""
+        if not similar_signals:
+            return False
+        return max(similarity for _, similarity in similar_signals) >= _MIN_ALIGNMENT_SIMILARITY
+
+    @staticmethod
+    def _score_similar_feedback(
+        video: VideoRecord,
+        similar_signals: list[tuple[_HistoricalFeedbackSignal, float]],
+    ) -> tuple[float, str]:
+        """Blend similar feedback signals into one score and explanation source."""
+        total_similarity = sum(similarity for _, similarity in similar_signals)
+        score = sum(
+            signal.reaction_score * similarity
+            for signal, similarity in similar_signals
+        ) / total_similarity
+        top_signal = sorted(
+            similar_signals,
+            key=lambda item: (-item[1], item[0].video_id),
+        )[0][0]
+        return score, _signal_reason(video, top_signal, score)
+
+    @staticmethod
+    def _summarize_alignment_scores(
+        per_video_scores: list[tuple[str, float, str]],
+    ) -> tuple[float, str]:
+        """Aggregate per-video alignment scores into evaluator output details."""
         alignment_score = round(
             sum(score for _, score, _ in per_video_scores) / len(per_video_scores),
             4,
@@ -272,4 +326,3 @@ class AlgorithmicScorer:
             for video_id, score, source in per_video_scores
         )
         return alignment_score, detail
-

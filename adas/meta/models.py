@@ -33,14 +33,21 @@ class ReflectionResult:
 
 @dataclass
 class CycleResult:
-    outcome: str  # "success" | "dedupe" | "parse_failure" | "reflect_exhausted" | "eval_error"
+    outcome: str  # "success" | "dedupe" | "parse_failure" | "reflect_exhausted" | "eval_error" | "deploy_error"
     candidate: Candidate | None = None
     eval_result: Any | None = None
     skill_id: str | None = None
+    promotion_result: Any | None = None
     error: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Serialise the cycle outcome to a JSON-safe dict for CLI output."""
+        promotion_payload = None
+        if self.promotion_result is not None:
+            if hasattr(self.promotion_result, "to_dict"):
+                promotion_payload = self.promotion_result.to_dict()
+            else:
+                promotion_payload = self.promotion_result
         return {
             "outcome": self.outcome,
             "candidate_name": self.candidate.name if self.candidate else None,
@@ -48,5 +55,6 @@ class CycleResult:
                 self.eval_result.total_score if self.eval_result is not None else None
             ),
             "skill_id": self.skill_id,
+            "promotion": promotion_payload,
             "error": self.error,
         }

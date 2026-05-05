@@ -18,10 +18,17 @@ try:
         FEEDBACK_FILE,
         META_MAX_CYCLES,
         META_REFLECT_PASSES,
+        SKILL_PRODUCTION,
     )
     from adas.meta.loop import run_cycle
 except ImportError:
-    from config import ARCHIVE_DIR, FEEDBACK_FILE, META_MAX_CYCLES, META_REFLECT_PASSES
+    from config import (
+        ARCHIVE_DIR,
+        FEEDBACK_FILE,
+        META_MAX_CYCLES,
+        META_REFLECT_PASSES,
+        SKILL_PRODUCTION,
+    )
     from meta.loop import run_cycle
 
 logging.basicConfig(
@@ -32,12 +39,18 @@ logging.basicConfig(
 _log = logging.getLogger(__name__)
 
 
-def main() -> None:
-    """Parse CLI args, drive N generate→reflect→evaluate→archive cycles, and
-    print the list of CycleResult dicts as JSON to stdout."""
+def _build_parser() -> argparse.ArgumentParser:
+    """Build the CLI parser for meta-agent cycle and promotion options."""
     parser = argparse.ArgumentParser(
         description="Run meta-agent generate→reflect→evaluate→archive cycle(s)."
     )
+    _add_cycle_arguments(parser)
+    _add_deployment_arguments(parser)
+    return parser
+
+
+def _add_cycle_arguments(parser: argparse.ArgumentParser) -> None:
+    """Register generation, reflection, archive, and feedback cycle arguments."""
     parser.add_argument(
         "--cache",
         required=True,
@@ -76,18 +89,35 @@ def main() -> None:
         metavar="PATH",
         help="Feedback JSON file (default: adas/test_sets/feedback.json).",
     )
-    args = parser.parse_args()
 
+
+def _add_deployment_arguments(parser: argparse.ArgumentParser) -> None:
+    """Register optional production skill promotion arguments."""
+    parser.add_argument(
+        "--deploy-best",
+        action="store_true",
+        help="Promote the archive winner after each successful cycle if it beats the current deployment.",
+    )
+    parser.add_argument(
+        "--production-skill",
+        default=SKILL_PRODUCTION,
+        metavar="PATH",
+        help="Production SKILL.md path used with --deploy-best.",
+    )
+    parser.add_argument(
+        "--deployment-record",
+        default=None,
+        metavar="PATH",
+        help="Optional deployment metadata JSON path. Defaults beside the production skill.",
+    )
+
+
+def _run_cycles(args: argparse.Namespace) -> list[dict[str, object]]:
+    """Run all requested cycles and return JSON-safe result dictionaries."""
     results = []
     for cycle_num in range(args.cycles):
         _log.info("Starting cycle %d/%d.", cycle_num + 1, args.cycles)
-        result = run_cycle(
-            cache_path=args.cache,
-            archive_dir=args.archive_dir,
-            feedback_path=args.feedback,
-            design_goal=args.design_goal,
-            reflect_passes=args.reflect_passes,
-        )
+        result = _run_one_cycle(args)
         result_dict = result.to_dict()
         results.append(result_dict)
         _log.info(
@@ -97,7 +127,27 @@ def main() -> None:
             result.skill_id,
             result.eval_result.total_score if result.eval_result else None,
         )
+    return results
 
+
+def _run_one_cycle(args: argparse.Namespace):
+    """Forward parsed CLI arguments into one meta-agent cycle."""
+    return run_cycle(
+        cache_path=args.cache,
+        archive_dir=args.archive_dir,
+        feedback_path=args.feedback,
+        design_goal=args.design_goal,
+        reflect_passes=args.reflect_passes,
+        promote_best=args.deploy_best,
+        production_skill_path=args.production_skill,
+        deployment_record_path=args.deployment_record,
+    )
+
+
+def main() -> None:
+    """Parse CLI args, run cycles, and print CycleResult JSON to stdout."""
+    args = _build_parser().parse_args()
+    results = _run_cycles(args)
     print(json.dumps(results, indent=2, ensure_ascii=False))
 
 
