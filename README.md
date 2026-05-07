@@ -1,8 +1,8 @@
 # EvoClaw
 
-EvoClaw is an **ADAS-style, self-improving YouTube curator** for AI and entrepreneurship content. The target system runs inside a NemoClaw/OpenClaw environment, fetches candidate videos, evaluates curation strategies, evolves better `SKILL.md` prompts over time, and eventually delivers a daily top-3 digest to Telegram.
+EvoClaw is an **ADAS-style, self-improving YouTube curator** for AI and entrepreneurship content. The target system runs inside a NemoClaw/OpenClaw environment, fetches candidate videos, evaluates curation strategies, evolves better `SKILL.md` prompts over time, and can now run a manual top-3 Telegram digest while full scheduling remains a later step.
 
-The repository is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback + meta-agent + skill promotion stage**:
+The repository is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback + meta-agent + skill promotion + manual Telegram delivery stage**:
 
 - a YouTube fetcher with caching, `subscriber_count` enrichment, and best-effort transcript support
 - a modular evaluator stack with DTO models, request loading, algorithmic scoring, optional LLM judging, and weighted aggregation
@@ -12,12 +12,13 @@ The repository is currently at the **working fetcher + evaluator + baseline comp
 - a Step 7 feedback flow that validates reactions, persists video snapshots atomically, and turns `alignment` into a real heuristic preference signal using channel, topic, and duration similarity
 - a Step 9 meta-agent flow that builds prompt context, generates a candidate skill, runs reflection passes, validates the candidate locally, evaluates it, and archives successful runs
 - a Step 10 skill promoter that copies the archive winner into `skills/youtube-curator/SKILL.md` only when it beats the recorded production deployment
+- a Step 11 Telegram delivery flow that runs the promoted production skill against a cache, formats the top 3 picks, optionally sends them through the Bot API, and records delivery metadata in `delivery_log.json`
 - lazy default LLM-judge initialization so evaluator construction does not require model client setup unless semantic judging is enabled
 - evaluator and comparison CLIs with safer defaults: evaluator runs a real scoring flow by default, and baseline comparison fails fast when the required cache file is missing
 - typed shared configuration for search, inference, paths, and scoring weights
 - three hand-written baseline skills plus a production `SKILL.md` target
 - a cron configuration stub for future automation
-- a focused pytest suite covering the evaluator path plus Step 5 through Step 10 orchestration (**261 tests currently passing**)
+- a focused pytest suite covering the evaluator path plus Step 5 through Step 11 orchestration
 
 ## Target architecture
 
@@ -27,8 +28,8 @@ The planned end-to-end loop is:
 2. Score candidate curation skills on cached datasets.
 3. Use a meta agent to propose improved `SKILL.md` strategies.
 4. Archive results and deploy the best-performing skill.
-5. Run the production skill on a schedule and send picks to Telegram.
-6. Collect feedback and feed it back into evaluation.
+5. Run the production skill on a schedule.
+6. Send picks to Telegram and feed the resulting feedback back into evaluation.
 
 ## Repository layout
 
@@ -45,10 +46,12 @@ EvoClaw/
 │   ├── evaluation/               # Evaluator models, loader, scorer, judge, executor, service
 │   ├── feedback/                 # Step 7 feedback store and append service
 │   ├── meta/                     # Step 9 meta-agent context, generation, reflection, parsing
+│   ├── telegram/                 # Step 11 Telegram digest formatter, sender, log, and service
 │   ├── baseline_comparison.py    # CLI entrypoint and compatibility wrapper
 │   ├── evaluator.py              # CLI entrypoint and compatibility wrapper
 │   ├── feedback_cli.py           # Manual feedback append CLI
 │   ├── meta_agent.py             # Step 9 meta-agent CLI entrypoint
+│   ├── telegram_digest.py        # Step 11 manual Telegram digest CLI
 │   ├── prompts/                  # Evaluator prompts
 │   ├── test_sets/                # Local caches and feedback artifacts
 │   └── youtube_fetcher.py        # YouTube data collection and caching
@@ -79,13 +82,15 @@ Implemented now:
 - `adas/feedback/` for Step 7 feedback persistence and append logic
 - `adas/meta/` for Step 9 meta-agent orchestration internals
 - `adas/deployment/` for Step 10 production skill promotion
-- top-level `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py`, and `adas/meta_agent.py` as CLI entrypoints
+- `adas/telegram/` for Step 11 digest formatting, sending, and delivery metadata logging
+- top-level `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py`, `adas/meta_agent.py`, and `adas/telegram_digest.py` as CLI entrypoints
 - `adas/prompts/eval_judge.md`
 - `adas/prompts/meta_system.md`, `adas/prompts/meta_design.md`, and `adas/prompts/meta_reflect.md`
 - `adas/baselines/*.md`
 - `adas/baseline_results/video_cache_w1/summary.json`
 - `adas/archive/index.json`
 - `skills/youtube-curator/SKILL.md`
+- `skills/youtube-curator/delivery_log.json` after the first Step 11 run
 - `cron/jobs.json`
 - local Step 1 validation: real fetch works and produces a reusable cache in `adas/test_sets/video_cache_w1.json`
 - evaluator architecture cleanup: smaller modules, DTO separation, injected collaborators, and readability-focused helpers
@@ -116,10 +121,17 @@ Current deployment snapshot:
 - `adas/deployment/promoter.py` can promote the archive winner into `skills/youtube-curator/SKILL.md`
 - promotion writes `deployment.json` beside the production skill and skips when the recorded deployment score is equal or better
 
+Current delivery snapshot:
+
+- `adas/telegram/service.py` runs the production skill against a cache and builds a Telegram digest
+- `adas/telegram/sender.py` sends the digest through Telegram's `sendMessage` API when explicitly enabled
+- `adas/telegram_digest.py` defaults to dry-run mode so message formatting can be checked safely
+- `skills/youtube-curator/delivery_log.json` records delivery time, selected video IDs, digest text, and Telegram message ID when available
+
 Current next milestone:
 
-- run the promoted production skill and send a Telegram digest
-- later connect Telegram reactions to the same Step 7 feedback schema
+- exercise one live bot-backed Telegram send with real credentials
+- connect Telegram reactions to the same Step 7 feedback schema
 
 Planned but not yet implemented:
 
@@ -238,6 +250,22 @@ Run the Step 9 loop and promote the archive winner when it beats production:
 cd /home/shishirmishra/Learnings/EvoClaw
 .venv/bin/python adas/meta_agent.py --cache adas/test_sets/video_cache_w1.json --reflect-passes 2 --deploy-best
 ```
+
+Run the Step 11 digest flow in dry-run mode:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python adas/telegram_digest.py --cache adas/test_sets/video_cache_w1.json
+```
+
+Send the Step 11 digest to Telegram:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python adas/telegram_digest.py --cache adas/test_sets/video_cache_w1.json --send
+```
+
+This writes `skills/youtube-curator/delivery_log.json` with the digest metadata for later feedback mapping.
 
 Append manual feedback into Step 7:
 

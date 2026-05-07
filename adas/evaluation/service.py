@@ -218,6 +218,14 @@ class Evaluator:
         """Return the names of any dimensions that have not yet received a score."""
         return [dimension.name for dimension in result.dimensions if dimension.score is None]
 
+    def select_video_ids(
+        self,
+        request: EvaluationRequest,
+        selected_video_ids: list[str] | None = None,
+    ) -> tuple[list[str], list[str]]:
+        """Resolve which video IDs a skill run should use, executing the strategy when needed."""
+        return self._select_videos_for_request(request, selected_video_ids)
+
     def _select_videos_for_request(
         self,
         request: EvaluationRequest,
@@ -286,7 +294,7 @@ class Evaluator:
             cache_path=cache_path,
             feedback_path=feedback_path,
         )
-        selected_video_ids, execution_notes = self._select_videos_for_request(
+        selected_video_ids, execution_notes = self.select_video_ids(
             request,
             selected_video_ids,
         )

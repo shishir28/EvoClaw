@@ -224,7 +224,7 @@ The evaluator runtime is now split cleanly:
 10. `feedback/service.py` can append manual feedback entries for later alignment scoring
 11. `deployment/promoter.py` can promote the archive winner into production
 
-Current limitation: the meta-agent runs a local generate→reflect→evaluate→archive loop with opt-in promotion, but it is not yet scheduled or connected to Telegram delivery.
+Current limitation: the meta-agent runs a local generate→reflect→evaluate→archive loop with opt-in promotion. Manual Telegram delivery now exists, but scheduled runtime wiring and Telegram reaction capture still do not.
 
 ### `meta/`
 
@@ -319,7 +319,7 @@ Current contents are:
 The design in `Plan.md` expects this directory to grow with:
 
 - further generated archive folders as the meta-agent proposes and archives new skills
-- Telegram delivery and feedback capture around the production skill
+- Telegram feedback capture around the production skill
 
 ## Data flow
 
@@ -341,13 +341,14 @@ The current lifecycle now also adds:
 
 The planned later lifecycle still adds:
 
-11. Run the production skill on a schedule and send the picks to Telegram.
+11. Run the production skill on a schedule.
+12. Capture Telegram reactions and feed them back into evaluation.
 
 ## Unit tests
 
 The test suite lives in `tests/adas/` and mirrors the source layout. Shared builder utilities live in `tests/adas/builders.py`.
 
-**Current status: 261 tests passing.**
+**Current status:** the suite now covers Step 11 delivery in addition to the earlier evaluator, archive, meta-agent, and promotion flows.
 
 | Test file | Covers |
 |---|---|
@@ -373,6 +374,10 @@ The test suite lives in `tests/adas/` and mirrors the source layout. Shared buil
 | `test_meta_loop.py` | generate/reflect/evaluate/archive orchestration and opt-in promotion |
 | `test_meta_agent_cli.py` | CLI forwarding for cycles, reflection passes, and deployment flags |
 | `test_skill_promoter.py` | production promotion rules and deployment metadata |
+| `test_telegram_formatter.py` | digest pick summaries, age/duration formatting, final message shape |
+| `test_telegram_sender.py` | Telegram Bot API request/response handling |
+| `test_telegram_service.py` | production selection, formatting, and delivery-log orchestration |
+| `test_telegram_digest_cli.py` | CLI forwarding for dry-run vs send mode |
 
 Builder utilities available to all tests:
 
@@ -393,10 +398,9 @@ python3 -m pytest tests/adas/test_archive_service.py -v  # one file
 
 - Runtime-generated caches in `test_sets/` are gitignored, but archive history under `archive/skill_*/` is versioned.
 - Secret values are loaded from the repo root `.env`.
-- The current repo state is **post-evaluator / post-archive / first meta-agent loop / Step 10 promoter**.
+- The current repo state is **post-evaluator / post-archive / first meta-agent loop / Step 10 promoter / Step 11 delivery runtime**.
 - Step 5 and Step 6 are complete for the current `video_cache_w1.json` dataset.
-- The current pytest suite is at **261 passing tests**.
 - Transcript fetching is **best-effort**: some videos now resolve transcripts, but YouTube may still block others depending on IP/network conditions.
 - The current cache shape is strong enough to begin the evaluator, because it includes `views_per_hour`, `subscriber_count`, and descriptions even when transcripts are missing.
-- The next concrete implementation step is Step 11: run the production skill and deliver the Telegram digest.
+- The next concrete implementation step is Step 12: capture Telegram reactions and map them into feedback history.
 - See the repo-level `ARCHITECTURE.md` and `WORKFLOW.md` files for the simplest high-level explanation.

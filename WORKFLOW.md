@@ -227,12 +227,11 @@ SKILL.md + cache JSON + feedback JSON
 The following steps are still planned, not implemented:
 
 1. run the production skill on a schedule
-2. send the digest to Telegram
-3. replace manual feedback append with Telegram reaction capture
+2. replace manual feedback append with Telegram reaction capture
 
 ## 4. Full End-To-End Workflow Shape
 
-The intended long-term workflow is below. Step 8 now exists as opt-in promotion through `--deploy-best`; the scheduled delivery and Telegram pieces are still future work.
+The intended long-term workflow is below. Step 8 now exists as opt-in promotion through `--deploy-best`, and Step 11 now exists as a manual Telegram delivery path; scheduled runtime wiring and reaction capture are still future work.
 
 1. fetch fresh YouTube candidates
 2. evaluate baseline and generated skills against cached sets
@@ -302,9 +301,8 @@ cd /home/shishirmishra/Learnings/EvoClaw
 
 The next useful workflow to add is:
 
-1. run the production skill against fresh candidates
-2. send the production picks to Telegram
-3. later replace manual feedback append with Telegram reaction capture
-4. then wire the full scheduled runtime
+1. exercise a live Step 11 send with real bot credentials
+2. replace manual feedback append with Telegram reaction capture
+3. then wire the full scheduled runtime
 
 That is the next missing step before EvoClaw becomes a true end-to-end daily system.

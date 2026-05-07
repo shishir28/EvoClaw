@@ -63,6 +63,7 @@ class PathSettings:
     test_sets_dir: str
     prompts_dir: str
     skill_production: str
+    skill_delivery_log: str
     feedback_file: str
 
 
@@ -169,6 +170,7 @@ def _build_path_settings(base_dir: Path) -> PathSettings:
         test_sets_dir=str(test_sets_dir),
         prompts_dir=str(adas_dir / "prompts"),
         skill_production=str(base_dir / "skills" / "youtube-curator" / "SKILL.md"),
+        skill_delivery_log=str(base_dir / "skills" / "youtube-curator" / "delivery_log.json"),
         feedback_file=str(test_sets_dir / "feedback.json"),
     )
 
@@ -227,6 +229,7 @@ BASELINE_RESULTS_DIR = SETTINGS.paths.baseline_results_dir
 TEST_SETS_DIR = SETTINGS.paths.test_sets_dir
 PROMPTS_DIR = SETTINGS.paths.prompts_dir
 SKILL_PRODUCTION = SETTINGS.paths.skill_production
+DELIVERY_LOG = SETTINGS.paths.skill_delivery_log
 FEEDBACK_FILE = SETTINGS.paths.feedback_file
 
 DAILY_SEARCH_BUDGET = SETTINGS.quotas.daily_search_budget

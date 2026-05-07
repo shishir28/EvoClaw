@@ -64,7 +64,7 @@ It is written as a learning-oriented checklist so you can follow the system incr
 ### Not implemented yet
 
 - [ ] generated candidate archive entries beyond the current baseline seeds
-- [ ] Telegram digest sender
+- [x] Telegram digest sender
 - [ ] Telegram reaction capture / feedback ingestion automation
 - [ ] actual scheduled runtime wiring
 - [ ] NemoClaw policy configuration in runnable form
@@ -512,19 +512,38 @@ This is how experimentation becomes production behavior.
 
 ### Tasks
 
-- [ ] create a Telegram sender module
-- [ ] define the final message formatter
-- [ ] run the production skill and format its picks
+- [x] create a Telegram sender module
+- [x] define the final message formatter
+- [x] run the production skill and format its picks
 - [ ] send a manual test message
 
 ### Why this matters
 
 This is the user-facing output of the system.
 
+### Step 11 progress
+
+Step 11 is implemented for the current manual-runtime scope.
+
+The production delivery path now:
+
+- lives under `adas/telegram/`
+- loads `skills/youtube-curator/SKILL.md` through the existing evaluator + executor path
+- formats the selected 3 picks into a Telegram-friendly digest message
+- sends the digest through Telegram's `sendMessage` API when `--send` is used
+- supports safe dry runs by default through `adas/telegram_digest.py`
+- appends `delivery_log.json` beside the production skill with delivery time, skill version, selected video IDs, digest text, and Telegram message ID when available
+
+Current limitation:
+
+- a live bot-backed manual send still needs to be exercised with real credentials
+
 ### Files involved
 
-- new Telegram integration code
+- `adas/telegram/`
+- `adas/telegram_digest.py`
 - `skills/youtube-curator/SKILL.md`
+- `skills/youtube-curator/delivery_log.json` (created on first run)
 - `.env`
 
 ---
@@ -608,7 +627,7 @@ If the goal is to understand what is happening as you build, use this order:
 - [x] Step 8 - meta-agent prompts
 - [x] Step 9 - meta-agent loop
 - [x] Step 10 - deployment
-- [ ] Step 11 - Telegram sending
+- [x] Step 11 - Telegram sending
 - [ ] Step 12 - Telegram feedback capture
 - [ ] Step 13 - cron automation
 - [ ] Step 14 - hardening
