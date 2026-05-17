@@ -4,7 +4,7 @@ This file explains **what actually happens today** in the codebase, and **what t
 
 ## 1. Current runnable workflow
 
-Today, EvoClaw supports a complete **fetch -> evaluate -> compare -> archive -> feedback** workflow.
+Today, EvoClaw supports a complete **fetch -> evaluate -> compare -> archive -> feedback -> evolve -> promote -> deliver -> capture reactions** workflow.
 
 ### Step 1: Fetch candidate videos
 
@@ -155,6 +155,28 @@ It:
 
 The meta-agent keeps promotion opt-in through `--deploy-best`.
 
+### Step 11: Send a Telegram digest
+
+`adas/telegram/service.py` orchestrates the delivery path:
+
+1. loads `skills/youtube-curator/SKILL.md` through the evaluator + executor path
+2. selects the top 3 videos
+3. formats them into a Telegram-friendly digest with title, channel, URL, and `why_watch` text
+4. sends the digest through Telegram's `sendMessage` API when `--send` is used
+5. appends a `DeliveryRecord` to `skills/youtube-curator/delivery_log.json` with `telegram_message_id` and `selected_video_ids`
+
+### Step 12: Capture Telegram reactions as feedback
+
+`adas/telegram/feedback_capture.py` closes the human-feedback loop:
+
+1. loads `delivery_log.json` to build a `message_id → DeliveryRecord` map
+2. polls Telegram's `getUpdates` for `message_reaction` events via `adas/telegram/reaction_poller.py`
+3. matches each reaction's `message_id` to a known delivery record
+4. maps recognised emoji (👍/👎 and common aliases) to `VALID_REACTIONS`
+5. loads the original `VideoRecord` data from the delivery record's `cache_path`
+6. writes one `FeedbackEntry` per matched reaction through `FeedbackService`, covering all picks in that delivery
+7. persists the last processed `update_id` to `reaction_poll_offset.json` to avoid reprocessing on subsequent runs
+
 ## 2. Current workflow as a diagram
 
 ```text
@@ -220,18 +242,26 @@ SKILL.md + cache JSON + feedback JSON
                         |
                         v
                 CycleResult (outcome + skill_id + score + promotion)
+                        |
+                        v
+          telegram/service.py (--send → delivery_log.json)
+                        |
+                        v
+        telegram/reaction_poller.py (getUpdates → ReactionUpdate)
+                        |
+                        v
+        telegram/feedback_capture.py (→ feedback.json via FeedbackService)
 ```
 
 ## 3. What is not in the workflow yet
 
 The following steps are still planned, not implemented:
 
-1. run the production skill on a schedule
-2. replace manual feedback append with Telegram reaction capture
+1. run the production skill on a schedule (cron automation — Step 13)
 
 ## 4. Full End-To-End Workflow Shape
 
-The intended long-term workflow is below. Step 8 now exists as opt-in promotion through `--deploy-best`, and Step 11 now exists as a manual Telegram delivery path; scheduled runtime wiring and reaction capture are still future work.
+The intended long-term workflow is below. Steps 8–12 are implemented; scheduled cron runtime wiring is the remaining gap.
 
 1. fetch fresh YouTube candidates
 2. evaluate baseline and generated skills against cached sets
@@ -297,12 +327,31 @@ cd /home/shishirmishra/Learnings/EvoClaw
 .venv/bin/python adas/meta_agent.py --cache adas/test_sets/video_cache_w1.json --reflect-passes 2 --deploy-best
 ```
 
+Run the Step 11 digest flow in dry-run mode:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python -m adas.telegram_digest --cache adas/test_sets/video_cache_w1.json
+```
+
+Send the Step 11 digest to Telegram:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python -m adas.telegram_digest --cache adas/test_sets/video_cache_w1.json --send
+```
+
+Capture Step 12 Telegram reactions as feedback:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python -m adas.telegram_feedback \
+  --delivery-log skills/youtube-curator/delivery_log.json \
+  --feedback adas/test_sets/feedback.json
+```
+
+React 👍 or 👎 to the digest message in Telegram, then run the above. Offset state is persisted so repeated runs only process new reactions.
+
 ## 6. Immediate next workflow milestone
 
-The next useful workflow to add is:
-
-1. exercise a live Step 11 send with real bot credentials
-2. replace manual feedback append with Telegram reaction capture
-3. then wire the full scheduled runtime
-
-That is the next missing step before EvoClaw becomes a true end-to-end daily system.
+The next milestone is Step 13: wire cron automation so the full loop (fetch → deliver → capture reactions) runs on a schedule without manual intervention.

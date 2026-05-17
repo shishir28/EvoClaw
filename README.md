@@ -2,7 +2,7 @@
 
 EvoClaw is an **ADAS-style, self-improving YouTube curator** for AI and entrepreneurship content. The target system runs inside a NemoClaw/OpenClaw environment, fetches candidate videos, evaluates curation strategies, evolves better `SKILL.md` prompts over time, and can now run a manual top-3 Telegram digest while full scheduling remains a later step.
 
-The repository is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback + meta-agent + skill promotion + manual Telegram delivery stage**:
+The repository is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback + meta-agent + skill promotion + Telegram delivery + Telegram reaction capture stage**:
 
 - a YouTube fetcher with caching, `subscriber_count` enrichment, and best-effort transcript support
 - a modular evaluator stack with DTO models, request loading, algorithmic scoring, optional LLM judging, and weighted aggregation
@@ -12,7 +12,8 @@ The repository is currently at the **working fetcher + evaluator + baseline comp
 - a Step 7 feedback flow that validates reactions, persists video snapshots atomically, and turns `alignment` into a real heuristic preference signal using channel, topic, and duration similarity
 - a Step 9 meta-agent flow that builds prompt context, generates a candidate skill, runs reflection passes, validates the candidate locally, evaluates it, and archives successful runs
 - a Step 10 skill promoter that copies the archive winner into `skills/youtube-curator/SKILL.md` only when it beats the recorded production deployment
-- a Step 11 Telegram delivery flow that runs the promoted production skill against a cache, formats the top 3 picks, optionally sends them through the Bot API, and records delivery metadata in `delivery_log.json`
+- a Step 11 Telegram delivery flow that runs the promoted production skill against a cache, formats the top 3 picks, sends them through the Bot API, and records delivery metadata in `delivery_log.json` — live send confirmed working
+- a Step 12 Telegram reaction capture flow that polls for 👍/👎 reactions on digest messages, maps them back to the delivered video picks via `delivery_log.json`, and writes `FeedbackEntry` records to `feedback.json` through the existing Step 7 feedback service
 - lazy default LLM-judge initialization so evaluator construction does not require model client setup unless semantic judging is enabled
 - evaluator and comparison CLIs with safer defaults: evaluator runs a real scoring flow by default, and baseline comparison fails fast when the required cache file is missing
 - typed shared configuration for search, inference, paths, and scoring weights
@@ -46,12 +47,13 @@ EvoClaw/
 │   ├── evaluation/               # Evaluator models, loader, scorer, judge, executor, service
 │   ├── feedback/                 # Step 7 feedback store and append service
 │   ├── meta/                     # Step 9 meta-agent context, generation, reflection, parsing
-│   ├── telegram/                 # Step 11 Telegram digest formatter, sender, log, and service
+│   ├── telegram/                 # Step 11-12 Telegram digest, sender, reaction poller, feedback capture
 │   ├── baseline_comparison.py    # CLI entrypoint and compatibility wrapper
 │   ├── evaluator.py              # CLI entrypoint and compatibility wrapper
 │   ├── feedback_cli.py           # Manual feedback append CLI
 │   ├── meta_agent.py             # Step 9 meta-agent CLI entrypoint
-│   ├── telegram_digest.py        # Step 11 manual Telegram digest CLI
+│   ├── telegram_digest.py        # Step 11 Telegram digest CLI
+│   ├── telegram_feedback.py      # Step 12 Telegram reaction feedback capture CLI
 │   ├── prompts/                  # Evaluator prompts
 │   ├── test_sets/                # Local caches and feedback artifacts
 │   └── youtube_fetcher.py        # YouTube data collection and caching
@@ -82,8 +84,8 @@ Implemented now:
 - `adas/feedback/` for Step 7 feedback persistence and append logic
 - `adas/meta/` for Step 9 meta-agent orchestration internals
 - `adas/deployment/` for Step 10 production skill promotion
-- `adas/telegram/` for Step 11 digest formatting, sending, and delivery metadata logging
-- top-level `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py`, `adas/meta_agent.py`, and `adas/telegram_digest.py` as CLI entrypoints
+- `adas/telegram/` for Step 11-12 digest formatting, sending, delivery metadata logging, reaction polling, and feedback capture
+- top-level `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py`, `adas/meta_agent.py`, `adas/telegram_digest.py`, and `adas/telegram_feedback.py` as CLI entrypoints
 - `adas/prompts/eval_judge.md`
 - `adas/prompts/meta_system.md`, `adas/prompts/meta_design.md`, and `adas/prompts/meta_reflect.md`
 - `adas/baselines/*.md`
@@ -127,16 +129,22 @@ Current delivery snapshot:
 - `adas/telegram/sender.py` sends the digest through Telegram's `sendMessage` API when explicitly enabled
 - `adas/telegram_digest.py` defaults to dry-run mode so message formatting can be checked safely
 - `skills/youtube-curator/delivery_log.json` records delivery time, selected video IDs, digest text, and Telegram message ID when available
+- live send confirmed working with real credentials (`telegram_message_id: 2`)
+
+Current reaction capture snapshot:
+
+- `adas/telegram/reaction_poller.py` polls `getUpdates` for `message_reaction` events
+- `adas/telegram/feedback_capture.py` maps reactions to delivery records and writes `FeedbackEntry` objects via the Step 7 service
+- `adas/telegram_feedback.py` is the CLI (`--delivery-log`, `--feedback`, `--offset-file`)
+- offset state is persisted in `reaction_poll_offset.json` next to the delivery log
 
 Current next milestone:
 
-- exercise one live bot-backed Telegram send with real credentials
-- connect Telegram reactions to the same Step 7 feedback schema
+- wire cron automation for the full scheduled runtime (Step 13)
 
 Planned but not yet implemented:
 
 - real OpenClaw execution
-- Telegram reaction capture
 - end-to-end cron-driven runtime wiring
 
 ## Setup
@@ -266,6 +274,17 @@ cd /home/shishirmishra/Learnings/EvoClaw
 ```
 
 This writes `skills/youtube-curator/delivery_log.json` with the digest metadata for later feedback mapping.
+
+Capture Telegram reactions into Step 12 feedback:
+
+```bash
+cd /home/shishirmishra/Learnings/EvoClaw
+.venv/bin/python -m adas.telegram_feedback \
+  --delivery-log skills/youtube-curator/delivery_log.json \
+  --feedback adas/test_sets/feedback.json
+```
+
+React 👍 or 👎 to the digest message in Telegram, then run the above command. Recognised reactions are written into `feedback.json` and influence future alignment scoring.
 
 Append manual feedback into Step 7:
 

@@ -9,6 +9,7 @@ The package layout was recently reorganized to group internals by domain:
 - `archive_runtime/` holds archive internals
 - `feedback/` holds Step 7 feedback persistence and append logic
 - `deployment/` holds Step 10 production skill promotion
+- `telegram/` holds Step 11-12 digest delivery, reaction polling, and feedback capture
 - top-level CLI files remain for manual runs; most internal imports now target the grouped packages directly
 
 ## What is here now
@@ -224,7 +225,7 @@ The evaluator runtime is now split cleanly:
 10. `feedback/service.py` can append manual feedback entries for later alignment scoring
 11. `deployment/promoter.py` can promote the archive winner into production
 
-Current limitation: the meta-agent runs a local generate→reflect→evaluate→archive loop with opt-in promotion. Manual Telegram delivery now exists, but scheduled runtime wiring and Telegram reaction capture still do not.
+The Telegram delivery path (Step 11) and reaction capture path (Step 12) are both implemented. Scheduled runtime wiring (Step 13) is the remaining gap.
 
 ### `meta/`
 
@@ -237,6 +238,25 @@ Owns Step 9 meta-agent internals:
 - `dedupe.py` prevents trivial archive duplicates based on normalized skill-body hashes
 - `loop.py` orchestrates generate -> reflect -> validate -> evaluate -> archive
 - `loop.py` can optionally call the Step 10 promoter after successful archive writes
+
+### `telegram/`
+
+Step 11-12 Telegram internals:
+
+- `formatter.py` — builds `TelegramDigestPick` objects and formats the final digest message text
+- `sender.py` — thin wrapper over Telegram's `sendMessage` API
+- `delivery_log.py` — append-only `DeliveryLogStore` that persists `DeliveryRecord` objects to `delivery_log.json`
+- `service.py` — `ProductionDigestService` orchestrates skill execution, formatting, optional send, and log append
+- `reaction_poller.py` — polls `getUpdates` with `allowed_updates=["message_reaction"]` and returns typed `ReactionUpdate` objects
+- `feedback_capture.py` — `ReactionFeedbackCapture` maps reaction updates to delivery records, loads the original VideoRecords from cache, and writes `FeedbackEntry` objects via `FeedbackService`
+
+### `telegram_digest.py`
+
+Step 11 CLI entrypoint. Supports `--cache`, `--skill`, `--feedback`, `--delivery-log`, and `--send`. Defaults to dry-run mode.
+
+### `telegram_feedback.py`
+
+Step 12 CLI entrypoint. Supports `--delivery-log`, `--feedback`, and `--offset-file`. Polls once and exits; run on a schedule or manually after reacting to a digest.
 
 ### `meta_agent.py`
 
@@ -339,16 +359,20 @@ The current lifecycle now also adds:
 9. Generate a candidate skill, run reflection passes, validate it, then evaluate and archive it.
 10. Optionally promote the archive winner into `skills/youtube-curator/SKILL.md` with `--deploy-best`.
 
+Steps 11-12 are also complete:
+
+11. Run the production skill, format picks, and send the Telegram digest.
+12. Poll for reactions on delivered messages and write matching feedback entries.
+
 The planned later lifecycle still adds:
 
-11. Run the production skill on a schedule.
-12. Capture Telegram reactions and feed them back into evaluation.
+13. Run the production skill on a schedule (cron automation).
 
 ## Unit tests
 
 The test suite lives in `tests/adas/` and mirrors the source layout. Shared builder utilities live in `tests/adas/builders.py`.
 
-**Current status:** the suite now covers Step 11 delivery in addition to the earlier evaluator, archive, meta-agent, and promotion flows.
+**Current status: 270 passing tests.** The suite covers Steps 1–11 (evaluator, archive, meta-agent, promotion, and Telegram delivery). Step 12 reaction capture modules do not yet have dedicated unit tests.
 
 | Test file | Covers |
 |---|---|
@@ -398,9 +422,9 @@ python3 -m pytest tests/adas/test_archive_service.py -v  # one file
 
 - Runtime-generated caches in `test_sets/` are gitignored, but archive history under `archive/skill_*/` is versioned.
 - Secret values are loaded from the repo root `.env`.
-- The current repo state is **post-evaluator / post-archive / first meta-agent loop / Step 10 promoter / Step 11 delivery runtime**.
+- The current repo state is **post-evaluator / post-archive / first meta-agent loop / Step 10 promoter / Step 11 delivery / Step 12 reaction capture**.
 - Step 5 and Step 6 are complete for the current `video_cache_w1.json` dataset.
 - Transcript fetching is **best-effort**: some videos now resolve transcripts, but YouTube may still block others depending on IP/network conditions.
 - The current cache shape is strong enough to begin the evaluator, because it includes `views_per_hour`, `subscriber_count`, and descriptions even when transcripts are missing.
-- The next concrete implementation step is Step 12: capture Telegram reactions and map them into feedback history.
+- The next concrete implementation step is Step 13: wire cron automation for the full scheduled runtime.
 - See the repo-level `ARCHITECTURE.md` and `WORKFLOW.md` files for the simplest high-level explanation.

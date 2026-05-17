@@ -4,7 +4,7 @@ This file explains the **current codebase shape** in plain language so you can u
 
 ## 1. Current architecture in one sentence
 
-EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> feedback -> evolve -> promote -> deliver** foundation, with scheduled runtime and Telegram reaction capture still to be built.
+EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> feedback -> evolve -> promote -> deliver -> capture reactions** foundation, with scheduled runtime automation still to be built.
 
 ## 2. Main layers
 
@@ -17,7 +17,7 @@ EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> fee
 | Archive internals | Save versioned archive entries and best-skill metadata | `adas/archive_runtime/` |
 | Feedback internals | Persist feedback history and append manual feedback entries | `adas/feedback/` |
 | Deployment internals | Promote the archive winner into the production skill path | `adas/deployment/` |
-| Telegram delivery internals | Format, send, and log the production digest | `adas/telegram/`, `adas/telegram_digest.py` |
+| Telegram delivery internals | Format, send, log the production digest, poll for reactions, and write feedback | `adas/telegram/`, `adas/telegram_digest.py`, `adas/telegram_feedback.py` |
 | CLI compatibility layer | Preserve the remaining manual entrypoints while internals live in grouped packages | `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py` |
 | Prompt assets | Hold reusable evaluator and meta-agent prompt templates | `adas/prompts/eval_judge.md`, `adas/prompts/meta_system.md`, `adas/prompts/meta_design.md`, `adas/prompts/meta_reflect.md` |
 | Production skill target | Live deployment target for the best skill | `skills/youtube-curator/SKILL.md` |
@@ -55,6 +55,14 @@ deployment/
 feedback/
     store.py
     service.py
+
+telegram/
+    formatter.py
+    sender.py
+    delivery_log.py
+    service.py
+    reaction_poller.py
+    feedback_capture.py
 
 top-level CLI entrypoints
     -> preserve the remaining manual command surfaces
@@ -142,11 +150,11 @@ That keeps API access, transcript attachment, cache persistence, and orchestrati
 - feedback persistence plus snapshot-based alignment scoring
 - first-pass meta-agent orchestration for generate -> reflect -> evaluate -> archive
 - opt-in production skill promotion with `deployment.json` metadata
-- manual Telegram digest delivery with `delivery_log.json` metadata
+- Telegram digest delivery with `delivery_log.json` metadata — live send confirmed
+- Telegram reaction capture via polling, mapping 👍/👎 reactions to feedback entries through the Step 7 service
 
 ### Planned later
 
-- Telegram feedback capture
 - cron-driven end-to-end automation
 
 ## 7. Best files to read first
@@ -172,7 +180,7 @@ If you want the easiest learning path through the code:
 
 ## 8. How to run unit tests
 
-The current suite is **261 passing tests**.
+The current suite is **270 passing tests**.
 
 ```bash
 # Activate the virtual environment first

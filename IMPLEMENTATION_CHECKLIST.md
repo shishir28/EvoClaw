@@ -65,7 +65,7 @@ It is written as a learning-oriented checklist so you can follow the system incr
 
 - [ ] generated candidate archive entries beyond the current baseline seeds
 - [x] Telegram digest sender
-- [ ] Telegram reaction capture / feedback ingestion automation
+- [x] Telegram reaction capture / feedback ingestion automation
 - [ ] actual scheduled runtime wiring
 - [ ] NemoClaw policy configuration in runnable form
 
@@ -515,7 +515,7 @@ This is how experimentation becomes production behavior.
 - [x] create a Telegram sender module
 - [x] define the final message formatter
 - [x] run the production skill and format its picks
-- [ ] send a manual test message
+- [x] send a manual test message
 
 ### Why this matters
 
@@ -523,7 +523,7 @@ This is the user-facing output of the system.
 
 ### Step 11 progress
 
-Step 11 is implemented for the current manual-runtime scope.
+Step 11 is complete.
 
 The production delivery path now:
 
@@ -533,10 +533,7 @@ The production delivery path now:
 - sends the digest through Telegram's `sendMessage` API when `--send` is used
 - supports safe dry runs by default through `adas/telegram_digest.py`
 - appends `delivery_log.json` beside the production skill with delivery time, skill version, selected video IDs, digest text, and Telegram message ID when available
-
-Current limitation:
-
-- a live bot-backed manual send still needs to be exercised with real credentials
+- live send has been exercised with real credentials and confirmed working (`telegram_message_id: 2`)
 
 ### Files involved
 
@@ -554,20 +551,37 @@ Current limitation:
 
 ### Tasks
 
-- [ ] choose polling or webhook
-- [ ] map reactions back to delivered video IDs
-- [ ] persist results into `adas/test_sets/feedback.json`
-- [ ] connect those results to evaluator alignment scoring
+- [x] choose polling or webhook
+- [x] map reactions back to delivered video IDs
+- [x] persist results into `adas/test_sets/feedback.json`
+- [x] connect those results to evaluator alignment scoring
 
 ### Why this matters
 
 This closes the human-feedback loop.
 
+### Step 12 progress
+
+Step 12 is complete for the current polling-based implementation scope.
+
+The reaction capture path now:
+
+- uses polling (no server required) via Telegram's `getUpdates` with `allowed_updates=["message_reaction"]`
+- lives in `adas/telegram/reaction_poller.py` (thin API wrapper) and `adas/telegram/feedback_capture.py` (mapping + persistence)
+- loads `delivery_log.json` to build a `message_id → DeliveryRecord` map at poll time
+- maps a recognised emoji reaction (👍/👎 and common aliases) on a digest message to all picks in that delivery with the same signal
+- loads the original `VideoRecord` data from the cache file recorded in the delivery log to build `FeedbackVideoSnapshot` entries
+- writes one `FeedbackEntry` per matched reaction through the existing `FeedbackService`
+- persists the last processed `update_id` in `reaction_poll_offset.json` next to the delivery log to avoid reprocessing
+- exposes a CLI at `adas/telegram_feedback.py` with `--delivery-log`, `--feedback`, and `--offset-file` options
+
 ### Files involved
 
-- new Telegram feedback code
+- `adas/telegram/reaction_poller.py`
+- `adas/telegram/feedback_capture.py`
+- `adas/telegram_feedback.py`
 - `adas/test_sets/feedback.json`
-- `adas/evaluator.py`
+- `skills/youtube-curator/reaction_poll_offset.json` (created on first poll)
 
 ---
 
@@ -628,7 +642,7 @@ If the goal is to understand what is happening as you build, use this order:
 - [x] Step 9 - meta-agent loop
 - [x] Step 10 - deployment
 - [x] Step 11 - Telegram sending
-- [ ] Step 12 - Telegram feedback capture
+- [x] Step 12 - Telegram feedback capture
 - [ ] Step 13 - cron automation
 - [ ] Step 14 - hardening
 
