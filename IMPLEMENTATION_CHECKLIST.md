@@ -591,21 +591,40 @@ The reaction capture path now:
 
 ### Tasks
 
-- [ ] verify `cron/jobs.json` matches real file paths
-- [ ] make missing-config failures explicit
-- [ ] run the evolution job manually
-- [ ] run the digest job manually
-- [ ] only then trust scheduled execution
+- [x] verify `cron/jobs.json` matches real file paths
+- [x] make missing-config failures explicit
+- [x] run the evolution job manually
+- [x] run the digest job manually
+- [x] only then trust scheduled execution
 
 ### Why this matters
 
 Scheduling should happen only after each manual path works.
 
+### Step 13 progress
+
+Step 13 is complete for the current implementation scope.
+
+The scheduled runtime now:
+
+- `cron/jobs.json` defines three real jobs with `{PROJECT_ROOT}`-relative paths and required env var declarations
+- `cron/runner.py` reads `jobs.json`, validates required env vars (exits 2 with a clear message when any are missing), runs the named job via the venv Python, and writes timestamped logs to `cron/logs/`
+- `cron/install.sh` generates and installs the three crontab entries into the user's crontab
+- `morning-digest` and `reaction-capture` have been manually exercised via the runner and confirmed working
+- the crontab is installed and active
+
+Daily schedule (Australia/Sydney):
+- `02:00` — `adas-evolution` (3 meta-agent cycles, deploy-best)
+- `07:00` — `morning-digest` (send digest to Telegram)
+- `09:30` — `reaction-capture` (poll for reactions, write feedback)
+
 ### Files involved
 
 - `cron/jobs.json`
-- `adas/meta_agent.py`
-- Telegram delivery code
+- `cron/runner.py`
+- `cron/install.sh`
+- `cron/logs/` (created on first run)
+- `cron/README.md`
 
 ---
 
@@ -643,7 +662,7 @@ If the goal is to understand what is happening as you build, use this order:
 - [x] Step 10 - deployment
 - [x] Step 11 - Telegram sending
 - [x] Step 12 - Telegram feedback capture
-- [ ] Step 13 - cron automation
+- [x] Step 13 - cron automation
 - [ ] Step 14 - hardening
 
 ---
