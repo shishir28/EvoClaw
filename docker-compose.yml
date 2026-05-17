@@ -1,0 +1,23 @@
+services:
+  evoclaw:
+    build:
+      context: .
+    image: evoclaw:latest
+    container_name: evoclaw-cron
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      TZ: Australia/Sydney
+      EVOCLAW_APP_DIR: /app
+      EVOCLAW_PYTHON: /usr/local/bin/python
+      EVOCLAW_UID: ${EVOCLAW_UID:-1000}
+      EVOCLAW_GID: ${EVOCLAW_GID:-1000}
+      # Inside Docker, localhost is the EvoClaw container. This reaches the
+      # host-published vLLM endpoint started on port 9000.
+      LLM_BASE_URL: ${EVOCLAW_LLM_BASE_URL:-http://host.docker.internal:9000/v1}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - .:/app
+    command: ["cron"]

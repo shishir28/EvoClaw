@@ -11,6 +11,10 @@ This directory contains the scheduler configuration and runtime tooling for EvoC
 | `install.sh` | Installs the three crontab entries into the current user's crontab |
 | `logs/` | Per-run log files written by `runner.py` and cron |
 
+The preferred production path is the Docker scheduler in `docker-compose.yml`.
+`install.sh` remains available for native/manual machines, but it is not needed
+when the `evoclaw-cron` container is running.
+
 ## Jobs
 
 Three jobs run daily in the `Australia/Sydney` timezone:
@@ -40,6 +44,8 @@ Logs are written to `cron/logs/<job-name>-<timestamp>.log`.
 
 ## Installing the crontab
 
+Native host crontab install:
+
 ```bash
 bash cron/install.sh           # preview entries, then confirm
 bash cron/install.sh --force   # install without prompting
@@ -48,6 +54,36 @@ bash cron/install.sh --force   # install without prompting
 To remove the entries later:
 ```bash
 crontab -e   # delete the three EvoClaw lines manually
+```
+
+## Running cron inside Docker
+
+```bash
+docker compose up -d --build evoclaw
+docker compose logs -f evoclaw
+```
+
+The container installs the same three cron schedules internally and bind-mounts
+the repository at `/app`, so generated files are written back into this working
+tree:
+
+- `cron/logs/*.log`
+- `adas/archive/**`
+- `adas/test_sets/feedback.json`
+- `skills/youtube-curator/delivery_log.json`
+- `skills/youtube-curator/reaction_poll_offset.json`
+- `skills/youtube-curator/SKILL.md` and deployment metadata when promotion runs
+
+For local vLLM on the host, Docker uses:
+
+```text
+LLM_BASE_URL=http://host.docker.internal:9000/v1
+```
+
+Override that without editing `.env` by setting:
+
+```bash
+EVOCLAW_LLM_BASE_URL=http://host.docker.internal:9000/v1 docker compose up -d --build evoclaw
 ```
 
 ## Config validation

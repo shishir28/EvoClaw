@@ -28,6 +28,21 @@ ENV_FILE = PROJECT_ROOT / ".env"
 VENV_PYTHON = PROJECT_ROOT / ".venv" / "bin" / "python"
 
 
+def _python_executable() -> str:
+    """Return the Python executable used to run jobs.
+
+    Native installs use the project virtualenv. Containerized installs usually
+    bind-mount the repository into /app without a .venv, so they should use the
+    image's Python instead.
+    """
+    configured = os.environ.get("EVOCLAW_PYTHON", "").strip()
+    if configured:
+        return configured
+    if VENV_PYTHON.exists():
+        return str(VENV_PYTHON)
+    return sys.executable
+
+
 def _load_env() -> None:
     """Load .env into the current process environment."""
     if not ENV_FILE.exists():
@@ -89,7 +104,7 @@ def _run_job(job: dict, dry_run: bool = False) -> int:
     module = job["module"]
     args = _expand_args(job.get("args", []), PROJECT_ROOT)
 
-    cmd = [str(VENV_PYTHON), "-m", module] + args
+    cmd = [_python_executable(), "-m", module] + args
     cmd_str = " ".join(cmd)
 
     if dry_run:

@@ -161,6 +161,60 @@
         "Selected from 7d fallback pool."
       ],
       "message_text": "🎬 Your AI + startup picks for today\n\n1. \"POV: AI just upgraded the photoshoot game 🚀📸 #ecommerce #product\"\n   @Surazz Gupta · 1 min · 16 days ago\n   🔗 https://www.youtube.com/watch?v=TsXhgpZRU2w\n   -> Useful for staying current on ai product launch, with roughly 136 views per hour right now.\n\n2. \"6 Profitable AI business ideas for 2026\"\n   @Silicon Valley Girl · 24 min · 16 days ago\n   🔗 https://www.youtube.com/watch?v=gwsaC3WiCqs\n   -> Let's talk about what AI business can you actually start in 2026 if you're not a coder, not in Silicon Valley, and don't have a million dollars in funding.\n\n3. \"Interview with an agency owner who will never be replaced by AI\"\n   @Payton Clark Smith · 14 min · 17 days ago\n   🔗 https://www.youtube.com/watch?v=zOE8nbMjV4c\n   -> And I was like, I think that's the work I want to get into.\n\nReact 👍 or 👎 to each to help me improve picks."
+    },
+    {
+      "delivered_at": "2026-05-17T21:19:53.887929+00:00",
+      "dry_run": false,
+      "skill_name": "recency-first",
+      "skill_version": "1.0",
+      "strategy": "recency",
+      "production_skill_path": "/app/skills/youtube-curator/SKILL.md",
+      "cache_path": "/app/adas/test_sets/video_cache_w1.json",
+      "feedback_path": "/app/adas/test_sets/feedback.json",
+      "telegram_chat_id": "8770142442",
+      "telegram_message_id": 2,
+      "selected_video_ids": [
+        "TsXhgpZRU2w",
+        "gwsaC3WiCqs",
+        "zOE8nbMjV4c"
+      ],
+      "picks": [
+        {
+          "rank": 1,
+          "video_id": "TsXhgpZRU2w",
+          "title": "POV: AI just upgraded the photoshoot game 🚀📸 #ecommerce #product",
+          "channel": "Surazz Gupta",
+          "url": "https://www.youtube.com/watch?v=TsXhgpZRU2w",
+          "duration_minutes": 1,
+          "age_label": "16 days ago",
+          "why_watch": "Useful for staying current on ai product launch, with roughly 136 views per hour right now."
+        },
+        {
+          "rank": 2,
+          "video_id": "gwsaC3WiCqs",
+          "title": "6 Profitable AI business ideas for 2026",
+          "channel": "Silicon Valley Girl",
+          "url": "https://www.youtube.com/watch?v=gwsaC3WiCqs",
+          "duration_minutes": 24,
+          "age_label": "16 days ago",
+          "why_watch": "Let's talk about what AI business can you actually start in 2026 if you're not a coder, not in Silicon Valley, and don't have a million dollars in funding."
+        },
+        {
+          "rank": 3,
+          "video_id": "zOE8nbMjV4c",
+          "title": "Interview with an agency owner who will never be replaced by AI",
+          "channel": "Payton Clark Smith",
+          "url": "https://www.youtube.com/watch?v=zOE8nbMjV4c",
+          "duration_minutes": 14,
+          "age_label": "17 days ago",
+          "why_watch": "And I was like, I think that's the work I want to get into."
+        }
+      ],
+      "execution_notes": [
+        "Executed recency strategy adapter.",
+        "Selected from 7d fallback pool."
+      ],
+      "message_text": "🎬 Your AI + startup picks for today\n\n1. \"POV: AI just upgraded the photoshoot game 🚀📸 #ecommerce #product\"\n   @Surazz Gupta · 1 min · 16 days ago\n   🔗 https://www.youtube.com/watch?v=TsXhgpZRU2w\n   -> Useful for staying current on ai product launch, with roughly 136 views per hour right now.\n\n2. \"6 Profitable AI business ideas for 2026\"\n   @Silicon Valley Girl · 24 min · 16 days ago\n   🔗 https://www.youtube.com/watch?v=gwsaC3WiCqs\n   -> Let's talk about what AI business can you actually start in 2026 if you're not a coder, not in Silicon Valley, and don't have a million dollars in funding.\n\n3. \"Interview with an agency owner who will never be replaced by AI\"\n   @Payton Clark Smith · 14 min · 17 days ago\n   🔗 https://www.youtube.com/watch?v=zOE8nbMjV4c\n   -> And I was like, I think that's the work I want to get into.\n\nReact 👍 or 👎 to each to help me improve picks."
     }
   ]
 }

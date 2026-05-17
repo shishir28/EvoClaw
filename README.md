@@ -168,6 +168,25 @@ Planned but not yet implemented:
    - `TELEGRAM_CHAT_ID`
    - optional inference settings such as `INFERENCE_BACKEND`, `LLM_BASE_URL`, and `LLM_MODEL`
 
+### Docker scheduler
+
+EvoClaw can run its scheduled jobs inside Docker instead of installing cron on
+the host:
+
+```bash
+docker compose up -d --build evoclaw
+docker compose logs -f evoclaw
+```
+
+The compose service bind-mounts this repository at `/app`. Any files created by
+scheduled runs are written back into the current directory structure, including
+`cron/logs/`, `adas/archive/`, `adas/test_sets/feedback.json`, and
+`skills/youtube-curator/` delivery/deployment files.
+
+When using a vLLM server published on the host at port `9000`, the container uses
+`http://host.docker.internal:9000/v1` by default. Override it with
+`EVOCLAW_LLM_BASE_URL` if needed.
+
 ## Usage
 
 Fetch and cache a test set of videos:

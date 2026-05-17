@@ -12,7 +12,13 @@ import pytest
 # Add cron/ to path so runner.py is importable directly.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "cron"))
 
-from runner import _check_required_env, _expand_args, _find_job, _load_env
+from runner import (
+    _check_required_env,
+    _expand_args,
+    _find_job,
+    _load_env,
+    _python_executable,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -142,6 +148,27 @@ class TestCheckRequiredEnv:
 
         missing = _check_required_env(job)
         assert set(missing) == {"VAR_X", "VAR_Y"}
+
+
+# ---------------------------------------------------------------------------
+# _python_executable
+# ---------------------------------------------------------------------------
+
+class TestPythonExecutable:
+    def test_uses_explicit_env_override(self, monkeypatch):
+        monkeypatch.setenv("EVOCLAW_PYTHON", "/usr/local/bin/python")
+
+        assert _python_executable() == "/usr/local/bin/python"
+
+    def test_falls_back_to_current_interpreter_when_venv_missing(self, monkeypatch, tmp_path):
+        import runner
+        original = runner.VENV_PYTHON
+        runner.VENV_PYTHON = tmp_path / ".venv" / "bin" / "python"
+        monkeypatch.delenv("EVOCLAW_PYTHON", raising=False)
+        try:
+            assert _python_executable() == sys.executable
+        finally:
+            runner.VENV_PYTHON = original
 
 
 # ---------------------------------------------------------------------------
