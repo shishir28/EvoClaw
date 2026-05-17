@@ -20,6 +20,18 @@ REQUIRED_FRONTMATTER_KEYS: frozenset[str] = frozenset(
 SUPPORTED_STRATEGIES: frozenset[str] = frozenset(
     {"recency", "engagement-velocity", "llm-substance-judge"}
 )
+REQUIRED_BODY_HEADERS: frozenset[str] = frozenset({"## Goal", "## Steps"})
+SKILL_BODY_MIN_LENGTH: int = 200
+# Patterns that indicate an LLM tried to escape its sandboxed role and inject
+# instructions into other prompts or system contexts.
+_INJECTION_PATTERNS: tuple[str, ...] = (
+    "ignore previous instructions",
+    "ignore all previous",
+    "disregard previous",
+    "system prompt",
+    "you are now",
+    "act as",
+)
 
 def strip_fences(text: str) -> str:
     """Remove ```json...``` or plain ``` fences from *text*."""
@@ -99,6 +111,45 @@ def parse_frontmatter(skill_md: str) -> dict[str, str | None]:
     return fm
 
 
+def _extract_body(skill_md: str) -> str:
+    """Return the text after the closing frontmatter delimiter."""
+    lines = skill_md.split("\n")
+    close_idx: int | None = None
+    if lines and lines[0].strip() == "---":
+        for i, line in enumerate(lines[1:], start=1):
+            if line.strip() == "---":
+                close_idx = i
+                break
+    if close_idx is None:
+        return skill_md
+    return "\n".join(lines[close_idx + 1:])
+
+
+def validate_skill_body(skill_md: str) -> None:
+    """Raise ValueError when the SKILL.md body fails structural or safety checks."""
+    body = _extract_body(skill_md)
+
+    if len(body.strip()) < SKILL_BODY_MIN_LENGTH:
+        raise ValueError(
+            f"SKILL.md body is too short ({len(body.strip())} chars). "
+            f"Minimum required: {SKILL_BODY_MIN_LENGTH}."
+        )
+
+    missing_headers = [h for h in sorted(REQUIRED_BODY_HEADERS) if h not in body]
+    if missing_headers:
+        raise ValueError(
+            "SKILL.md body is missing required headers: "
+            + ", ".join(f"'{h}'" for h in missing_headers)
+        )
+
+    lower_body = body.lower()
+    for pattern in _INJECTION_PATTERNS:
+        if pattern in lower_body:
+            raise ValueError(
+                f"SKILL.md body contains a potential prompt injection pattern: {pattern!r}"
+            )
+
+
 def validate_frontmatter(skill_md: str) -> dict[str, str | None]:
     """Parse frontmatter and raise ValueError for any contract violations."""
     fm = parse_frontmatter(skill_md)
@@ -130,6 +181,7 @@ def validate_frontmatter(skill_md: str) -> dict[str, str | None]:
 def validate_candidate(candidate: Candidate) -> dict[str, str | None]:
     """Validate candidate frontmatter and assert the name field matches."""
     frontmatter = validate_frontmatter(candidate.skill_md)
+    validate_skill_body(candidate.skill_md)
     if frontmatter.get("name") != candidate.name:
         raise ValueError(
             "Candidate name must match frontmatter 'name': "

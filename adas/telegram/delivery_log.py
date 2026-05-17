@@ -7,15 +7,20 @@ from pathlib import Path
 
 try:
     from .models import DeliveryRecord
+    from ..config import BASE_DIR
+    from ..utils.paths import assert_safe_write_path
 except ImportError:
     from telegram.models import DeliveryRecord
+    from config import BASE_DIR
+    from utils.paths import assert_safe_write_path
 
 
 class DeliveryLogStore:
     """Append-only JSON persistence for Telegram digest delivery records."""
 
-    def __init__(self, path: str | Path) -> None:
+    def __init__(self, path: str | Path, safe_base: Path | None = None) -> None:
         self._path = Path(path)
+        self._safe_base: Path = safe_base if safe_base is not None else Path(BASE_DIR)
 
     @property
     def path(self) -> Path:
@@ -35,6 +40,7 @@ class DeliveryLogStore:
         ]
 
     def append(self, record: DeliveryRecord) -> None:
+        assert_safe_write_path(self._path, self._safe_base)
         history = self.load_history()
         history.append(record)
         self._path.parent.mkdir(parents=True, exist_ok=True)

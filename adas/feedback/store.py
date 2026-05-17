@@ -10,16 +10,19 @@ import tempfile
 from pathlib import Path
 
 try:
-    from ..config import FEEDBACK_FILE
+    from ..config import BASE_DIR, FEEDBACK_FILE
     from ..evaluation.models import FeedbackEntry
+    from ..utils.paths import assert_safe_write_path
 except ImportError:
-    from config import FEEDBACK_FILE
+    from config import BASE_DIR, FEEDBACK_FILE
     from evaluation.models import FeedbackEntry
+    from utils.paths import assert_safe_write_path
 
 
 class FeedbackStore:
-    def __init__(self, default_path: str = FEEDBACK_FILE) -> None:
+    def __init__(self, default_path: str = FEEDBACK_FILE, safe_base: Path | None = None) -> None:
         self._default_path = Path(default_path)
+        self._safe_base: Path = safe_base if safe_base is not None else Path(BASE_DIR)
 
     def load_history(self, path: str | None = None) -> list[FeedbackEntry]:
         resolved = Path(path) if path is not None else self._default_path
@@ -31,6 +34,8 @@ class FeedbackStore:
 
     def save_history(self, history: list[FeedbackEntry], path: str | None = None) -> None:
         resolved = Path(path) if path is not None else self._default_path
+        if path is not None:
+            assert_safe_write_path(resolved, self._safe_base)
         resolved.parent.mkdir(parents=True, exist_ok=True)
         content = json.dumps(
             {"history": [entry.to_dict() for entry in history]},

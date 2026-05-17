@@ -5,9 +5,12 @@ Step 6 orchestration for writing evaluated skills into the archive.
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
+
+_log = logging.getLogger(__name__)
 
 try:
     from ..baseline.models import BaselineEvaluationRecord
@@ -35,6 +38,7 @@ class ArchiveService:
         context: dict[str, Any],
     ) -> dict[str, Any]:
         index = self._store.load_index()
+        _log.info("archiving %d records (source_type=%s)", len(records), source_type)
         for record in records:
             self._archive_record(
                 index=index,
@@ -44,6 +48,7 @@ class ArchiveService:
             )
         self._refresh_best_skill(index)
         self._store.save_index(index)
+        _log.info("archive saved; best_skill_id=%s score=%s", index.best_skill_id, index.best_score)
         return index.to_dict()
 
     def _archive_record(
@@ -53,6 +58,7 @@ class ArchiveService:
         source_type: str,
         context: dict[str, Any],
     ) -> None:
+        _log.debug("archiving skill_path=%s status=%s", record.skill_path, record.status)
         # Failed records are archived intentionally so the archive keeps an audit
         # trail of attempted evaluations, not just successful winners.
         resolved_skill_path = self._resolve_skill_path(record.skill_path)

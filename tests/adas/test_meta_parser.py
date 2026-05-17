@@ -27,15 +27,20 @@ score: null
 ---
 
 ## Goal
-Pick fresh AI startup videos.
+Pick the 3 most recently published AI and startup videos from the last 48 hours.
+Focus on breaking news, product launches, and founder insights that have not yet gone viral.
 
 ## Steps
-1. Filter by recency.
+1. Filter candidates by published_at descending (newest first).
+2. Discard videos from channels with fewer than 1,000 subscribers.
+3. Discard non-English titles or descriptions.
+4. Select the top 3 remaining videos.
+5. Generate a one-sentence "why watch" summary for each pick.
 
 ## Fallback
-Use a wider window if fewer than 3 found.
+Use a wider 96-hour window if fewer than 3 candidates remain after filtering.
 
-Telegram: List top 3 picks with titles and channels.
+Telegram: List top 3 picks with titles, channels, and why-watch summaries.
 """
 
 

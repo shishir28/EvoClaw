@@ -632,13 +632,25 @@ Daily schedule (Australia/Sydney):
 
 **Goal:** make the system safe, stable, and suitable for real repeated execution.
 
+**Status: Complete** — 2026-05-17
+
 ### Tasks
 
-- [ ] apply network policy for YouTube, Telegram, and local inference
-- [ ] confirm writable paths are limited to intended workspace locations
-- [ ] add validation for generated `SKILL.md`
-- [ ] add retry handling for model and API failures
-- [ ] add useful logs around archive writes, deployment, and delivery
+- [x] confirm writable paths are limited to intended workspace locations
+  - `assert_safe_write_path()` in `adas/utils/paths.py`; applied to `FeedbackStore.save_history()` and `DeliveryLogStore.append()` with injectable `safe_base`
+- [x] add validation for generated `SKILL.md`
+  - `validate_skill_body()` in `adas/meta/parser.py`; checks minimum length (200 chars), required headers (`## Goal`, `## Steps`), and prompt injection patterns; called from `validate_candidate()`
+- [x] add retry handling for model and API failures
+  - `call_with_retry()` in `adas/utils/retry.py`; applied to `TelegramSender._post()`, `TelegramReactionPoller.poll()`, and `OpenAIChatCompletionClient.complete()`
+- [x] add useful logs around archive writes, deployment, and delivery
+  - `logging.getLogger(__name__)` added to `archive_runtime/service.py`, `deployment/promoter.py`, `telegram/service.py`, and `feedback/service.py`
+
+### New files
+
+- `adas/utils/__init__.py`
+- `adas/utils/retry.py`
+- `adas/utils/paths.py`
+- `tests/adas/test_hardening.py` (30 tests)
 
 ### Why this matters
 
@@ -663,7 +675,7 @@ If the goal is to understand what is happening as you build, use this order:
 - [x] Step 11 - Telegram sending
 - [x] Step 12 - Telegram feedback capture
 - [x] Step 13 - cron automation
-- [ ] Step 14 - hardening
+- [x] Step 14 - hardening
 
 ---
 

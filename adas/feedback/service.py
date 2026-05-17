@@ -4,7 +4,10 @@ Step 7 feedback ingestion service.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
+
+_log = logging.getLogger(__name__)
 
 try:
     from ..evaluation.models import FeedbackEntry, FeedbackPick, FeedbackVideoSnapshot, VideoRecord
@@ -56,6 +59,7 @@ class FeedbackService:
         history = self._store.load_history(feedback_path)
         history.append(entry)
         self._store.save_history(history, feedback_path)
+        _log.info("feedback entry appended: date=%s picks=%d", date, len(feedback_picks))
         return entry
 
     def _validate_request(self, date: str, picks: list[ManualFeedbackPick]) -> None:

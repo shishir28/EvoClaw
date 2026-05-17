@@ -61,7 +61,7 @@ def test_dry_run_writes_delivery_log(tmp_path):
     skill_doc = skill().with_name("production-skill").build()
     skill_doc.version = "2.1"
     request = make_request(videos=_videos(), skill_doc=skill_doc)
-    store = DeliveryLogStore(tmp_path / "delivery_log.json")
+    store = DeliveryLogStore(tmp_path / "delivery_log.json", safe_base=tmp_path)
     service = ProductionDigestService(
         evaluator=_StubEvaluator(request, ["v1", "v2", "v3"]),
         formatter=TelegramDigestFormatter(
@@ -89,7 +89,7 @@ def test_dry_run_writes_delivery_log(tmp_path):
 def test_send_calls_telegram_and_persists_message_id(tmp_path):
     request = make_request(videos=_videos(), skill_doc=skill().build())
     sender = _StubSender()
-    store = DeliveryLogStore(tmp_path / "delivery_log.json")
+    store = DeliveryLogStore(tmp_path / "delivery_log.json", safe_base=tmp_path)
     service = ProductionDigestService(
         evaluator=_StubEvaluator(request, ["v1", "v2", "v3"]),
         formatter=TelegramDigestFormatter(

@@ -12,9 +12,11 @@ from typing import Any, Callable, Protocol
 try:
     from ..config import LLM_BASE_URL, LLM_MODEL, PROMPTS_DIR
     from .models import EvaluationRequest, VideoRecord
+    from ..utils.retry import call_with_retry
 except ImportError:
     from config import LLM_BASE_URL, LLM_MODEL, PROMPTS_DIR
     from evaluation.models import EvaluationRequest, VideoRecord
+    from utils.retry import call_with_retry
 
 
 def _first_sentence(text: str) -> str:
@@ -74,26 +76,28 @@ class OpenAIChatCompletionClient:
 
     def complete(self, system_prompt: str, user_prompt: str) -> str:
         try:
-            from openai import APIConnectionError, APIStatusError, APITimeoutError
+            from openai import APIConnectionError, APITimeoutError
         except ImportError as exc:
             raise RuntimeError("The 'openai' package is required for LLM judging.") from exc
 
-        try:
-            response = self._client.chat.completions.create(
-                model=self._model,
-                temperature=0.0,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-            )
-        except (APIConnectionError, APIStatusError, APITimeoutError) as exc:
-            raise RuntimeError(f"LLM judging request failed: {exc}") from exc
+        def _attempt() -> str:
+            try:
+                response = self._client.chat.completions.create(
+                    model=self._model,
+                    temperature=0.0,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                )
+            except (APIConnectionError, APITimeoutError) as exc:
+                raise RuntimeError(f"LLM judging request failed: {exc}") from exc
+            content = response.choices[0].message.content if response.choices else None
+            if not content:
+                raise RuntimeError("LLM judging returned no message content.")
+            return content
 
-        content = response.choices[0].message.content if response.choices else None
-        if not content:
-            raise RuntimeError("LLM judging returned no message content.")
-        return content
+        return call_with_retry(_attempt, retryable_exceptions=(RuntimeError,))
 
 
 class LLMJudge:

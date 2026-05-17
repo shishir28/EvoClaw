@@ -9,9 +9,11 @@ import requests
 try:
     from ..config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
     from .models import TelegramSendReceipt
+    from ..utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
 except ImportError:
     from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
     from telegram.models import TelegramSendReceipt
+    from utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
 
 
 @dataclass(slots=True)
@@ -52,23 +54,33 @@ class TelegramSender:
         )
 
     def _post(self, text: str) -> requests.Response:
-        try:
-            response = self.session.post(
-                self.endpoint,
-                json={
-                    "chat_id": self.chat_id,
-                    "text": text,
-                    "disable_web_page_preview": False,
-                },
-                timeout=self.timeout_seconds,
-            )
-        except requests.RequestException as exc:
-            raise RuntimeError(f"Telegram sendMessage request failed: {exc}") from exc
-        if response.status_code != 200:
-            raise RuntimeError(
-                f"Telegram sendMessage returned HTTP {response.status_code}: {response.text}"
-            )
-        return response
+        def _attempt() -> requests.Response:
+            try:
+                response = self.session.post(
+                    self.endpoint,
+                    json={
+                        "chat_id": self.chat_id,
+                        "text": text,
+                        "disable_web_page_preview": False,
+                    },
+                    timeout=self.timeout_seconds,
+                )
+            except requests.RequestException as exc:
+                raise RuntimeError(f"Telegram sendMessage request failed: {exc}") from exc
+            if response.status_code in RETRYABLE_HTTP_STATUSES:
+                raise RuntimeError(
+                    f"Telegram sendMessage returned HTTP {response.status_code}: {response.text}"
+                )
+            if response.status_code != 200:
+                raise RuntimeError(
+                    f"Telegram sendMessage returned HTTP {response.status_code}: {response.text}"
+                )
+            return response
+
+        return call_with_retry(
+            _attempt,
+            retryable_exceptions=(RuntimeError,),
+        )
 
     @staticmethod
     def _parse_json(response: requests.Response) -> dict[str, object]:

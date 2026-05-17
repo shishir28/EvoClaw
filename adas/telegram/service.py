@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Protocol
+
+_log = logging.getLogger(__name__)
 
 try:
     from ..config import DELIVERY_LOG, FEEDBACK_FILE, SKILL_PRODUCTION
@@ -102,7 +105,11 @@ class ProductionDigestService:
         dry_run = not send
         if send:
             sender = self.sender or TelegramSender()
+            _log.info("sending digest to Telegram (skill=%s, videos=%s)", request.skill.name, selected_video_ids)
             receipt = sender.send_message(message_text)
+            _log.info("digest sent: message_id=%s", receipt.message_id)
+        else:
+            _log.info("dry-run: skipping Telegram send (skill=%s)", request.skill.name)
 
         delivery_store = self._resolve_delivery_log_store(skill_path, delivery_log_path)
         record = DeliveryRecord(

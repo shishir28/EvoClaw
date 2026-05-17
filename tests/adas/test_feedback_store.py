@@ -61,7 +61,7 @@ class TestFeedbackStore:
             )
         ]
 
-        FeedbackStore().save_history(history, str(feedback_file))
+        FeedbackStore(safe_base=tmp_path).save_history(history, str(feedback_file))
 
         payload = json.loads(feedback_file.read_text())
         assert payload["history"][0]["date"] == "2026-05-04"
@@ -79,7 +79,7 @@ class TestFeedbackService:
             .build()
         ]
 
-        entry = FeedbackService().append_feedback(
+        entry = FeedbackService(store=FeedbackStore(safe_base=tmp_path)).append_feedback(
             date="2026-05-04",
             picks=[ManualFeedbackPick(video_id="v1", reaction="up")],
             available_videos=available_videos,
@@ -96,7 +96,7 @@ class TestFeedbackService:
         feedback_file = tmp_path / "feedback.json"
 
         with pytest.raises(ValueError, match="Feedback video_id not found"):
-            FeedbackService().append_feedback(
+            FeedbackService(store=FeedbackStore(safe_base=tmp_path)).append_feedback(
                 date="2026-05-04",
                 picks=[ManualFeedbackPick(video_id="missing", reaction="up")],
                 available_videos=[video().with_id("v1").build()],
@@ -108,7 +108,7 @@ class TestFeedbackService:
         available_videos = [video().with_id("v1").build()]
 
         with pytest.raises(ValueError, match="Duplicate feedback video IDs"):
-            FeedbackService().append_feedback(
+            FeedbackService(store=FeedbackStore(safe_base=tmp_path)).append_feedback(
                 date="2026-05-04",
                 picks=[
                     ManualFeedbackPick(video_id="v1", reaction="up"),
@@ -121,7 +121,7 @@ class TestFeedbackService:
     def test_append_feedback_rejects_empty_date(self, tmp_path):
         feedback_file = tmp_path / "feedback.json"
         with pytest.raises(ValueError, match="date must not be empty"):
-            FeedbackService().append_feedback(
+            FeedbackService(store=FeedbackStore(safe_base=tmp_path)).append_feedback(
                 date="   ",
                 picks=[ManualFeedbackPick(video_id="v1", reaction="up")],
                 available_videos=[video().with_id("v1").build()],
@@ -131,7 +131,7 @@ class TestFeedbackService:
     def test_append_feedback_rejects_empty_picks_list(self, tmp_path):
         feedback_file = tmp_path / "feedback.json"
         with pytest.raises(ValueError, match="At least one feedback pick"):
-            FeedbackService().append_feedback(
+            FeedbackService(store=FeedbackStore(safe_base=tmp_path)).append_feedback(
                 date="2026-05-04",
                 picks=[],
                 available_videos=[video().with_id("v1").build()],
@@ -141,7 +141,7 @@ class TestFeedbackService:
     def test_append_feedback_rejects_empty_video_id(self, tmp_path):
         feedback_file = tmp_path / "feedback.json"
         with pytest.raises(ValueError, match="video_id must not be empty"):
-            FeedbackService().append_feedback(
+            FeedbackService(store=FeedbackStore(safe_base=tmp_path)).append_feedback(
                 date="2026-05-04",
                 picks=[ManualFeedbackPick(video_id="  ", reaction="up")],
                 available_videos=[video().with_id("v1").build()],
@@ -151,7 +151,7 @@ class TestFeedbackService:
     def test_append_feedback_rejects_invalid_reaction_string(self, tmp_path):
         feedback_file = tmp_path / "feedback.json"
         with pytest.raises(ValueError, match="Invalid reaction"):
-            FeedbackService().append_feedback(
+            FeedbackService(store=FeedbackStore(safe_base=tmp_path)).append_feedback(
                 date="2026-05-04",
                 picks=[ManualFeedbackPick(video_id="v1", reaction="thumbs up")],
                 available_videos=[video().with_id("v1").build()],
@@ -160,7 +160,7 @@ class TestFeedbackService:
 
     def test_append_feedback_accepts_none_reaction(self, tmp_path):
         feedback_file = tmp_path / "feedback.json"
-        entry = FeedbackService().append_feedback(
+        entry = FeedbackService(store=FeedbackStore(safe_base=tmp_path)).append_feedback(
             date="2026-05-04",
             picks=[ManualFeedbackPick(video_id="v1", reaction=None)],
             available_videos=[video().with_id("v1").build()],
@@ -171,7 +171,7 @@ class TestFeedbackService:
     @pytest.mark.parametrize("reaction", ["up", "down", "👍", "👎", "like", "dislike"])
     def test_append_feedback_accepts_all_valid_reactions(self, tmp_path, reaction):
         feedback_file = tmp_path / "feedback.json"
-        entry = FeedbackService().append_feedback(
+        entry = FeedbackService(store=FeedbackStore(safe_base=tmp_path)).append_feedback(
             date="2026-05-04",
             picks=[ManualFeedbackPick(video_id="v1", reaction=reaction)],
             available_videos=[video().with_id("v1").build()],

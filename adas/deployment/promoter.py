@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Protocol
+
+_log = logging.getLogger(__name__)
 
 try:
     from ..archive_runtime.models import ArchiveIndex, ArchiveIndexEntry
@@ -150,6 +153,7 @@ class SkillPromoter:
         current_record = self._deployment_store.load()
 
         if best_entry is None:
+            _log.info("promotion skipped: archive has no deployable best skill")
             return self._skipped_result(
                 reason="Archive index does not contain a deployable best skill.",
                 current_record=current_record,
@@ -159,6 +163,11 @@ class SkillPromoter:
         source_skill_path = self._resolve_archived_skill_path(best_entry)
 
         if self._current_deployment_is_better_or_equal(current_record, best_score):
+            _log.info(
+                "promotion skipped: current score %.4f >= best score %.4f",
+                current_record.deployed_score,
+                best_score,
+            )
             return self._skipped_result(
                 reason="Current deployment score is greater than or equal to archive best score.",
                 current_record=current_record,
@@ -166,6 +175,12 @@ class SkillPromoter:
                 source_skill_path=source_skill_path,
             )
 
+        _log.info(
+            "promoting skill_id=%s score=%.4f -> %s",
+            best_entry.skill_id,
+            best_score,
+            self._production_skill_path,
+        )
         self._copy_skill(source_skill_path, self._production_skill_path)
         record = self._build_deployment_record(
             best_entry=best_entry,

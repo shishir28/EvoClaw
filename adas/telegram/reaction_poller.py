@@ -9,8 +9,10 @@ import requests
 
 try:
     from ..config import TELEGRAM_BOT_TOKEN
+    from ..utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
 except ImportError:
     from config import TELEGRAM_BOT_TOKEN
+    from utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
 
 
 @dataclass(slots=True)
@@ -48,19 +50,26 @@ class TelegramReactionPoller:
         if offset is not None:
             params["offset"] = offset
 
-        try:
-            response = self.session.get(
-                f"https://api.telegram.org/bot{self.bot_token}/getUpdates",
-                params=params,
-                timeout=self.timeout_seconds,
-            )
-        except requests.RequestException as exc:
-            raise RuntimeError(f"getUpdates request failed: {exc}") from exc
+        def _attempt() -> requests.Response:
+            try:
+                resp = self.session.get(
+                    f"https://api.telegram.org/bot{self.bot_token}/getUpdates",
+                    params=params,
+                    timeout=self.timeout_seconds,
+                )
+            except requests.RequestException as exc:
+                raise RuntimeError(f"getUpdates request failed: {exc}") from exc
+            if resp.status_code in RETRYABLE_HTTP_STATUSES:
+                raise RuntimeError(
+                    f"getUpdates returned HTTP {resp.status_code}: {resp.text}"
+                )
+            if resp.status_code != 200:
+                raise RuntimeError(
+                    f"getUpdates returned HTTP {resp.status_code}: {resp.text}"
+                )
+            return resp
 
-        if response.status_code != 200:
-            raise RuntimeError(
-                f"getUpdates returned HTTP {response.status_code}: {response.text}"
-            )
+        response = call_with_retry(_attempt, retryable_exceptions=(RuntimeError,))
 
         payload = response.json()
         if not payload.get("ok"):
