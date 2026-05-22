@@ -3,8 +3,8 @@
   "jobs": [
     {
       "name": "refresh-video-cache",
-      "schedule": "0 1 * * *",
-      "description": "Refresh the reusable YouTube candidate cache before evolution and digest jobs",
+      "schedule": "30 0 * * *",
+      "description": "Refresh the reusable YouTube candidate cache before evolution and digest jobs at 12:30 AM AEST",
       "module": "adas.youtube_fetcher",
       "args": [
         "--days",
@@ -20,8 +20,8 @@
     },
     {
       "name": "adas-evolution",
-      "schedule": "0 2 * * *",
-      "description": "Overnight ADAS loop at 2 AM AEST — generate, evaluate, archive, and promote candidate skills",
+      "schedule": "30 1 * * *",
+      "description": "Overnight ADAS loop at 1:30 AM AEST — generate, evaluate, archive, and promote candidate skills",
       "module": "adas.meta_agent",
       "args": [
         "--cache",
@@ -36,8 +36,8 @@
     },
     {
       "name": "morning-digest",
-      "schedule": "30 5 * * *",
-      "description": "Send top 3 AI+startup video picks to Telegram at 5:30 AM AEST",
+      "schedule": "30 4 * * *",
+      "description": "Send top 3 AI+startup video picks to Telegram at 4:30 AM AEST",
       "module": "adas.telegram_digest",
       "args": [
         "--cache",
@@ -51,8 +51,8 @@
     },
     {
       "name": "reaction-capture",
-      "schedule": "30 9 * * *",
-      "description": "Poll Telegram for reactions on the digest at 7:30 AM AEST and write feedback",
+      "schedule": "30 8 * * *",
+      "description": "Poll Telegram for reactions on the digest at 8:30 AM AEST and write feedback",
       "module": "adas.telegram_feedback",
       "args": [
         "--delivery-log",
