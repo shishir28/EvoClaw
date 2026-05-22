@@ -2,6 +2,23 @@
   "timezone": "Australia/Sydney",
   "jobs": [
     {
+      "name": "refresh-video-cache",
+      "schedule": "0 1 * * *",
+      "description": "Refresh the reusable YouTube candidate cache before evolution and digest jobs",
+      "module": "adas.youtube_fetcher",
+      "args": [
+        "--days",
+        "7",
+        "--max-per-query",
+        "10",
+        "--output",
+        "video_cache_w1.json"
+      ],
+      "required_env": [
+        "YOUTUBE_API_KEY"
+      ]
+    },
+    {
       "name": "adas-evolution",
       "schedule": "0 2 * * *",
       "description": "Overnight ADAS loop at 2 AM AEST — generate, evaluate, archive, and promote candidate skills",
@@ -19,8 +36,8 @@
     },
     {
       "name": "morning-digest",
-      "schedule": "0 7 * * *",
-      "description": "Send top 3 AI+startup video picks to Telegram at 4 AM AEST",
+      "schedule": "30 5 * * *",
+      "description": "Send top 3 AI+startup video picks to Telegram at 5:30 AM AEST",
       "module": "adas.telegram_digest",
       "args": [
         "--cache",

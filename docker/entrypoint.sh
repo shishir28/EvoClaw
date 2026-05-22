@@ -29,6 +29,7 @@ write_cron_file() {
             printf 'export %s=%q\n' "$name" "$value"
         fi
     done > "$ENV_FILE"
+    chown "$APP_UID:$APP_GID" "$ENV_FILE"
     chmod 0600 "$ENV_FILE"
 
     cat > "$CRON_FILE" <<EOF
@@ -38,9 +39,10 @@ TZ=$TZ
 EVOCLAW_PYTHON=${EVOCLAW_PYTHON:-/usr/local/bin/python}
 
 # EvoClaw automated jobs (container-managed)
-0 2 * * * $APP_USER source $ENV_FILE && cd $APP_DIR && /usr/local/bin/python cron/runner.py --job adas-evolution >> $APP_DIR/cron/logs/cron-adas-evolution.log 2>&1
-0 7 * * * $APP_USER source $ENV_FILE && cd $APP_DIR && /usr/local/bin/python cron/runner.py --job morning-digest >> $APP_DIR/cron/logs/cron-morning-digest.log 2>&1
-30 9 * * * $APP_USER source $ENV_FILE && cd $APP_DIR && /usr/local/bin/python cron/runner.py --job reaction-capture >> $APP_DIR/cron/logs/cron-reaction-capture.log 2>&1
+0 1 * * * $APP_USER bash -lc 'source $ENV_FILE && cd $APP_DIR && /usr/local/bin/python cron/runner.py --job refresh-video-cache' >> $APP_DIR/cron/logs/cron-refresh-video-cache.log 2>&1
+0 2 * * * $APP_USER bash -lc 'source $ENV_FILE && cd $APP_DIR && /usr/local/bin/python cron/runner.py --job adas-evolution' >> $APP_DIR/cron/logs/cron-adas-evolution.log 2>&1
+30 5 * * * $APP_USER bash -lc 'source $ENV_FILE && cd $APP_DIR && /usr/local/bin/python cron/runner.py --job morning-digest' >> $APP_DIR/cron/logs/cron-morning-digest.log 2>&1
+30 9 * * * $APP_USER bash -lc 'source $ENV_FILE && cd $APP_DIR && /usr/local/bin/python cron/runner.py --job reaction-capture' >> $APP_DIR/cron/logs/cron-reaction-capture.log 2>&1
 EOF
 
     chmod 0644 "$CRON_FILE"

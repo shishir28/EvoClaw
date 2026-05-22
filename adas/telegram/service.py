@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Protocol
@@ -92,7 +92,18 @@ class ProductionDigestService:
             cache_path=cache_path,
             feedback_path=feedback_path,
         )
+        delivery_store = self._resolve_delivery_log_store(skill_path, delivery_log_path)
+        previously_delivered_ids = self._previously_delivered_video_ids(delivery_store)
+        request = self._exclude_previously_delivered_videos(
+            request,
+            previously_delivered_ids,
+        )
         selected_video_ids, execution_notes = self.evaluator.select_video_ids(request)
+        if previously_delivered_ids:
+            execution_notes = [
+                f"Excluded {len(previously_delivered_ids)} previously delivered video(s).",
+                *execution_notes,
+            ]
         if len(selected_video_ids) != 3:
             raise ValueError(
                 f"Production digest requires exactly 3 selected videos, got {len(selected_video_ids)}."
@@ -111,7 +122,6 @@ class ProductionDigestService:
         else:
             _log.info("dry-run: skipping Telegram send (skill=%s)", request.skill.name)
 
-        delivery_store = self._resolve_delivery_log_store(skill_path, delivery_log_path)
         record = DeliveryRecord(
             delivered_at=self.delivered_at_factory(),
             dry_run=dry_run,
@@ -146,6 +156,35 @@ class ProductionDigestService:
             picks=record.picks,
             execution_notes=record.execution_notes,
             message_text=record.message_text,
+        )
+
+    @staticmethod
+    def _previously_delivered_video_ids(
+        delivery_store: DeliveryLogStore,
+    ) -> set[str]:
+        """Return video IDs from live sends so production does not repeat picks."""
+        return {
+            video_id
+            for record in delivery_store.load_history()
+            if not record.dry_run
+            for video_id in record.selected_video_ids
+        }
+
+    @staticmethod
+    def _exclude_previously_delivered_videos(
+        request: EvaluationRequest,
+        previously_delivered_ids: set[str],
+    ) -> EvaluationRequest:
+        """Filter already-sent videos before the strategy executor ranks candidates."""
+        if not previously_delivered_ids:
+            return request
+        return replace(
+            request,
+            videos=[
+                video
+                for video in request.videos
+                if video.video_id not in previously_delivered_ids
+            ],
         )
 
     def _resolve_delivery_log_store(

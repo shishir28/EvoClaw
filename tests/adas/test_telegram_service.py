@@ -9,7 +9,7 @@ import pytest
 
 from adas.telegram.delivery_log import DeliveryLogStore
 from adas.telegram.formatter import TelegramDigestFormatter
-from adas.telegram.models import TelegramSendReceipt
+from adas.telegram.models import DeliveryRecord, TelegramSendReceipt
 from adas.telegram.service import ProductionDigestService
 from builders import make_request, skill, video
 
@@ -32,6 +32,14 @@ class _StubEvaluator:
         return [videos_by_id[video_id] for video_id in selected_video_ids]
 
 
+class _FirstThreeEvaluator(_StubEvaluator):
+    def __init__(self, request):
+        super().__init__(request, [])
+
+    def select_video_ids(self, request, selected_video_ids=None):
+        return [video.video_id for video in request.videos[:3]], ["Executed production strategy."]
+
+
 class _StubSender:
     chat_id = "chat-123"
 
@@ -43,7 +51,7 @@ class _StubSender:
         return TelegramSendReceipt(chat_id=self.chat_id, message_id=99)
 
 
-def _videos():
+def _videos(count: int = 3):
     return [
         video()
         .with_id(f"v{i}")
@@ -53,8 +61,24 @@ def _videos():
             "This episode covers a concrete founder workflow for using AI tools in product research."
         )
         .build()
-        for i in range(1, 4)
+        for i in range(1, count + 1)
     ]
+
+
+def _delivery_record(selected_video_ids: list[str], dry_run: bool = False) -> DeliveryRecord:
+    return DeliveryRecord(
+        delivered_at="2026-05-06T01:00:00+00:00",
+        dry_run=dry_run,
+        skill_name="production-skill",
+        skill_version="2.1",
+        strategy="recency",
+        production_skill_path="/fake/SKILL.md",
+        cache_path="adas/test_sets/video_cache_w1.json",
+        feedback_path="adas/test_sets/feedback.json",
+        telegram_chat_id="chat-123",
+        telegram_message_id=42 if not dry_run else None,
+        selected_video_ids=selected_video_ids,
+    )
 
 
 def test_dry_run_writes_delivery_log(tmp_path):
@@ -125,3 +149,46 @@ def test_delivery_requires_exactly_three_picks(tmp_path):
             cache_path="adas/test_sets/video_cache_w1.json",
             production_skill_path=str(tmp_path / "skills" / "youtube-curator" / "SKILL.md"),
         )
+
+
+def test_delivery_excludes_previously_sent_video_ids(tmp_path):
+    request = make_request(videos=_videos(6), skill_doc=skill().build())
+    store = DeliveryLogStore(tmp_path / "delivery_log.json", safe_base=tmp_path)
+    store.append(_delivery_record(["v1", "v2", "v3"]))
+    service = ProductionDigestService(
+        evaluator=_FirstThreeEvaluator(request),
+        delivery_log_store=store,
+        formatter=TelegramDigestFormatter(
+            now_factory=lambda: datetime(2026, 5, 7, 0, 0, tzinfo=timezone.utc)
+        ),
+        delivered_at_factory=lambda: "2026-05-07T01:00:00+00:00",
+    )
+
+    result = service.deliver(
+        cache_path="adas/test_sets/video_cache_w1.json",
+        production_skill_path=str(tmp_path / "skills" / "youtube-curator" / "SKILL.md"),
+    )
+
+    assert result.selected_video_ids == ["v4", "v5", "v6"]
+    assert "Excluded 3 previously delivered video(s)." in result.execution_notes
+
+
+def test_delivery_does_not_treat_dry_runs_as_seen(tmp_path):
+    request = make_request(videos=_videos(6), skill_doc=skill().build())
+    store = DeliveryLogStore(tmp_path / "delivery_log.json", safe_base=tmp_path)
+    store.append(_delivery_record(["v1", "v2", "v3"], dry_run=True))
+    service = ProductionDigestService(
+        evaluator=_FirstThreeEvaluator(request),
+        delivery_log_store=store,
+        formatter=TelegramDigestFormatter(
+            now_factory=lambda: datetime(2026, 5, 7, 0, 0, tzinfo=timezone.utc)
+        ),
+        delivered_at_factory=lambda: "2026-05-07T01:00:00+00:00",
+    )
+
+    result = service.deliver(
+        cache_path="adas/test_sets/video_cache_w1.json",
+        production_skill_path=str(tmp_path / "skills" / "youtube-curator" / "SKILL.md"),
+    )
+
+    assert result.selected_video_ids == ["v1", "v2", "v3"]
