@@ -49,6 +49,8 @@ class DeliveryRecord:
     telegram_chat_id: str | None
     telegram_message_id: int | None
     selected_video_ids: list[str]
+    telegram_message_ids: list[int] = field(default_factory=list)
+    pick_message_ids: dict[str, int] = field(default_factory=dict)
     picks: list[TelegramDigestPick] = field(default_factory=list)
     execution_notes: list[str] = field(default_factory=list)
     message_text: str = ""
@@ -85,6 +87,14 @@ class DeliveryRecord:
                 else None
             ),
             selected_video_ids=[str(video_id) for video_id in payload.get("selected_video_ids", [])],
+            telegram_message_ids=[
+                int(message_id)
+                for message_id in payload.get("telegram_message_ids", [])
+            ],
+            pick_message_ids={
+                str(video_id): int(message_id)
+                for video_id, message_id in payload.get("pick_message_ids", {}).items()
+            },
             picks=[
                 TelegramDigestPick(**pick)
                 for pick in payload.get("picks", [])
@@ -117,6 +127,8 @@ class DigestDeliveryResult:
     telegram_chat_id: str | None
     telegram_message_id: int | None
     selected_video_ids: list[str]
+    telegram_message_ids: list[int] = field(default_factory=list)
+    pick_message_ids: dict[str, int] = field(default_factory=dict)
     picks: list[TelegramDigestPick] = field(default_factory=list)
     execution_notes: list[str] = field(default_factory=list)
     message_text: str = ""

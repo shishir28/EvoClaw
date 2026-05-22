@@ -107,6 +107,7 @@ class ReactionFeedbackCapture:
                 skipped += 1
                 continue
 
+            matched_record, target_video_ids = matched
             reactions = [_emoji_to_reaction(e) for e in update.new_reactions]
             reactions = [r for r in reactions if r is not None]
             if not reactions:
@@ -114,14 +115,19 @@ class ReactionFeedbackCapture:
                 skipped += 1
                 continue
 
-            # Use the first recognised reaction for all picks in this digest.
             reaction = reactions[0]
-            wrote = self._write_feedback(matched, reaction, feedback_path)
+            wrote = self._write_feedback(
+                matched_record,
+                reaction,
+                feedback_path,
+                target_video_ids,
+            )
             if wrote:
                 entries_written += 1
+                pick_label = "pick" if len(target_video_ids) == 1 else "picks"
                 messages.append(
                     f"message_id={update.message_id}: reaction={reaction} "
-                    f"→ {len(matched.selected_video_ids)} picks recorded"
+                    f"→ {len(target_video_ids)} {pick_label} recorded"
                 )
             else:
                 skipped += 1
@@ -141,30 +147,44 @@ class ReactionFeedbackCapture:
     # Helpers
     # ------------------------------------------------------------------
 
-    def _build_delivery_map(self) -> dict[int, DeliveryRecord]:
-        """Build a dict of message_id → DeliveryRecord for live (non-dry-run) deliveries."""
+    def _build_delivery_map(self) -> dict[int, tuple[DeliveryRecord, list[str]]]:
+        """Build message_id → (delivery, target video IDs) for live deliveries.
+
+        New delivery records store one Telegram message ID per video pick. Older
+        records only have a digest-level message ID, so they remain supported as
+        whole-digest feedback for historical compatibility.
+        """
         records = self._delivery_log_store.load_history()
-        return {
-            r.telegram_message_id: r
-            for r in records
-            if not r.dry_run and r.telegram_message_id is not None
-        }
+        delivery_map: dict[int, tuple[DeliveryRecord, list[str]]] = {}
+        for record in records:
+            if record.dry_run:
+                continue
+            for video_id, message_id in record.pick_message_ids.items():
+                delivery_map[int(message_id)] = (record, [video_id])
+            if not record.pick_message_ids and record.telegram_message_id is not None:
+                delivery_map[record.telegram_message_id] = (
+                    record,
+                    list(record.selected_video_ids),
+                )
+        return delivery_map
 
     def _write_feedback(
         self,
         record: DeliveryRecord,
         reaction: str,
         feedback_path: str | None,
+        target_video_ids: list[str],
     ) -> bool:
         """Load videos from cache and append one feedback entry. Returns True on success."""
         videos = self._load_videos(record)
         if not videos:
             return False
 
+        available_video_ids = {v.video_id for v in videos}
         picks = [
             ManualFeedbackPick(video_id=vid, reaction=reaction)
-            for vid in record.selected_video_ids
-            if vid in {v.video_id for v in videos}
+            for vid in target_video_ids
+            if vid in available_video_ids
         ]
         if not picks:
             return False

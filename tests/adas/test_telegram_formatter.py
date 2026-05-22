@@ -35,9 +35,10 @@ def test_build_picks_and_format_digest():
     assert picks[0].age_label.endswith("ago")
     assert picks[0].duration_minutes == 11
     assert "GTM lessons for AI founders" in picks[0].why_watch
-    assert '1. "Video 1"' in message
+    assert '🎬 Pick 1: "Video 1"' in message
     assert "🔗 https://www.youtube.com/watch?v=v1" in message
-    assert "React 👍 or 👎 to each to help me improve picks." in message
+    assert "React 👍 or 👎 to this pick to help me improve future recommendations." in message
+    assert message.count("React 👍 or 👎 to this pick") == 3
 
 
 def test_uses_fallback_summary_when_description_is_missing():

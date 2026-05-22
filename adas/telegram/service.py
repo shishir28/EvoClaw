@@ -112,15 +112,30 @@ class ProductionDigestService:
         picks = self.formatter.build_picks(videos)
         message_text = self.formatter.format_digest(picks)
 
-        receipt = None
+        receipts = []
         dry_run = not send
         if send:
             sender = self.sender or TelegramSender()
-            _log.info("sending digest to Telegram (skill=%s, videos=%s)", request.skill.name, selected_video_ids)
-            receipt = sender.send_message(message_text)
-            _log.info("digest sent: message_id=%s", receipt.message_id)
+            _log.info(
+                "sending per-video digest to Telegram (skill=%s, videos=%s)",
+                request.skill.name,
+                selected_video_ids,
+            )
+            for pick in picks:
+                receipts.append(sender.send_message(self.formatter.format_pick_message(pick)))
+            _log.info(
+                "digest sent: message_ids=%s",
+                [receipt.message_id for receipt in receipts],
+            )
         else:
             _log.info("dry-run: skipping Telegram send (skill=%s)", request.skill.name)
+
+        first_receipt = receipts[0] if receipts else None
+        telegram_message_ids = [receipt.message_id for receipt in receipts]
+        pick_message_ids = {
+            pick.video_id: receipt.message_id
+            for pick, receipt in zip(picks, receipts, strict=True)
+        } if receipts else {}
 
         record = DeliveryRecord(
             delivered_at=self.delivered_at_factory(),
@@ -131,9 +146,11 @@ class ProductionDigestService:
             production_skill_path=skill_path,
             cache_path=request.cache_path,
             feedback_path=request.feedback_path,
-            telegram_chat_id=self._telegram_chat_id(send, receipt),
-            telegram_message_id=receipt.message_id if receipt is not None else None,
+            telegram_chat_id=self._telegram_chat_id(send, first_receipt),
+            telegram_message_id=first_receipt.message_id if first_receipt is not None else None,
             selected_video_ids=list(selected_video_ids),
+            telegram_message_ids=telegram_message_ids,
+            pick_message_ids=pick_message_ids,
             picks=list(picks),
             execution_notes=list(execution_notes),
             message_text=message_text,
@@ -153,6 +170,8 @@ class ProductionDigestService:
             telegram_chat_id=record.telegram_chat_id,
             telegram_message_id=record.telegram_message_id,
             selected_video_ids=record.selected_video_ids,
+            telegram_message_ids=record.telegram_message_ids,
+            pick_message_ids=record.pick_message_ids,
             picks=record.picks,
             execution_notes=record.execution_notes,
             message_text=record.message_text,

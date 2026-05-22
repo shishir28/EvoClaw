@@ -21,6 +21,7 @@ def _make_delivery_record(
     cache_path: str = "/fake/cache.json",
     dry_run: bool = False,
     skill_version: str | None = "skill_003",
+    pick_message_ids: dict[str, int] | None = None,
 ) -> DeliveryRecord:
     return DeliveryRecord(
         delivered_at="2026-05-17T07:00:00+00:00",
@@ -34,6 +35,8 @@ def _make_delivery_record(
         telegram_chat_id="chat-1",
         telegram_message_id=message_id,
         selected_video_ids=selected_video_ids or ["v1", "v2", "v3"],
+        telegram_message_ids=list((pick_message_ids or {}).values()),
+        pick_message_ids=pick_message_ids or {},
     )
 
 
@@ -221,6 +224,27 @@ class TestCaptureMatchingReaction:
         picks = fb.calls[0]["picks"]
         assert len(picks) == 2
         assert all(p.reaction == "👍" for p in picks)
+
+
+    def test_per_pick_message_reaction_records_only_that_video(self, tmp_path):
+        cache = _make_cache_file(tmp_path, ["v1", "v2", "v3"])
+        record = _make_delivery_record(
+            message_id=10,
+            selected_video_ids=["v1", "v2", "v3"],
+            cache_path=str(cache),
+            pick_message_ids={"v1": 101, "v2": 102, "v3": 103},
+        )
+        update = _reaction_update(message_id=102, new_reactions=["👎"])
+        capture, fb = _capture([update], records=[record])
+
+        result = capture.capture(offset_path=str(tmp_path / "offset.json"))
+
+        assert result.feedback_entries_written == 1
+        assert result.messages == ["message_id=102: reaction=👎 → 1 pick recorded"]
+        picks = fb.calls[0]["picks"]
+        assert len(picks) == 1
+        assert picks[0].video_id == "v2"
+        assert picks[0].reaction == "👎"
 
     def test_maps_thumbs_down_emoji_to_down_reaction(self, tmp_path):
         cache = _make_cache_file(tmp_path, ["v1"])

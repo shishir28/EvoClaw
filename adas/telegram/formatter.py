@@ -97,25 +97,22 @@ class TelegramDigestFormatter:
             for index, video in enumerate(videos, start=1)
         ]
 
+    def format_pick_message(self, pick: TelegramDigestPick) -> str:
+        """Format one recommendation so Telegram reactions map to one video."""
+        return "\n".join(
+            [
+                f'🎬 Pick {pick.rank}: "{pick.title}"',
+                f"@{pick.channel} · {pick.duration_minutes} min · {pick.age_label}",
+                f"🔗 {pick.url}",
+                f"-> {pick.why_watch}",
+                "",
+                "React 👍 or 👎 to this pick to help me improve future recommendations.",
+            ]
+        )
+
     def format_digest(self, picks: list[TelegramDigestPick]) -> str:
         if len(picks) != 3:
             raise ValueError(f"Telegram digests require exactly 3 picks, got {len(picks)}.")
 
-        blocks = []
-        for pick in picks:
-            blocks.append(
-                "\n".join(
-                    [
-                        f'{pick.rank}. "{pick.title}"',
-                        f"   @{pick.channel} · {pick.duration_minutes} min · {pick.age_label}",
-                        f"   🔗 {pick.url}",
-                        f"   -> {pick.why_watch}",
-                    ]
-                )
-            )
-
-        return (
-            "🎬 Your AI + startup picks for today\n\n"
-            + "\n\n".join(blocks)
-            + "\n\nReact 👍 or 👎 to each to help me improve picks."
-        )
+        blocks = [self.format_pick_message(pick) for pick in picks]
+        return "\n\n---\n\n".join(blocks)

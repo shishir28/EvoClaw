@@ -48,7 +48,7 @@ class _StubSender:
 
     def send_message(self, text: str):
         self.messages.append(text)
-        return TelegramSendReceipt(chat_id=self.chat_id, message_id=99)
+        return TelegramSendReceipt(chat_id=self.chat_id, message_id=98 + len(self.messages))
 
 
 def _videos(count: int = 3):
@@ -132,9 +132,14 @@ def test_send_calls_telegram_and_persists_message_id(tmp_path):
 
     assert result.status == "sent"
     assert result.telegram_message_id == 99
+    assert result.telegram_message_ids == [99, 100, 101]
+    assert result.pick_message_ids == {"v1": 99, "v2": 100, "v3": 101}
     assert result.telegram_chat_id == "chat-123"
-    assert len(sender.messages) == 1
-    assert json.loads(store.path.read_text())["history"][0]["telegram_message_id"] == 99
+    assert len(sender.messages) == 3
+    persisted = json.loads(store.path.read_text())["history"][0]
+    assert persisted["telegram_message_id"] == 99
+    assert persisted["telegram_message_ids"] == [99, 100, 101]
+    assert persisted["pick_message_ids"] == {"v1": 99, "v2": 100, "v3": 101}
 
 
 def test_delivery_requires_exactly_three_picks(tmp_path):
