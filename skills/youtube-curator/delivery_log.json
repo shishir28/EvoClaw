@@ -16,6 +16,8 @@
         "gwsaC3WiCqs",
         "zOE8nbMjV4c"
       ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
       "picks": [
         {
           "rank": 1,
@@ -70,6 +72,8 @@
         "gwsaC3WiCqs",
         "zOE8nbMjV4c"
       ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
       "picks": [
         {
           "rank": 1,
@@ -124,6 +128,8 @@
         "gwsaC3WiCqs",
         "zOE8nbMjV4c"
       ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
       "picks": [
         {
           "rank": 1,
@@ -178,6 +184,8 @@
         "gwsaC3WiCqs",
         "zOE8nbMjV4c"
       ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
       "picks": [
         {
           "rank": 1,
@@ -232,6 +240,8 @@
         "gwsaC3WiCqs",
         "zOE8nbMjV4c"
       ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
       "picks": [
         {
           "rank": 1,
@@ -286,6 +296,8 @@
         "gwsaC3WiCqs",
         "zOE8nbMjV4c"
       ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
       "picks": [
         {
           "rank": 1,
@@ -340,6 +352,8 @@
         "gwsaC3WiCqs",
         "zOE8nbMjV4c"
       ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
       "picks": [
         {
           "rank": 1,
@@ -394,6 +408,8 @@
         "gwsaC3WiCqs",
         "zOE8nbMjV4c"
       ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
       "picks": [
         {
           "rank": 1,
@@ -448,6 +464,8 @@
         "gwsaC3WiCqs",
         "zOE8nbMjV4c"
       ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
       "picks": [
         {
           "rank": 1,
@@ -502,6 +520,8 @@
         "gwsaC3WiCqs",
         "zOE8nbMjV4c"
       ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
       "picks": [
         {
           "rank": 1,
@@ -556,6 +576,8 @@
         "gwsaC3WiCqs",
         "zOE8nbMjV4c"
       ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
       "picks": [
         {
           "rank": 1,
@@ -593,6 +615,128 @@
         "Selected from 7d fallback pool."
       ],
       "message_text": "🎬 Your AI + startup picks for today\n\n1. \"POV: AI just upgraded the photoshoot game 🚀📸 #ecommerce #product\"\n   @Surazz Gupta · 1 min · 21 days ago\n   🔗 https://www.youtube.com/watch?v=TsXhgpZRU2w\n   -> Useful for staying current on ai product launch, with roughly 136 views per hour right now.\n\n2. \"6 Profitable AI business ideas for 2026\"\n   @Silicon Valley Girl · 24 min · 21 days ago\n   🔗 https://www.youtube.com/watch?v=gwsaC3WiCqs\n   -> Let's talk about what AI business can you actually start in 2026 if you're not a coder, not in Silicon Valley, and don't have a million dollars in funding.\n\n3. \"Interview with an agency owner who will never be replaced by AI\"\n   @Payton Clark Smith · 14 min · 22 days ago\n   🔗 https://www.youtube.com/watch?v=zOE8nbMjV4c\n   -> And I was like, I think that's the work I want to get into.\n\nReact 👍 or 👎 to each to help me improve picks."
+    },
+    {
+      "delivered_at": "2026-05-23T01:21:31.952784+00:00",
+      "dry_run": true,
+      "skill_name": "recency-first",
+      "skill_version": "1.0",
+      "strategy": "recency",
+      "production_skill_path": "/home/shishirmishra/Learnings/EvoClaw/skills/youtube-curator/SKILL.md",
+      "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
+      "feedback_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json",
+      "telegram_chat_id": null,
+      "telegram_message_id": null,
+      "selected_video_ids": [
+        "BaJpfGQ6gMA",
+        "dNJpaLnl9io",
+        "eEUUpcpvKZ0"
+      ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
+      "picks": [
+        {
+          "rank": 1,
+          "video_id": "BaJpfGQ6gMA",
+          "title": "Streamline your product launch with Asana AI",
+          "channel": "Asana",
+          "url": "https://www.youtube.com/watch?v=BaJpfGQ6gMA",
+          "duration_minutes": 5,
+          "age_label": "7 hours ago",
+          "why_watch": "Hi, I'm Hannah Lee and I'm excited to introduce you to Asana, the platform for human and AI coordination."
+        },
+        {
+          "rank": 2,
+          "video_id": "dNJpaLnl9io",
+          "title": "AI’s Impact on Product Management 🤖",
+          "channel": "SaaS District",
+          "url": "https://www.youtube.com/watch?v=dNJpaLnl9io",
+          "duration_minutes": 1,
+          "age_label": "7 hours ago",
+          "why_watch": "Biggest thing I'm thinking of right now is like the coming AI coding wave and what that means for product development."
+        },
+        {
+          "rank": 3,
+          "video_id": "eEUUpcpvKZ0",
+          "title": "How to Answer &#39;What&#39;s Your Productivity Hack?&#39; #interviewprep #productivity",
+          "channel": "NextLeap Product",
+          "url": "https://www.youtube.com/watch?v=eEUUpcpvKZ0",
+          "duration_minutes": 1,
+          "age_label": "10 hours ago",
+          "why_watch": ">> [music] >> What is one most asked PM interview question?."
+        }
+      ],
+      "execution_notes": [
+        "Excluded 3 previously delivered video(s).",
+        "Executed recency strategy adapter.",
+        "Selected from 48h window."
+      ],
+      "message_text": "🎬 Pick 1: \"Streamline your product launch with Asana AI\"\n@Asana · 5 min · 7 hours ago\n🔗 https://www.youtube.com/watch?v=BaJpfGQ6gMA\n-> Hi, I'm Hannah Lee and I'm excited to introduce you to Asana, the platform for human and AI coordination.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"AI’s Impact on Product Management 🤖\"\n@SaaS District · 1 min · 7 hours ago\n🔗 https://www.youtube.com/watch?v=dNJpaLnl9io\n-> Biggest thing I'm thinking of right now is like the coming AI coding wave and what that means for product development.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"How to Answer &#39;What&#39;s Your Productivity Hack?&#39; #interviewprep #productivity\"\n@NextLeap Product · 1 min · 10 hours ago\n🔗 https://www.youtube.com/watch?v=eEUUpcpvKZ0\n-> >> [music] >> What is one most asked PM interview question?.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
+    },
+    {
+      "delivered_at": "2026-05-23T01:21:40.717387+00:00",
+      "dry_run": false,
+      "skill_name": "recency-first",
+      "skill_version": "1.0",
+      "strategy": "recency",
+      "production_skill_path": "/home/shishirmishra/Learnings/EvoClaw/skills/youtube-curator/SKILL.md",
+      "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
+      "feedback_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json",
+      "telegram_chat_id": "8770142442",
+      "telegram_message_id": 11,
+      "selected_video_ids": [
+        "BaJpfGQ6gMA",
+        "dNJpaLnl9io",
+        "eEUUpcpvKZ0"
+      ],
+      "telegram_message_ids": [
+        11,
+        12,
+        13
+      ],
+      "pick_message_ids": {
+        "BaJpfGQ6gMA": 11,
+        "dNJpaLnl9io": 12,
+        "eEUUpcpvKZ0": 13
+      },
+      "picks": [
+        {
+          "rank": 1,
+          "video_id": "BaJpfGQ6gMA",
+          "title": "Streamline your product launch with Asana AI",
+          "channel": "Asana",
+          "url": "https://www.youtube.com/watch?v=BaJpfGQ6gMA",
+          "duration_minutes": 5,
+          "age_label": "7 hours ago",
+          "why_watch": "Hi, I'm Hannah Lee and I'm excited to introduce you to Asana, the platform for human and AI coordination."
+        },
+        {
+          "rank": 2,
+          "video_id": "dNJpaLnl9io",
+          "title": "AI’s Impact on Product Management 🤖",
+          "channel": "SaaS District",
+          "url": "https://www.youtube.com/watch?v=dNJpaLnl9io",
+          "duration_minutes": 1,
+          "age_label": "7 hours ago",
+          "why_watch": "Biggest thing I'm thinking of right now is like the coming AI coding wave and what that means for product development."
+        },
+        {
+          "rank": 3,
+          "video_id": "eEUUpcpvKZ0",
+          "title": "How to Answer &#39;What&#39;s Your Productivity Hack?&#39; #interviewprep #productivity",
+          "channel": "NextLeap Product",
+          "url": "https://www.youtube.com/watch?v=eEUUpcpvKZ0",
+          "duration_minutes": 1,
+          "age_label": "10 hours ago",
+          "why_watch": ">> [music] >> What is one most asked PM interview question?."
+        }
+      ],
+      "execution_notes": [
+        "Excluded 3 previously delivered video(s).",
+        "Executed recency strategy adapter.",
+        "Selected from 48h window."
+      ],
+      "message_text": "🎬 Pick 1: \"Streamline your product launch with Asana AI\"\n@Asana · 5 min · 7 hours ago\n🔗 https://www.youtube.com/watch?v=BaJpfGQ6gMA\n-> Hi, I'm Hannah Lee and I'm excited to introduce you to Asana, the platform for human and AI coordination.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"AI’s Impact on Product Management 🤖\"\n@SaaS District · 1 min · 7 hours ago\n🔗 https://www.youtube.com/watch?v=dNJpaLnl9io\n-> Biggest thing I'm thinking of right now is like the coming AI coding wave and what that means for product development.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"How to Answer &#39;What&#39;s Your Productivity Hack?&#39; #interviewprep #productivity\"\n@NextLeap Product · 1 min · 10 hours ago\n🔗 https://www.youtube.com/watch?v=eEUUpcpvKZ0\n-> >> [music] >> What is one most asked PM interview question?.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
     }
   ]
 }

@@ -12,6 +12,7 @@ import os
 import re
 import sys
 import time
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TypedDict
@@ -311,10 +312,31 @@ class TranscriptProvider:
         return videos
 
 
+@dataclass(frozen=True, slots=True)
+class CacheMetadata:
+    """Freshness envelope for a cache file, independent of its video payload."""
+
+    path: Path
+    exists: bool
+    fetched_at: datetime | None
+    count: int
+    age_hours: float | None  # None when the cache is missing or has no usable timestamp
+
+
 class VideoCacheRepository:
     def _resolve_path(self, path: str) -> Path:
         """Return an absolute Path, prefixing with TEST_SETS_DIR when a relative path is given."""
         return Path(path) if os.path.isabs(path) else Path(TEST_SETS_DIR) / path
+
+    @staticmethod
+    def _parse_fetched_at(value: object) -> datetime | None:
+        """Parse an ISO 8601 ``fetched_at`` value, returning None when absent or malformed."""
+        if not value:
+            return None
+        try:
+            return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except ValueError:
+            return None
 
     def save(self, videos: list[VideoRecordPayload], path: str) -> None:
         """Serialise the video list to a JSON file with a fetch timestamp and count envelope."""
@@ -333,6 +355,38 @@ class VideoCacheRepository:
         dest = self._resolve_path(path)
         raw = json.loads(dest.read_text())
         return raw["videos"]
+
+    def load_metadata(self, path: str, now: datetime | None = None) -> CacheMetadata:
+        """Return freshness metadata for a cache file without loading its full payload.
+
+        Missing or unreadable caches yield ``exists=False`` / ``age_hours=None`` rather
+        than raising, so callers can decide their own staleness policy.
+        """
+        dest = self._resolve_path(path)
+        if not dest.exists():
+            return CacheMetadata(dest, exists=False, fetched_at=None, count=0, age_hours=None)
+        try:
+            raw = json.loads(dest.read_text())
+        except (json.JSONDecodeError, OSError):
+            return CacheMetadata(dest, exists=True, fetched_at=None, count=0, age_hours=None)
+
+        fetched_at = self._parse_fetched_at(raw.get("fetched_at"))
+        count = int(raw.get("count", len(raw.get("videos", []))))
+        age_hours: float | None = None
+        if fetched_at is not None:
+            reference = now or datetime.now(timezone.utc)
+            age_hours = (reference - fetched_at).total_seconds() / 3600
+        return CacheMetadata(
+            dest,
+            exists=True,
+            fetched_at=fetched_at,
+            count=count,
+            age_hours=age_hours,
+        )
+
+    def count(self, path: str) -> int:
+        """Return the number of videos recorded in an existing cache, or 0 when absent."""
+        return self.load_metadata(path).count
 
 
 class YouTubeFetcher:
@@ -378,6 +432,10 @@ class YouTubeFetcher:
         """Persist the given video list to disk via the injected cache repository."""
         self._cache_repository.save(videos, path)
 
+    def cache_count(self, path: str) -> int:
+        """Return how many videos the existing cache at path holds (0 if none)."""
+        return self._cache_repository.count(path)
+
     @staticmethod
     def load_cache(path: str) -> list[VideoRecordPayload]:
         """Load a cached video list from disk without requiring a fetcher instance."""
@@ -411,4 +469,22 @@ if __name__ == "__main__":
         with_transcripts=not args.no_transcripts,
     )
     print(f"Fetched {len(videos)} unique videos")
+
+    if not videos:
+        # A failed/empty fetch must never clobber a good cache: downstream jobs
+        # rely on its fetched_at timestamp to detect that the refresh stalled.
+        existing = fetcher.cache_count(args.output)
+        if existing:
+            print(
+                f"Refresh returned 0 videos (likely a YouTube API failure); "
+                f"keeping last-good cache of {existing} video(s) at {args.output}.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"Refresh returned 0 videos and no prior cache exists at {args.output}.",
+                file=sys.stderr,
+            )
+        sys.exit(1)
+
     fetcher.save_cache(videos, args.output)

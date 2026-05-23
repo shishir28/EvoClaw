@@ -57,5 +57,12 @@ if [[ "${1:-}" == "cron" ]]; then
     exec cron -f
 fi
 
+if [[ "${1:-}" == "cron-print" ]]; then
+    ensure_user
+    write_cron_file
+    cat "$CRON_FILE"
+    exit 0
+fi
+
 ensure_user
 exec gosu "$APP_USER" "$@"

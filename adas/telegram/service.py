@@ -12,17 +12,31 @@ from typing import Callable, Protocol
 _log = logging.getLogger(__name__)
 
 try:
-    from ..config import DELIVERY_LOG, FEEDBACK_FILE, SKILL_PRODUCTION
+    from ..config import (
+        CACHE_MAX_AGE_HOURS,
+        CACHE_STALE_WARN_HOURS,
+        DELIVERY_LOG,
+        FEEDBACK_FILE,
+        SKILL_PRODUCTION,
+    )
     from ..evaluation.models import EvaluationRequest, SkillDocument, VideoRecord
     from ..evaluation.service import Evaluator
+    from ..youtube_fetcher import VideoCacheRepository
     from .delivery_log import DeliveryLogStore
     from .formatter import TelegramDigestFormatter
     from .models import DeliveryRecord, DigestDeliveryResult, TelegramDigestPick
     from .sender import TelegramSender
 except ImportError:
-    from config import DELIVERY_LOG, FEEDBACK_FILE, SKILL_PRODUCTION
+    from config import (
+        CACHE_MAX_AGE_HOURS,
+        CACHE_STALE_WARN_HOURS,
+        DELIVERY_LOG,
+        FEEDBACK_FILE,
+        SKILL_PRODUCTION,
+    )
     from evaluation.models import EvaluationRequest, SkillDocument, VideoRecord
     from evaluation.service import Evaluator
+    from youtube_fetcher import VideoCacheRepository
     from telegram.delivery_log import DeliveryLogStore
     from telegram.formatter import TelegramDigestFormatter
     from telegram.models import DeliveryRecord, DigestDeliveryResult, TelegramDigestPick
@@ -60,6 +74,58 @@ class SelectionEvaluator(Protocol):
     ) -> list[VideoRecord]: ...
 
 
+class StaleCacheError(RuntimeError):
+    """Raised when the candidate cache is too old to deliver a trustworthy digest."""
+
+
+@dataclass(slots=True)
+class CacheFreshnessGate:
+    """Decide whether a cache is fresh enough to deliver, and how to flag staleness.
+
+    A healthy cache is refreshed daily, so age is the signal that an upstream
+    refresh stalled (the fetcher keeps the last-good cache rather than clobbering
+    it). Moderately stale caches still ship with a delivery note; severely stale
+    caches abort the digest so we never quietly send day-old picks.
+    """
+
+    cache_repository: VideoCacheRepository | None = None
+    stale_warn_hours: float = CACHE_STALE_WARN_HOURS
+    max_age_hours: float = CACHE_MAX_AGE_HOURS
+    now_factory: Callable[[], datetime] | None = None
+
+    def __post_init__(self) -> None:
+        if self.cache_repository is None:
+            self.cache_repository = VideoCacheRepository()
+        if self.now_factory is None:
+            self.now_factory = lambda: datetime.now(timezone.utc)
+
+    def evaluate(self, cache_path: str) -> list[str]:
+        """Return delivery notes for a cache, raising StaleCacheError when too old."""
+        meta = self.cache_repository.load_metadata(cache_path, now=self.now_factory())
+
+        if meta.age_hours is None:
+            return [
+                "Cache freshness unknown: missing or unreadable 'fetched_at' timestamp; "
+                "delivering on a best-effort basis."
+            ]
+
+        if meta.age_hours > self.max_age_hours:
+            raise StaleCacheError(
+                f"Candidate cache at {meta.path} is {meta.age_hours:.1f}h old "
+                f"(max {self.max_age_hours:.0f}h). Last successful fetch: "
+                f"{meta.fetched_at.isoformat()}. Refusing to deliver a stale digest — "
+                f"the YouTube refresh has likely been failing."
+            )
+
+        if meta.age_hours > self.stale_warn_hours:
+            return [
+                f"⚠️ Cache is {meta.age_hours:.1f}h old (fetched {meta.fetched_at.isoformat()}); "
+                f"the YouTube refresh may have failed. Picks drawn from the last-good cache."
+            ]
+
+        return []
+
+
 @dataclass(slots=True)
 class ProductionDigestService:
     """Execute the production skill, format a digest, and optionally send it."""
@@ -69,6 +135,7 @@ class ProductionDigestService:
     sender: DigestSender | None = None
     delivery_log_store: DeliveryLogStore | None = None
     delivered_at_factory: Callable[[], str] | None = None
+    freshness_gate: CacheFreshnessGate | None = None
 
     def __post_init__(self) -> None:
         if self.evaluator is None:
@@ -77,6 +144,8 @@ class ProductionDigestService:
             self.formatter = TelegramDigestFormatter()
         if self.delivered_at_factory is None:
             self.delivered_at_factory = lambda: datetime.now(timezone.utc).isoformat()
+        if self.freshness_gate is None:
+            self.freshness_gate = CacheFreshnessGate()
 
     def deliver(
         self,
@@ -92,6 +161,8 @@ class ProductionDigestService:
             cache_path=cache_path,
             feedback_path=feedback_path,
         )
+        # Gate on cache freshness before doing any work: too-stale raises here.
+        freshness_notes = self.freshness_gate.evaluate(request.cache_path)
         delivery_store = self._resolve_delivery_log_store(skill_path, delivery_log_path)
         previously_delivered_ids = self._previously_delivered_video_ids(delivery_store)
         request = self._exclude_previously_delivered_videos(
@@ -104,6 +175,8 @@ class ProductionDigestService:
                 f"Excluded {len(previously_delivered_ids)} previously delivered video(s).",
                 *execution_notes,
             ]
+        if freshness_notes:
+            execution_notes = [*freshness_notes, *execution_notes]
         if len(selected_video_ids) != 3:
             raise ValueError(
                 f"Production digest requires exactly 3 selected videos, got {len(selected_video_ids)}."

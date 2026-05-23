@@ -74,6 +74,14 @@ class QuotaSettings:
 
 
 @dataclass(frozen=True, slots=True)
+class CacheSettings:
+    """Freshness thresholds (in hours) for the reusable video candidate cache."""
+
+    stale_warn_hours: float
+    max_age_hours: float
+
+
+@dataclass(frozen=True, slots=True)
 class AppSettings:
     search: SearchSettings
     integrations: IntegrationSettings
@@ -82,6 +90,7 @@ class AppSettings:
     loop: LoopSettings
     paths: PathSettings
     quotas: QuotaSettings
+    cache: CacheSettings
 
 
 def _load_environment(env_file: Path = DEFAULT_ENV_FILE) -> None:
@@ -94,6 +103,16 @@ def _bool_env(name: str, default: bool) -> bool:
     if raw is None:
         return default
     return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _float_env(name: str, default: float) -> float:
+    raw = os.environ.get(name)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
 
 
 def _resolve_inference_base_url(backend: str) -> str:
@@ -182,6 +201,16 @@ def _build_quota_settings() -> QuotaSettings:
     )
 
 
+def _build_cache_settings() -> CacheSettings:
+    # The cache is refreshed daily and the digest runs a few hours later, so a
+    # healthy cache is well under a day old. Warn past ~one missed refresh and
+    # refuse to deliver past ~two missed refreshes.
+    return CacheSettings(
+        stale_warn_hours=_float_env("CACHE_STALE_WARN_HOURS", 26.0),
+        max_age_hours=_float_env("CACHE_MAX_AGE_HOURS", 48.0),
+    )
+
+
 def load_settings(env_file: Path = DEFAULT_ENV_FILE) -> AppSettings:
     _load_environment(env_file)
 
@@ -195,6 +224,7 @@ def load_settings(env_file: Path = DEFAULT_ENV_FILE) -> AppSettings:
         loop=_build_loop_settings(),
         paths=_build_path_settings(base_dir),
         quotas=_build_quota_settings(),
+        cache=_build_cache_settings(),
     )
 
 
@@ -234,6 +264,9 @@ FEEDBACK_FILE = SETTINGS.paths.feedback_file
 
 DAILY_SEARCH_BUDGET = SETTINGS.quotas.daily_search_budget
 DAILY_VIDEO_DETAIL_BUDGET = SETTINGS.quotas.daily_video_detail_budget
+
+CACHE_STALE_WARN_HOURS = SETTINGS.cache.stale_warn_hours
+CACHE_MAX_AGE_HOURS = SETTINGS.cache.max_age_hours
 
 # Meta-agent settings (read from environment, not stored in AppSettings)
 META_REFLECT_PASSES: int = int(os.environ.get("META_REFLECT_PASSES", "2"))

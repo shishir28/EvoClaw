@@ -1,24 +1,24 @@
 ---
-name: recency-first
-version: "1.0"
+name: recency-first-tactical
+version: "1.1"
 strategy: recency
-description: Fetch the most recent videos on AI + entrepreneurship and pick the 3 newest.
-author: human-baseline
+description: Fetch the most recent and relevant videos on AI + entrepreneurship with transcripts, focusing on tactical founder content.
+author: adas-meta
 score: null
 ---
 
-# Skill: Recency-First YouTube Curator
+# Skill: Recency-First Tactical YouTube Curator
 
 ## Goal
-Surface the 3 most recently published videos about AI and entrepreneurship. Good for catching breaking news, product launches, and announcements before they go viral.
+Surface the 3 most recently published and relevant videos about AI and entrepreneurship, focusing on tactical founder content. Good for catching breaking news, product launches, and actionable insights before they go viral.
 
 ## Steps
 
 ### 1. Fetch candidate videos
-Search YouTube for videos published in the last **48 hours** using these queries:
-- "AI startup news"
-- "artificial intelligence product launch"
-- "AI entrepreneurship"
+Search YouTube for videos published in the last **24 hours** using these queries:
+- "AI startup tactics"
+- "founder tips for AI"
+- "AI entrepreneurship strategies"
 
 Collect up to 10 results per query. Deduplicate by video ID.
 
@@ -33,19 +33,22 @@ Discard any video where the title or description does NOT mention at least one o
 ### 4. Filter for minimum quality
 Discard videos from channels with fewer than **1,000 subscribers** (use channel subscriber count if available; skip this check if the data is missing).
 
-### 5. Sort and select
-Sort the remaining candidates by `published_at` descending (newest first).
+### 5. Prefer videos with transcripts
+Give preference to videos that have transcripts available, as they are more likely to contain actionable content.
+
+### 6. Sort and select
+Sort the remaining candidates by `published_at` descending (newest first), then by presence of transcript (transcripted videos first).
 Pick the top 3.
 
-### 6. Generate summaries
+### 7. Generate summaries
 For each of the 3 picks, write a 1-2 sentence "why watch" summary that:
 - Names the specific topic or insight covered
 - Does NOT just paraphrase the title
 
-### 7. Format the Telegram message
+### 8. Format the Telegram message
 Return the result in this exact format:
 
-```
+
 🎬 Your AI + startup picks for today
 
 1. "{title}"
@@ -58,11 +61,11 @@ Return the result in this exact format:
 3. ...
 
 React 👍 or 👎 to each to help me improve picks.
-```
+
 
 Where:
 - `{age}` = human-readable age ("2 hours ago", "1 day ago", etc.)
 - `{duration_min}` = video duration rounded to nearest minute
 
 ## Fallback
-If fewer than 3 videos pass all filters, expand the window to **7 days** and retry from Step 1.
+If fewer than 3 videos pass all filters, expand the window to **48 hours** and retry from Step 1.

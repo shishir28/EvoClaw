@@ -4,7 +4,10 @@ Tests for adas/youtube_fetcher.py
 
 from __future__ import annotations
 
-from youtube_fetcher import TranscriptProvider
+import json
+from datetime import datetime, timezone
+
+from youtube_fetcher import TranscriptProvider, VideoCacheRepository
 
 
 class TestTranscriptProvider:
@@ -39,3 +42,57 @@ class TestTranscriptProvider:
 
         assert result is videos
         assert result[0]["transcript"] is None
+
+
+def _write_cache(path, fetched_at: str, count: int = 2) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "fetched_at": fetched_at,
+                "count": count,
+                "videos": [{"video_id": f"v{i}"} for i in range(count)],
+            }
+        )
+    )
+
+
+class TestVideoCacheMetadata:
+    def test_load_metadata_computes_age_from_fetched_at(self, tmp_path):
+        cache = tmp_path / "cache.json"
+        _write_cache(cache, "2026-05-22T00:00:00+00:00", count=3)
+
+        meta = VideoCacheRepository().load_metadata(
+            str(cache), now=datetime(2026, 5, 23, 0, 0, tzinfo=timezone.utc)
+        )
+
+        assert meta.exists is True
+        assert meta.count == 3
+        assert meta.age_hours == 24.0
+        assert meta.fetched_at == datetime(2026, 5, 22, 0, 0, tzinfo=timezone.utc)
+
+    def test_load_metadata_missing_file_is_not_an_error(self, tmp_path):
+        meta = VideoCacheRepository().load_metadata(str(tmp_path / "absent.json"))
+
+        assert meta.exists is False
+        assert meta.age_hours is None
+        assert meta.count == 0
+
+    def test_load_metadata_handles_missing_timestamp(self, tmp_path):
+        cache = tmp_path / "cache.json"
+        cache.write_text(json.dumps({"count": 1, "videos": [{"video_id": "v0"}]}))
+
+        meta = VideoCacheRepository().load_metadata(str(cache))
+
+        assert meta.exists is True
+        assert meta.fetched_at is None
+        assert meta.age_hours is None
+        assert meta.count == 1
+
+    def test_count_returns_zero_when_cache_absent(self, tmp_path):
+        assert VideoCacheRepository().count(str(tmp_path / "absent.json")) == 0
+
+    def test_count_returns_zero_for_corrupt_cache(self, tmp_path):
+        cache = tmp_path / "cache.json"
+        cache.write_text("{not json")
+
+        assert VideoCacheRepository().count(str(cache)) == 0
