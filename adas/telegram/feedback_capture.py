@@ -12,6 +12,7 @@ try:
     from ..config import DELIVERY_LOG, FEEDBACK_FILE
     from ..evaluation.models import VideoRecord
     from ..feedback.service import FeedbackService, ManualFeedbackPick
+    from ..utils.paths import write_text_atomic
     from ..youtube_fetcher import VideoCacheRepository
     from .delivery_log import DeliveryLogStore
     from .models import DeliveryRecord
@@ -20,6 +21,7 @@ except ImportError:
     from config import DELIVERY_LOG, FEEDBACK_FILE
     from evaluation.models import VideoRecord
     from feedback.service import FeedbackService, ManualFeedbackPick
+    from utils.paths import write_text_atomic
     from youtube_fetcher import VideoCacheRepository
     from telegram.delivery_log import DeliveryLogStore
     from telegram.models import DeliveryRecord
@@ -229,5 +231,4 @@ class ReactionFeedbackCapture:
 
     @staticmethod
     def _save_offset(path: Path, offset: int) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps({"offset": offset}, indent=2))
+        write_text_atomic(path, json.dumps({"offset": offset}, indent=2))

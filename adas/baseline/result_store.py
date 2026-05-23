@@ -10,8 +10,10 @@ from pathlib import Path
 from typing import Any, Callable
 
 try:
+    from ..utils.paths import write_text_atomic
     from .models import BaselineEvaluationRecord
 except ImportError:
+    from utils.paths import write_text_atomic
     from baseline.models import BaselineEvaluationRecord
 
 
@@ -33,11 +35,15 @@ class EvaluationResultStore:
 
         for record in records:
             record_path = results_dir / f"{Path(record.skill_path).stem}.json"
-            record_path.write_text(json.dumps(record.to_dict(), indent=2, ensure_ascii=False))
+            write_text_atomic(
+                record_path,
+                json.dumps(record.to_dict(), indent=2, ensure_ascii=False),
+            )
 
         summary = self._build_summary(records)
-        (destination / "summary.json").write_text(
-            json.dumps(summary, indent=2, ensure_ascii=False)
+        write_text_atomic(
+            destination / "summary.json",
+            json.dumps(summary, indent=2, ensure_ascii=False),
         )
         return summary
 

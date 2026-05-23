@@ -38,6 +38,7 @@ try:
         VIDEO_WINDOW_DAYS,
         YOUTUBE_API_KEY,
     )
+    from utils.paths import write_text_atomic
 except ModuleNotFoundError:
     from adas.config import (
         MAX_RESULTS_PER_QUERY,
@@ -46,6 +47,7 @@ except ModuleNotFoundError:
         VIDEO_WINDOW_DAYS,
         YOUTUBE_API_KEY,
     )
+    from adas.utils.paths import write_text_atomic
 
 # ISO 8601 duration → seconds
 _DURATION_RE = re.compile(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?")
@@ -323,7 +325,7 @@ class VideoCacheRepository:
             "count": len(videos),
             "videos": videos,
         }
-        dest.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+        write_text_atomic(dest, json.dumps(payload, indent=2, ensure_ascii=False))
         print(f"Cached {len(videos)} videos → {dest}")
 
     def load(self, path: str) -> list[VideoRecordPayload]:

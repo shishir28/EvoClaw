@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from adas.utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
-from adas.utils.paths import assert_safe_write_path
+from adas.utils.paths import assert_safe_write_path, write_text_atomic
 from adas.meta.parser import (
     REQUIRED_BODY_HEADERS,
     SKILL_BODY_MIN_LENGTH,
@@ -120,6 +120,37 @@ class TestAssertSafeWritePath:
         msg = str(exc_info.value)
         assert str(tmp_path) in msg
 
+
+
+# ---------------------------------------------------------------------------
+# write_text_atomic
+# ---------------------------------------------------------------------------
+
+class TestWriteTextAtomic:
+    def test_writes_content_and_creates_parent_directory(self, tmp_path):
+        target = tmp_path / "nested" / "data.json"
+
+        write_text_atomic(target, '{"ok": true}')
+
+        assert target.read_text() == '{"ok": true}'
+
+    def test_replaces_existing_file(self, tmp_path):
+        target = tmp_path / "data.json"
+        target.write_text("old")
+
+        write_text_atomic(target, "new")
+
+        assert target.read_text() == "new"
+
+    def test_cleans_temp_file_when_replace_fails(self, tmp_path):
+        target = tmp_path / "data.json"
+
+        with patch("adas.utils.paths.os.replace", side_effect=RuntimeError("boom")):
+            with pytest.raises(RuntimeError, match="boom"):
+                write_text_atomic(target, "new")
+
+        assert not target.exists()
+        assert list(tmp_path.glob("*.tmp")) == []
 
 # ---------------------------------------------------------------------------
 # validate_skill_body

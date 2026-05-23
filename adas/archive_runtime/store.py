@@ -10,9 +10,11 @@ from typing import Any
 
 try:
     from ..config import ARCHIVE_DIR, ARCHIVE_INDEX
+    from ..utils.paths import write_text_atomic
     from .models import ArchiveIndex
 except ImportError:
     from config import ARCHIVE_DIR, ARCHIVE_INDEX
+    from utils.paths import write_text_atomic
     from archive_runtime.models import ArchiveIndex
 
 
@@ -32,8 +34,10 @@ class ArchiveStore:
         return ArchiveIndex.from_dict(payload)
 
     def save_index(self, index: ArchiveIndex) -> None:
-        self._archive_dir.mkdir(parents=True, exist_ok=True)
-        self._archive_index.write_text(json.dumps(index.to_dict(), indent=2, ensure_ascii=False))
+        write_text_atomic(
+            self._archive_index,
+            json.dumps(index.to_dict(), indent=2, ensure_ascii=False),
+        )
 
     def resolve_skill_id(self, index: ArchiveIndex, archive_key: str) -> str:
         for entry in index.skills:
@@ -52,12 +56,15 @@ class ArchiveStore:
         meta_payload: dict[str, Any],
     ) -> str:
         entry_dir = self._archive_dir / skill_id
-        entry_dir.mkdir(parents=True, exist_ok=True)
-        (entry_dir / "SKILL.md").write_text(skill_text)
-        (entry_dir / "result.json").write_text(
-            json.dumps(result_payload, indent=2, ensure_ascii=False)
+        write_text_atomic(entry_dir / "SKILL.md", skill_text)
+        write_text_atomic(
+            entry_dir / "result.json",
+            json.dumps(result_payload, indent=2, ensure_ascii=False),
         )
-        (entry_dir / "meta.json").write_text(json.dumps(meta_payload, indent=2, ensure_ascii=False))
+        write_text_atomic(
+            entry_dir / "meta.json",
+            json.dumps(meta_payload, indent=2, ensure_ascii=False),
+        )
         return skill_id
 
     @staticmethod
