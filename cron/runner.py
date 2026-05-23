@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shlex
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -99,6 +100,40 @@ def _expand_args(args: list, project_root: Path) -> list[str]:
     return result
 
 
+
+def _build_cron_entries(
+    jobs: list[dict],
+    project_root: Path = PROJECT_ROOT,
+    python_executable: str | None = None,
+    logs_dir: Path = LOGS_DIR,
+    env_file: Path | None = None,
+    user: str | None = None,
+) -> list[str]:
+    """Build crontab lines from jobs.json so schedules have one source of truth."""
+    python_cmd = python_executable or _python_executable()
+    runner_path = project_root / "cron" / "runner.py"
+    entries: list[str] = []
+    for job in jobs:
+        name = str(job["name"])
+        schedule = str(job["schedule"])
+        log_file = logs_dir / f"cron-{name}.log"
+        command_parts = []
+        if env_file is not None:
+            command_parts.append(f"source {shlex.quote(str(env_file))}")
+        command_parts.append(f"cd {shlex.quote(str(project_root))}")
+        command_parts.append(
+            f"{shlex.quote(python_cmd)} {shlex.quote(str(runner_path))} --job {shlex.quote(name)}"
+        )
+        command = " && ".join(command_parts)
+        line = (
+            f"{schedule} "
+            f"{(user + ' ') if user else ''}"
+            f"bash -lc {shlex.quote(command)} "
+            f">> {shlex.quote(str(log_file))} 2>&1"
+        )
+        entries.append(line)
+    return entries
+
 def _run_job(job: dict, dry_run: bool = False) -> int:
     name = job["name"]
     module = job["module"]
@@ -165,10 +200,23 @@ def main() -> None:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--job", metavar="NAME", help="Run a named job")
     group.add_argument("--list", action="store_true", help="List available jobs")
+    group.add_argument(
+        "--print-crontab",
+        action="store_true",
+        help="Print crontab entries generated from jobs.json",
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print what would run without executing",
+    )
+    parser.add_argument(
+        "--cron-user",
+        help="User field to include for system cron files such as /etc/cron.d",
+    )
+    parser.add_argument(
+        "--cron-env-file",
+        help="Optional env file to source before each generated cron command",
     )
     args = parser.parse_args()
 
@@ -177,6 +225,16 @@ def main() -> None:
 
     if args.list:
         _list_jobs(jobs)
+        return
+
+    if args.print_crontab:
+        env_file = Path(args.cron_env_file) if args.cron_env_file else None
+        for entry in _build_cron_entries(
+            jobs,
+            env_file=env_file,
+            user=args.cron_user,
+        ):
+            print(entry)
         return
 
     job = _find_job(jobs, args.job)

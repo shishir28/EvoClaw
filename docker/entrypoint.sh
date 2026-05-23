@@ -6,6 +6,7 @@ APP_USER="${EVOCLAW_APP_USER:-evoclaw}"
 APP_UID="${EVOCLAW_UID:-1000}"
 APP_GID="${EVOCLAW_GID:-1000}"
 TZ="${TZ:-Australia/Sydney}"
+EVOCLAW_PYTHON="${EVOCLAW_PYTHON:-/usr/local/bin/python}"
 CRON_FILE="/etc/cron.d/evoclaw"
 ENV_FILE="/etc/evoclaw/env.sh"
 
@@ -38,12 +39,11 @@ PATH=/usr/local/bin:/usr/bin:/bin
 TZ=$TZ
 EVOCLAW_PYTHON=${EVOCLAW_PYTHON:-/usr/local/bin/python}
 
-# EvoClaw automated jobs (container-managed)
-30 0 * * * $APP_USER bash -lc 'source $ENV_FILE && cd $APP_DIR && /usr/local/bin/python cron/runner.py --job refresh-video-cache' >> $APP_DIR/cron/logs/cron-refresh-video-cache.log 2>&1
-30 1 * * * $APP_USER bash -lc 'source $ENV_FILE && cd $APP_DIR && /usr/local/bin/python cron/runner.py --job adas-evolution' >> $APP_DIR/cron/logs/cron-adas-evolution.log 2>&1
-30 4 * * * $APP_USER bash -lc 'source $ENV_FILE && cd $APP_DIR && /usr/local/bin/python cron/runner.py --job morning-digest' >> $APP_DIR/cron/logs/cron-morning-digest.log 2>&1
-30 8 * * * $APP_USER bash -lc 'source $ENV_FILE && cd $APP_DIR && /usr/local/bin/python cron/runner.py --job reaction-capture' >> $APP_DIR/cron/logs/cron-reaction-capture.log 2>&1
+# EvoClaw automated jobs (container-managed; generated from cron/jobs.json)
 EOF
+    "$EVOCLAW_PYTHON" "$APP_DIR/cron/runner.py" --print-crontab \
+        --cron-user "$APP_USER" \
+        --cron-env-file "$ENV_FILE" >> "$CRON_FILE"
 
     chmod 0644 "$CRON_FILE"
 }

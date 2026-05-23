@@ -13,6 +13,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "cron"))
 
 from runner import (
+    _build_cron_entries,
     _check_required_env,
     _expand_args,
     _find_job,
@@ -209,3 +210,53 @@ class TestExpandArgs:
         assert all(str(tmp_path) in r for r in result)
         assert "{PROJECT_ROOT}" not in result[0]
         assert "{PROJECT_ROOT}" not in result[1]
+
+
+# ---------------------------------------------------------------------------
+# _build_cron_entries
+# ---------------------------------------------------------------------------
+
+class TestBuildCronEntries:
+    def test_builds_entries_from_jobs_json_shape(self, tmp_path):
+        jobs = [
+            {"name": "refresh-video-cache", "schedule": "30 0 * * *"},
+            {"name": "morning-digest", "schedule": "30 4 * * *"},
+        ]
+
+        entries = _build_cron_entries(
+            jobs,
+            project_root=tmp_path,
+            python_executable="/usr/bin/python3",
+            logs_dir=tmp_path / "cron" / "logs",
+        )
+
+        assert entries[0].startswith("30 0 * * * bash -lc")
+        assert "--job refresh-video-cache" in entries[0]
+        assert "cron-refresh-video-cache.log" in entries[0]
+        assert entries[1].startswith("30 4 * * * bash -lc")
+        assert "--job morning-digest" in entries[1]
+
+    def test_builds_system_cron_entries_with_user_and_env_file(self, tmp_path):
+        jobs = [{"name": "reaction-capture", "schedule": "30 8 * * *"}]
+
+        entries = _build_cron_entries(
+            jobs,
+            project_root=tmp_path,
+            python_executable="/usr/local/bin/python",
+            logs_dir=tmp_path / "cron" / "logs",
+            env_file=tmp_path / "env.sh",
+            user="evoclaw",
+        )
+
+        assert entries == [
+            "30 8 * * * evoclaw bash -lc "
+            + "'source "
+            + str(tmp_path / "env.sh")
+            + " && cd "
+            + str(tmp_path)
+            + " && /usr/local/bin/python "
+            + str(tmp_path / "cron" / "runner.py")
+            + " --job reaction-capture' >> "
+            + str(tmp_path / "cron" / "logs" / "cron-reaction-capture.log")
+            + " 2>&1"
+        ]

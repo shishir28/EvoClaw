@@ -8,7 +8,7 @@ This directory contains the scheduler configuration and runtime tooling for EvoC
 |---|---|
 | `jobs.json` | Canonical job definitions — name, schedule, module, args, required env |
 | `runner.py` | CLI that reads `jobs.json`, validates config, runs a named job, and logs output |
-| `install.sh` | Installs the three crontab entries into the current user's crontab |
+| `install.sh` | Installs crontab entries generated from `jobs.json` into the current user's crontab |
 | `logs/` | Per-run log files written by `runner.py` and cron |
 
 The preferred production path is the Docker scheduler in `docker-compose.yml`.
@@ -17,13 +17,14 @@ when the `evoclaw-cron` container is running.
 
 ## Jobs
 
-Three jobs run daily in the `Australia/Sydney` timezone:
+The jobs in `jobs.json` run daily in the `Australia/Sydney` timezone:
 
 | Job | Schedule | What it does |
 |---|---|---|
-| `adas-evolution` | 2:00 AM AEST | Runs 3 meta-agent cycles: generate → reflect → evaluate → archive → promote |
-| `morning-digest` | 7:00 AM AEST | Runs the production skill, formats top 3 picks, sends Telegram digest |
-| `reaction-capture` | 9:30 AM AEST | Polls Telegram for 👍/👎 reactions and writes feedback entries |
+| `refresh-video-cache` | 12:30 AM AEST | Refreshes the reusable YouTube candidate cache |
+| `adas-evolution` | 1:30 AM AEST | Runs 3 meta-agent cycles: generate → reflect → evaluate → archive → promote |
+| `morning-digest` | 4:30 AM AEST | Runs the production skill, formats top 3 picks, sends Telegram messages |
+| `reaction-capture` | 8:30 AM AEST | Polls Telegram for 👍/👎 reactions and writes feedback entries |
 
 ## Running a job manually
 
@@ -53,7 +54,7 @@ bash cron/install.sh --force   # install without prompting
 
 To remove the entries later:
 ```bash
-crontab -e   # delete the three EvoClaw lines manually
+crontab -e   # delete the EvoClaw lines manually
 ```
 
 ## Running cron inside Docker
@@ -63,7 +64,7 @@ docker compose up -d --build evoclaw
 docker compose logs -f evoclaw
 ```
 
-The container installs the same three cron schedules internally and bind-mounts
+The container generates its cron file from `cron/jobs.json` and bind-mounts
 the repository at `/app`, so generated files are written back into this working
 tree:
 
@@ -94,6 +95,7 @@ before a scheduled job silently fails at midnight.
 
 Required env vars per job:
 
+- `refresh-video-cache` — `YOUTUBE_API_KEY`
 - `adas-evolution` — none (uses cached video data and local LLM settings from `.env`)
 - `morning-digest` — `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
 - `reaction-capture` — `TELEGRAM_BOT_TOKEN`
@@ -101,12 +103,13 @@ Required env vars per job:
 ## Daily schedule flow
 
 ```
-02:00  adas-evolution   — overnight skill evolution (LLM-heavy, runs while you sleep)
-07:00  morning-digest   — sends the curated digest to Telegram
-09:30  reaction-capture — captures your 👍/👎 reactions from the morning digest
+00:30  refresh-video-cache — refreshes the YouTube candidate cache
+01:30  adas-evolution      — overnight skill evolution (LLM-heavy, runs while you sleep)
+04:30  morning-digest      — sends the curated picks to Telegram
+08:30  reaction-capture    — captures your 👍/👎 reactions from the morning digest
 ```
 
-Reactions captured at 9:30 AM feed into the alignment scorer for the next night's
+Reactions captured at 8:30 AM feed into the alignment scorer for the next night's
 evolution cycle, closing the human-feedback loop.
 
 ## Relationship to the plan
