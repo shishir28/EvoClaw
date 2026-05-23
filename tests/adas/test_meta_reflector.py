@@ -37,7 +37,16 @@ _CANDIDATE = Candidate(
 
 _REPAIRED_SKILL_MD = _SKILL_MD.replace("name: my-skill", "name: my-skill-v2")
 
-_ACCEPT_RESPONSE = json.dumps(
+
+def _two_part(head: dict, skill_md: str | None = None) -> str:
+    """Build a reflector response: a JSON head, then an optional fenced SKILL.md block."""
+    out = json.dumps(head)
+    if skill_md is not None:
+        out += f"\n\n```markdown\n{skill_md}```\n"
+    return out
+
+
+_ACCEPT_RESPONSE = _two_part(
     {
         "verdict": "accept",
         "issues": [],
@@ -53,11 +62,11 @@ _ACCEPT_RESPONSE = json.dumps(
         },
         "thought": "Looks good to go.",
         "name": "my-skill",
-        "skill_md": _SKILL_MD,
-    }
+    },
+    _SKILL_MD,
 )
 
-_REVISE_RESPONSE = json.dumps(
+_REVISE_RESPONSE = _two_part(
     {
         "verdict": "revise",
         "issues": ["Missing meaningful novelty compared to archive."],
@@ -67,8 +76,8 @@ _REVISE_RESPONSE = json.dumps(
         },
         "thought": "Needs more differentiation.",
         "name": "my-skill-v2",
-        "skill_md": _REPAIRED_SKILL_MD,
-    }
+    },
+    _REPAIRED_SKILL_MD,
 )
 
 
@@ -87,7 +96,9 @@ class _FakeClient:
         self._iter = iter(responses)
         self.calls: list[tuple[str, str]] = []
 
-    def complete(self, system_prompt: str, user_prompt: str) -> str:
+    def complete(
+        self, system_prompt: str, user_prompt: str, json_schema: dict | None = None
+    ) -> str:
         self.calls.append((system_prompt, user_prompt))
         return next(self._iter)
 
@@ -160,29 +171,30 @@ class TestReflectorPromptBuilding:
         assert _CANDIDATE.name in user_prompt
 
     def test_unknown_verdict_defaults_to_revise(self, tmp_path):
-        response = json.dumps(
+        response = _two_part(
             {
                 "verdict": "something-weird",
                 "issues": [],
                 "checks": {},
                 "thought": "hmm",
                 "name": "x",
-                "skill_md": _SKILL_MD,
-            }
+            },
+            _SKILL_MD,
         )
         reflector = _make_reflector(tmp_path, [response])
         result = reflector.reflect(_CANDIDATE, _make_context())
         assert result.verdict == "revise"
 
     def test_missing_verdict_defaults_to_revise(self, tmp_path):
-        response = json.dumps(
-            {"issues": [], "checks": {}, "thought": "hmm", "name": "x", "skill_md": _SKILL_MD}
+        response = _two_part(
+            {"issues": [], "checks": {}, "thought": "hmm", "name": "x"}, _SKILL_MD
         )
         reflector = _make_reflector(tmp_path, [response])
         result = reflector.reflect(_CANDIDATE, _make_context())
         assert result.verdict == "revise"
 
     def test_original_candidate_used_as_fallback_when_fields_missing(self, tmp_path):
+        # Accept with no fenced block and no name -> keep the original candidate.
         response = json.dumps({"verdict": "accept", "issues": [], "checks": {}, "thought": "ok"})
         reflector = _make_reflector(tmp_path, [response])
         result = reflector.reflect(_CANDIDATE, _make_context())

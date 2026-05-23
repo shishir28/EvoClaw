@@ -9,32 +9,43 @@ import pytest
 from adas.meta.models import Candidate, MetaContext
 from adas.meta.generator import Generator
 
-_VALID_RESPONSE = json.dumps(
+_SKILL_MD = (
+    "---\n"
+    "name: engagement-v2\n"
+    'version: "1.0"\n'
+    "strategy: engagement-velocity\n"
+    "description: High-velocity AI startup picks.\n"
+    "author: adas-meta\n"
+    "score: null\n"
+    "---\n"
+    "\n"
+    "## Goal\n"
+    "Pick fast-moving AI startup videos.\n"
+    "\n"
+    "## Steps\n"
+    "1. Filter to channels with >= 10 000 subscribers.\n"
+    "2. Rank by views-per-hour descending.\n"
+    "3. Select top 3.\n"
+    "\n"
+    "## Fallback\n"
+    "Lower subscriber floor to 1 000 if fewer than 3 qualify.\n"
+)
+
+
+def _two_part(head: dict, skill_md: str | None = None) -> str:
+    """Build a meta-agent response: a JSON head, then a fenced SKILL.md block."""
+    out = json.dumps(head)
+    if skill_md is not None:
+        out += f"\n\n```markdown\n{skill_md}```\n"
+    return out
+
+
+_VALID_RESPONSE = _two_part(
     {
         "thought": "Engagement velocity improves pick quality.",
         "name": "engagement-v2",
-        "skill_md": (
-            "---\n"
-            "name: engagement-v2\n"
-            'version: "1.0"\n'
-            "strategy: engagement-velocity\n"
-            "description: High-velocity AI startup picks.\n"
-            "author: adas-meta\n"
-            "score: null\n"
-            "---\n"
-            "\n"
-            "## Goal\n"
-            "Pick fast-moving AI startup videos.\n"
-            "\n"
-            "## Steps\n"
-            "1. Filter to channels with >= 10 000 subscribers.\n"
-            "2. Rank by views-per-hour descending.\n"
-            "3. Select top 3.\n"
-            "\n"
-            "## Fallback\n"
-            "Lower subscriber floor to 1 000 if fewer than 3 qualify.\n"
-        ),
-    }
+    },
+    _SKILL_MD,
 )
 
 
@@ -53,7 +64,9 @@ class _FakeClient:
         self._response = response
         self.calls: list[tuple[str, str]] = []
 
-    def complete(self, system_prompt: str, user_prompt: str) -> str:
+    def complete(
+        self, system_prompt: str, user_prompt: str, json_schema: dict | None = None
+    ) -> str:
         self.calls.append((system_prompt, user_prompt))
         return self._response
 
@@ -126,14 +139,26 @@ class TestGenerator:
         with pytest.raises(ValueError):
             gen.generate(_make_context())
 
-    def test_response_missing_field_raises_value_error(self, tmp_path):
+    def test_missing_skill_md_block_raises_value_error(self, tmp_path):
         (tmp_path / "meta_system.md").write_text("system")
         (tmp_path / "meta_design.md").write_text("design")
 
-        # Valid JSON but missing 'skill_md'
+        # Valid JSON head but no fenced SKILL.md block.
         bad_response = json.dumps({"thought": "ok", "name": "x"})
         client = _FakeClient(bad_response)
         gen = Generator(client=client, prompt_dir=str(tmp_path))
 
-        with pytest.raises(ValueError, match="skill_md"):
+        with pytest.raises(ValueError, match="SKILL.md document"):
+            gen.generate(_make_context())
+
+    def test_missing_head_field_raises_value_error(self, tmp_path):
+        (tmp_path / "meta_system.md").write_text("system")
+        (tmp_path / "meta_design.md").write_text("design")
+
+        # Fenced block present but JSON head is missing 'name'.
+        bad_response = _two_part({"thought": "ok"}, _SKILL_MD)
+        client = _FakeClient(bad_response)
+        gen = Generator(client=client, prompt_dir=str(tmp_path))
+
+        with pytest.raises(ValueError, match="name"):
             gen.generate(_make_context())

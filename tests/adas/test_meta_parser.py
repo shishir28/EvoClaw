@@ -9,7 +9,10 @@ import pytest
 from adas.meta.parser import (
     Candidate,
     extract_candidate,
+    extract_skill_md_block,
+    parse_candidate_response,
     parse_frontmatter,
+    parse_reflection_response,
     parse_response,
     strip_fences,
     validate_candidate,
@@ -118,6 +121,80 @@ class TestExtractCandidate:
     def test_non_string_name_raises(self):
         with pytest.raises(ValueError, match="string"):
             extract_candidate({"thought": "x", "name": [], "skill_md": "y"})
+
+
+class TestExtractSkillMdBlock:
+    def test_extracts_markdown_block(self):
+        raw = '{"thought": "t", "name": "n"}\n\n```markdown\n' + _VALID_SKILL_MD + "```\n"
+        assert extract_skill_md_block(raw).startswith("---\nname: test-skill")
+
+    def test_handles_json_fenced_head_and_four_backtick_skill_fence(self):
+        # Mirrors real Qwen output: a ```json head, a ````markdown skill opener,
+        # and a nested ``` code block inside the skill body.
+        raw = (
+            '```json\n{"thought": "t", "name": "test-skill"}\n```\n\n'
+            "````markdown\n" + _VALID_SKILL_MD + "````\n"
+        )
+        out = extract_skill_md_block(raw)
+        assert out.startswith("---\nname: test-skill")
+        assert "score: null" in out
+
+    def test_nested_fence_preserved(self):
+        body = (
+            "---\nname: x\n---\n\n## Goal\nDo it.\n\n"
+            "```\nTelegram template\n```\n\n## Steps\nGo."
+        )
+        raw = '{"name": "x"}\n```markdown\n' + body + "\n```"
+        out = extract_skill_md_block(raw)
+        assert "Telegram template" in out
+        assert "## Steps\nGo." in out
+
+    def test_strips_trailing_fence(self):
+        raw = '{"name": "n"}\n```markdown\n' + _VALID_SKILL_MD + "```\n"
+        assert not extract_skill_md_block(raw).rstrip().endswith("`")
+
+    def test_no_frontmatter_raises(self):
+        with pytest.raises(ValueError, match="SKILL.md document"):
+            extract_skill_md_block('{"thought": "t", "name": "n"}')
+
+
+class TestParseCandidateResponse:
+    def _response(self) -> str:
+        return '{"thought": "rationale", "name": "test-skill"}\n\n```markdown\n' + _VALID_SKILL_MD + "```\n"
+
+    def test_returns_candidate(self):
+        c = parse_candidate_response(self._response())
+        assert isinstance(c, Candidate)
+        assert c.thought == "rationale"
+        assert c.name == "test-skill"
+        assert c.skill_md.startswith("---\nname: test-skill")
+
+    def test_missing_block_raises(self):
+        with pytest.raises(ValueError, match="SKILL.md document"):
+            parse_candidate_response('{"thought": "t", "name": "n"}')
+
+    def test_missing_head_field_raises(self):
+        raw = '{"thought": "t"}\n```markdown\n' + _VALID_SKILL_MD + "```"
+        with pytest.raises(ValueError, match="name"):
+            parse_candidate_response(raw)
+
+    def test_non_string_head_field_raises(self):
+        raw = '{"thought": "t", "name": 5}\n```markdown\n' + _VALID_SKILL_MD + "```"
+        with pytest.raises(ValueError, match="string"):
+            parse_candidate_response(raw)
+
+
+class TestParseReflectionResponse:
+    def test_includes_skill_md_when_block_present(self):
+        raw = '{"verdict": "revise", "name": "n"}\n```markdown\n' + _VALID_SKILL_MD + "```"
+        parsed = parse_reflection_response(raw)
+        assert parsed["verdict"] == "revise"
+        assert parsed["skill_md"].startswith("---\nname: test-skill")
+
+    def test_omits_skill_md_when_no_block(self):
+        parsed = parse_reflection_response('{"verdict": "accept", "name": "n"}')
+        assert parsed["verdict"] == "accept"
+        assert "skill_md" not in parsed
 
 
 class TestParseFrontmatter:

@@ -9,13 +9,13 @@ try:
     from ..evaluation.judge import ChatCompletionClient
     from .client import make_client
     from .models import Candidate, MetaContext
-    from .parser import extract_candidate, parse_response
+    from .parser import parse_candidate_response
 except ImportError:
     from config import PROMPTS_DIR
     from evaluation.judge import ChatCompletionClient
     from meta.client import make_client
     from meta.models import Candidate, MetaContext
-    from meta.parser import extract_candidate, parse_response
+    from meta.parser import parse_candidate_response
 
 
 class Generator:
@@ -50,4 +50,4 @@ class Generator:
         system_prompt = self._load("meta_system.md")
         user_prompt = self._build_user_prompt(context)
         response = self._client.complete(system_prompt, user_prompt)
-        return extract_candidate(parse_response(response))
+        return parse_candidate_response(response)

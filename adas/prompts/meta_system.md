@@ -18,17 +18,35 @@ Do **not** invent a new strategy name yet. Novelty must come from the skill desi
 
 ## Required output contract
 
-Return **JSON only** with no surrounding prose and no markdown fences.
+Return your answer in **two parts, in this exact order**, with no other surrounding prose:
 
-Return exactly this top-level shape:
+1. A single JSON object carrying the structured fields.
+2. A fenced ```` ```markdown ```` block carrying the complete SKILL.md document.
+
+Do **not** put the SKILL.md inside the JSON. Keeping the multi-line document out of
+the JSON string is required — embedding it there corrupts the response.
+
+Return exactly this shape:
 
 ```json
 {
   "thought": "short rationale grounded in archive/feedback evidence",
-  "name": "candidate skill name",
-  "skill_md": "---\\nname: ...\\nversion: ...\\nstrategy: ...\\ndescription: ...\\nauthor: adas-meta\\nscore: null\\n---\\n..."
+  "name": "candidate skill name"
 }
 ```
+
+````markdown
+---
+name: candidate skill name
+version: "1.0"
+strategy: recency
+description: ...
+author: adas-meta
+score: null
+---
+
+# ...
+````
 
 ### Field rules
 
@@ -39,9 +57,9 @@ Return exactly this top-level shape:
 
 - `name`
   - concise and human-readable
-  - should match the frontmatter `name` field inside `skill_md`
+  - must match the frontmatter `name` field inside the SKILL.md block
 
-- `skill_md`
+- the SKILL.md block
   - must be a complete markdown skill document
   - must start with YAML frontmatter
   - must include these frontmatter keys:

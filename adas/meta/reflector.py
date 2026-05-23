@@ -10,13 +10,13 @@ try:
     from ..evaluation.judge import ChatCompletionClient
     from .client import make_client
     from .models import Candidate, MetaContext, ReflectionResult
-    from .parser import parse_response
+    from .parser import parse_reflection_response
 except ImportError:
     from config import PROMPTS_DIR
     from evaluation.judge import ChatCompletionClient
     from meta.client import make_client
     from meta.models import Candidate, MetaContext, ReflectionResult
-    from meta.parser import parse_response
+    from meta.parser import parse_reflection_response
 
 
 class Reflector:
@@ -61,7 +61,7 @@ class Reflector:
         system_prompt = self._load("meta_system.md")
         user_prompt = self._build_user_prompt(candidate, context)
         response = self._client.complete(system_prompt, user_prompt)
-        parsed = parse_response(response)
+        parsed = parse_reflection_response(response)
 
         verdict = str(parsed.get("verdict", "revise"))
         if verdict not in ("accept", "revise"):

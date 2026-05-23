@@ -10,11 +10,11 @@ from pathlib import Path
 from typing import Any, Callable, Protocol
 
 try:
-    from ..config import LLM_BASE_URL, LLM_MODEL, PROMPTS_DIR
+    from ..config import LLM_BASE_URL, LLM_MAX_TOKENS, LLM_MODEL, PROMPTS_DIR
     from .models import EvaluationRequest, VideoRecord
     from ..utils.retry import call_with_retry
 except ImportError:
-    from config import LLM_BASE_URL, LLM_MODEL, PROMPTS_DIR
+    from config import LLM_BASE_URL, LLM_MAX_TOKENS, LLM_MODEL, PROMPTS_DIR
     from evaluation.models import EvaluationRequest, VideoRecord
     from utils.retry import call_with_retry
 
@@ -54,7 +54,12 @@ class PromptTemplateLoader(Protocol):
 
 
 class ChatCompletionClient(Protocol):
-    def complete(self, system_prompt: str, user_prompt: str) -> str: ...
+    def complete(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        json_schema: dict | None = None,
+    ) -> str: ...
 
 
 class FilePromptTemplateLoader:
@@ -66,29 +71,47 @@ class FilePromptTemplateLoader:
 
 
 class OpenAIChatCompletionClient:
-    def __init__(self, base_url: str = LLM_BASE_URL, model: str = LLM_MODEL) -> None:
+    def __init__(
+        self,
+        base_url: str = LLM_BASE_URL,
+        model: str = LLM_MODEL,
+        max_tokens: int = LLM_MAX_TOKENS,
+    ) -> None:
         try:
             from openai import OpenAI
         except ImportError as exc:
             raise RuntimeError("The 'openai' package is required for LLM judging.") from exc
         self._client = OpenAI(api_key="local", base_url=base_url)
         self._model = model
+        self._max_tokens = max_tokens
 
-    def complete(self, system_prompt: str, user_prompt: str) -> str:
+    def complete(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        json_schema: dict | None = None,
+    ) -> str:
         try:
             from openai import APIConnectionError, APITimeoutError
         except ImportError as exc:
             raise RuntimeError("The 'openai' package is required for LLM judging.") from exc
+
+        # When a schema is supplied, ask the backend (vLLM) to grammar-constrain
+        # decoding so the model cannot emit malformed JSON — small local models
+        # otherwise fail to escape quotes/newlines inside large string fields.
+        extra_body = {"guided_json": json_schema} if json_schema is not None else None
 
         def _attempt() -> str:
             try:
                 response = self._client.chat.completions.create(
                     model=self._model,
                     temperature=0.0,
+                    max_tokens=self._max_tokens,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
+                    extra_body=extra_body,
                 )
             except (APIConnectionError, APITimeoutError) as exc:
                 raise RuntimeError(f"LLM judging request failed: {exc}") from exc

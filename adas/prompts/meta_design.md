@@ -63,4 +63,6 @@ Avoid:
 
 ## Output
 
-Return JSON only, following the exact candidate contract from `meta_system.md`.
+Follow the exact two-part candidate contract from `meta_system.md`: a JSON head
+object (`thought`, `name`) followed by a fenced ```` ```markdown ```` block
+containing the full SKILL.md. Do not embed the SKILL.md inside the JSON.
