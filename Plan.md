@@ -2,6 +2,8 @@
 
 ## Project overview
 
+This is the original design plan. For current implementation status, prefer `README.md`, `WORKFLOW.md`, `ARCHITECTURE.md`, and `cron/README.md`.
+
 A self-evolving video curation system that runs inside NemoClaw's sandboxed environment. Every morning, your OpenClaw agent sends you the top 3 YouTube videos on AI + entrepreneurship via Telegram. Behind the scenes, a Meta Agent Search loop runs overnight to continuously discover better curation strategies — expressed as OpenClaw SKILL.md files — and deploys the winners automatically.
 
 The system combines three ideas:
@@ -10,9 +12,9 @@ The system combines three ideas:
 - **NemoClaw's sandbox** for safe execution of untested, auto-generated skills
 - **OpenClaw's skill system** as the interface between discovered strategies and the running agent
 
-## Current implementation snapshot
+## Implemented areas
 
-The codebase is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback + meta-agent + skill promotion** stage:
+The codebase has moved beyond the original planning stage. Current implemented areas include:
 
 - real YouTube fetches work and produce reusable caches
 - the evaluator is implemented and split into focused modules
@@ -24,9 +26,9 @@ The codebase is currently at the **working fetcher + evaluator + baseline compar
 - Step 9 meta-agent orchestration is implemented and can build prompt context, generate a candidate, run reflection passes, validate it locally, evaluate it, and archive it
 - Step 10 skill promotion is implemented and can copy the archive winner into `skills/youtube-curator/SKILL.md` when it beats the recorded production deployment
 - evaluator CLI defaults now run a real scoring flow, default LLM judge setup is lazy, and baseline comparison validates the required cache input up front
-- Telegram automation and scheduled runtime wiring are still future phases
+- Telegram delivery, per-video reaction capture, cache refresh, and scheduled runtime wiring are implemented.
 
-The immediate next milestone is Step 11: run the production skill and send a Telegram digest.
+Remaining major adapter gap: real OpenClaw execution.
 
 ---
 
@@ -239,7 +241,7 @@ The first Step 9 version now exists as a local CLI-driven loop. It is not yet th
 5. evaluate it with the existing evaluator
 6. archive the result
 
-The later production form still needs cron wiring, Telegram delivery, and multi-iteration operational hardening.
+The production form now has cron wiring and Telegram delivery; multi-iteration operational hardening remains ongoing.
 
 **Configuration:**
 - Iterations per night: 5 (start conservative, increase as you gain confidence)
@@ -284,7 +286,7 @@ The self-reflection prompts check for:
 
 ### Component 5: Telegram delivery + feedback loop
 
-**Morning delivery (current cron stub uses 4:00 AM local time):**
+**Morning delivery (current cron schedule sends at 4:30 AM local time):**
 
 The production skill (best from archive) runs and sends a Telegram message like:
 
@@ -427,8 +429,8 @@ egress_rules:
 - [x] Test auto-deployment of winning skill
 
 ### Phase 4: Automation and feedback (day 8-10)
-- [ ] Configure cron jobs in NemoClaw (2 AM evolution, 7 AM delivery)
-- [ ] Set up Telegram reaction capture for feedback loop
+- [x] Configure cron jobs from `cron/jobs.json` (cache refresh, evolution, 4:30 AM delivery, reaction capture)
+- [x] Set up Telegram reaction capture for feedback loop
 - [ ] Configure NemoClaw network policies
 - [ ] Run the full system for 3 days, monitor logs
 - [ ] Tune scoring weights based on early results

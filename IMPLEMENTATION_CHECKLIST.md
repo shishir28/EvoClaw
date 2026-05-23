@@ -1,6 +1,6 @@
 # EvoClaw implementation checklist
 
-This file is the practical companion to `Plan.md`.
+This file is the practical companion to `Plan.md`. This checklist is historical in places; use `README.md`, `WORKFLOW.md`, and `cron/README.md` for current runtime behavior.
 
 Use it to answer two questions quickly:
 
@@ -54,26 +54,26 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] `adas/feedback/store.py`
 - [x] `adas/feedback/service.py`
 - [x] `adas/feedback_cli.py`
-- [x] cron config stub in `cron/jobs.json`
+- [x] canonical cron config in `cron/jobs.json`
 - [x] repository documentation in `README.md` files
 - [x] high-level orientation docs in `ARCHITECTURE.md` and `WORKFLOW.md`
 - [x] unit tests for evaluator, loader, scorer, executor, evaluator CLI helpers, and Step 5 comparison flow
 - [x] `tests/adas/test_skill_promoter.py`
-- [x] current full pytest suite passing (`261 passed`)
+- [x] current full pytest suite passing
 
 ### Not implemented yet
 
 - [ ] generated candidate archive entries beyond the current baseline seeds
 - [x] Telegram digest sender
 - [x] Telegram reaction capture / feedback ingestion automation
-- [ ] actual scheduled runtime wiring
+- [x] actual scheduled runtime wiring
 - [ ] NemoClaw policy configuration in runnable form
 
 ---
 
 ## 2. How the full system is supposed to work
 
-The planned end-to-end flow is:
+The end-to-end flow is:
 
 1. Fetch candidate YouTube videos.
 2. Run a skill or strategy to select the best 3.
@@ -515,7 +515,7 @@ This is how experimentation becomes production behavior.
 - [x] create a Telegram sender module
 - [x] define the final message formatter
 - [x] run the production skill and format its picks
-- [x] send a manual test message
+- [x] send a test message
 
 ### Why this matters
 
@@ -529,11 +529,10 @@ The production delivery path now:
 
 - lives under `adas/telegram/`
 - loads `skills/youtube-curator/SKILL.md` through the existing evaluator + executor path
-- formats the selected 3 picks into a Telegram-friendly digest message
-- sends the digest through Telegram's `sendMessage` API when `--send` is used
+- formats the selected 3 picks into Telegram-friendly per-video messages
+- sends one message per selected video through Telegram's `sendMessage` API when `--send` is used
 - supports safe dry runs by default through `adas/telegram_digest.py`
 - appends `delivery_log.json` beside the production skill with delivery time, skill version, selected video IDs, digest text, and Telegram message ID when available
-- live send has been exercised with real credentials and confirmed working (`telegram_message_id: 2`)
 
 ### Files involved
 
@@ -569,7 +568,7 @@ The reaction capture path now:
 - uses polling (no server required) via Telegram's `getUpdates` with `allowed_updates=["message_reaction"]`
 - lives in `adas/telegram/reaction_poller.py` (thin API wrapper) and `adas/telegram/feedback_capture.py` (mapping + persistence)
 - loads `delivery_log.json` to build a `message_id → DeliveryRecord` map at poll time
-- maps a recognised emoji reaction (👍/👎 and common aliases) on a digest message to all picks in that delivery with the same signal
+- maps a recognised reaction on a delivered video message to that specific video when per-pick message IDs are available
 - loads the original `VideoRecord` data from the cache file recorded in the delivery log to build `FeedbackVideoSnapshot` entries
 - writes one `FeedbackEntry` per matched reaction through the existing `FeedbackService`
 - persists the last processed `update_id` in `reaction_poll_offset.json` next to the delivery log to avoid reprocessing
@@ -599,7 +598,7 @@ The reaction capture path now:
 
 ### Why this matters
 
-Scheduling should happen only after each manual path works.
+Scheduling depends on each command path working independently.
 
 ### Step 13 progress
 
@@ -610,13 +609,14 @@ The scheduled runtime now:
 - `cron/jobs.json` defines three real jobs with `{PROJECT_ROOT}`-relative paths and required env var declarations
 - `cron/runner.py` reads `jobs.json`, validates required env vars (exits 2 with a clear message when any are missing), runs the named job via the venv Python, and writes timestamped logs to `cron/logs/`
 - `cron/install.sh` generates and installs the three crontab entries into the user's crontab
-- `morning-digest` and `reaction-capture` have been manually exercised via the runner and confirmed working
+- `morning-digest` and `reaction-capture` have been exercised via the runner and confirmed working
 - the crontab is installed and active
 
 Daily schedule (Australia/Sydney):
-- `02:00` — `adas-evolution` (3 meta-agent cycles, deploy-best)
-- `07:00` — `morning-digest` (send digest to Telegram)
-- `09:30` — `reaction-capture` (poll for reactions, write feedback)
+- `00:30` — `refresh-video-cache` (refresh reusable YouTube cache)
+- `01:30` — `adas-evolution` (3 meta-agent cycles, deploy-best)
+- `04:30` — `morning-digest` (send picks to Telegram)
+- `08:30` — `reaction-capture` (poll for reactions, write feedback)
 
 ### Files involved
 

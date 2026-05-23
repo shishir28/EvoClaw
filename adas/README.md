@@ -1,6 +1,6 @@
 # ADAS workspace
 
-This directory holds the **fetch, evaluate, compare, archive, feedback, evolve, and promote** side of EvoClaw.
+This directory holds the **fetch, evaluate, compare, archive, feedback, evolve, promote, deliver, and reaction-capture** side of EvoClaw.
 
 The package layout was recently reorganized to group internals by domain:
 
@@ -47,7 +47,7 @@ Central config for:
 - search queries and fetch limits
 - inference backend and model settings
 - evaluation score weights
-- path constants used by the planned ADAS loop
+- path constants used by the ADAS loop
 - nightly loop parameters like iteration counts and retry limits
 
 It now also exposes a typed `SETTINGS` object as the source of truth, while keeping the older constant-style imports working for existing modules.
@@ -225,7 +225,7 @@ The evaluator runtime is now split cleanly:
 10. `feedback/service.py` can append manual feedback entries for later alignment scoring
 11. `deployment/promoter.py` can promote the archive winner into production
 
-The Telegram delivery path (Step 11) and reaction capture path (Step 12) are both implemented. Scheduled runtime wiring (Step 13) is the remaining gap.
+The Telegram delivery path, reaction capture path, and scheduled runtime wiring are implemented. Cron job definitions live in `../cron/jobs.json`.
 
 ### `meta/`
 
@@ -243,7 +243,7 @@ Owns Step 9 meta-agent internals:
 
 Step 11-12 Telegram internals:
 
-- `formatter.py` — builds `TelegramDigestPick` objects and formats the final digest message text
+- `formatter.py` — builds `TelegramDigestPick` objects and formats per-video Telegram message text
 - `sender.py` — thin wrapper over Telegram's `sendMessage` API
 - `delivery_log.py` — append-only `DeliveryLogStore` that persists `DeliveryRecord` objects to `delivery_log.json`
 - `service.py` — `ProductionDigestService` orchestrates skill execution, formatting, optional send, and log append
@@ -256,7 +256,7 @@ Step 11 CLI entrypoint. Supports `--cache`, `--skill`, `--feedback`, `--delivery
 
 ### `telegram_feedback.py`
 
-Step 12 CLI entrypoint. Supports `--delivery-log`, `--feedback`, and `--offset-file`. Polls once and exits; run on a schedule or manually after reacting to a digest.
+Step 12 CLI entrypoint. Supports `--delivery-log`, `--feedback`, and `--offset-file`. Polls once and exits; run on the configured schedule or manually after reacting to delivered video messages.
 
 ### `meta_agent.py`
 
@@ -303,43 +303,31 @@ This now holds the Step 6 archive state:
 - `index.json` tracks archived skills, their evaluation context, and the current best skill
 - `skill_001/` to `skill_003/` store the archived baseline seeds
 
-Current best archive entry:
-
-- `skill_003` → `recency-first` with **7.3924**
-
 ### `baseline_results/`
 
 Holds Step 5 comparison outputs that are intentionally separate from the archive layer.
 
-Current saved output:
+Saved output paths:
 
 - `baseline_results/video_cache_w1/summary.json`
 - `baseline_results/video_cache_w1/results/baseline_recency.json`
 - `baseline_results/video_cache_w1/results/baseline_popular.json`
 - `baseline_results/video_cache_w1/results/baseline_curated.json`
 
-Latest recorded ranking on `video_cache_w1.json`:
-
-1. `recency-first` — `7.3924`
-2. `engagement-velocity` — `7.1419`
-3. `llm-substance-judge` — `5.7784`
-
 ### `test_sets/`
 
 Holds cached video sets and feedback history.
 
-Current contents are:
+Typical local artifacts are:
 
 - `video_cache_test.json`
-- `video_cache_w1.json` generated locally for Step 1 validation
+- `video_cache_w1.json`
 - `feedback.json` with a stable `history` wrapper for stored feedback entries
 
-## Planned additions
-
-The design in `Plan.md` expects this directory to grow with:
+## Remaining growth areas
 
 - further generated archive folders as the meta-agent proposes and archives new skills
-- Telegram feedback capture around the production skill
+- real OpenClaw execution replacing the current Python adapter
 
 ## Data flow
 
@@ -353,26 +341,23 @@ The current lifecycle inside `adas/` is:
 6. Optionally run all baselines against one cache and persist a comparison summary.
 7. Optionally archive those evaluated results into `adas/archive/skill_###/`.
 
-The current lifecycle now also adds:
+The lifecycle also adds:
 
 8. Build archive + feedback prompt context for the meta-agent.
 9. Generate a candidate skill, run reflection passes, validate it, then evaluate and archive it.
 10. Optionally promote the archive winner into `skills/youtube-curator/SKILL.md` with `--deploy-best`.
 
-Steps 11-12 are also complete:
+The scheduled runtime completes the loop:
 
-11. Run the production skill, format picks, and send the Telegram digest.
-12. Poll for reactions on delivered messages and write matching feedback entries.
-
-The planned later lifecycle still adds:
-
-13. Run the production skill on a schedule (cron automation).
+11. Refresh the reusable YouTube cache.
+12. Run the production skill, format picks, and send one Telegram message per video.
+13. Poll for reactions on delivered messages and write matching feedback entries.
 
 ## Unit tests
 
 The test suite lives in `tests/adas/` and mirrors the source layout. Shared builder utilities live in `tests/adas/builders.py`.
 
-**Current status: 270 passing tests.** The suite covers Steps 1–11 (evaluator, archive, meta-agent, promotion, and Telegram delivery). Step 12 reaction capture modules do not yet have dedicated unit tests.
+The suite covers evaluator, archive, meta-agent, promotion, Telegram delivery, reaction capture, and cron runner behavior.
 
 | Test file | Covers |
 |---|---|
@@ -402,6 +387,8 @@ The test suite lives in `tests/adas/` and mirrors the source layout. Shared buil
 | `test_telegram_sender.py` | Telegram Bot API request/response handling |
 | `test_telegram_service.py` | production selection, formatting, and delivery-log orchestration |
 | `test_telegram_digest_cli.py` | CLI forwarding for dry-run vs send mode |
+| `test_telegram_feedback_capture.py` | reaction-to-feedback mapping, including per-video message IDs |
+| `test_cron_runner.py` | job lookup, env validation, health checks, crontab generation |
 
 Builder utilities available to all tests:
 
@@ -422,9 +409,8 @@ python3 -m pytest tests/adas/test_archive_service.py -v  # one file
 
 - Runtime-generated caches in `test_sets/` are gitignored, but archive history under `archive/skill_*/` is versioned.
 - Secret values are loaded from the repo root `.env`.
-- The current repo state is **post-evaluator / post-archive / first meta-agent loop / Step 10 promoter / Step 11 delivery / Step 12 reaction capture**.
+- The current repo state includes evaluator, archive, meta-agent, promotion, Telegram delivery, reaction capture, and scheduled runtime wiring.
 - Step 5 and Step 6 are complete for the current `video_cache_w1.json` dataset.
 - Transcript fetching is **best-effort**: some videos now resolve transcripts, but YouTube may still block others depending on IP/network conditions.
 - The current cache shape is strong enough to begin the evaluator, because it includes `views_per_hour`, `subscriber_count`, and descriptions even when transcripts are missing.
-- The next concrete implementation step is Step 13: wire cron automation for the full scheduled runtime.
 - See the repo-level `ARCHITECTURE.md` and `WORKFLOW.md` files for the simplest high-level explanation.

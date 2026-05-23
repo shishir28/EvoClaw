@@ -1,38 +1,22 @@
 # YouTube curator skill
 
-This directory is meant to hold the **production OpenClaw skill** used for the daily digest.
+This directory holds the production `SKILL.md` used by the daily Telegram digest.
 
-## Current state
+## Current role
 
-`SKILL.md` exists as the current production skill target. It can now be updated by the Step 10 `SkillPromoter` when the archive winner beats the recorded production deployment.
+- `SKILL.md` is the live production skill target.
+- `deployment.json` records the deployed archive skill, score, timestamp, and previous deployment after promotion.
+- `delivery_log.json` records each digest delivery, including selected video IDs and Telegram message IDs.
+- `reaction_poll_offset.json` records the Telegram update offset after reaction capture runs.
 
-Today this path is mainly useful as:
+## Workflow
 
-- the canonical deployment target for the best archived skill
-- a concrete example of the `SKILL.md` shape the evaluator is built around
-- the live file read by the current manual Step 11 digest runtime and the future scheduled daily digest
-
-## Intended role
-
-This file is updated by `adas/deployment/promoter.py` whenever a newly evaluated archive winner outperforms the current deployment record.
-
-Expected workflow:
-
-1. `adas/meta_agent.py` generates a candidate skill.
-2. `adas/evaluator.py` scores it on cached video sets.
-3. The result is stored in `adas/archive/skill_xxx/`.
-4. If it becomes the new best performer, its `SKILL.md` is copied here.
-5. `deployment.json` records the deployed skill ID, score, timestamp, and previous deployment.
-6. The Step 11 digest runtime runs this production skill manually today, and the scheduled delivery job will reuse it later.
-
-Current limitation: manual Telegram delivery now exists, but scheduled delivery and Telegram reaction capture are still future steps.
+1. `adas/meta_agent.py` generates and evaluates candidate skills.
+2. Successful candidates are archived under `adas/archive/skill_*/`.
+3. `adas/deployment/promoter.py` copies the archive winner here when it beats the current deployment record.
+4. `adas.telegram_digest` reads this production skill and sends one Telegram message per selected video.
+5. `adas.telegram_feedback` maps reactions on those messages back to individual videos and writes feedback.
 
 ## Output contract
 
-The production skill is expected to produce a Telegram-friendly digest with:
-
-- 3 selected videos
-- title, channel, duration, and age
-- a direct "why watch" summary for each pick
-- a closing feedback prompt for 👍 / 👎 reactions
-- delivery metadata persisted in `delivery_log.json` beside this file
+The production skill should produce three video picks with title, channel, duration, age, URL, and a direct reason to watch. Delivery and feedback metadata is persisted beside this file.

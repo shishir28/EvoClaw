@@ -56,7 +56,6 @@ _BLOCKED_SCRIPT_RANGES = [
 
 
 def _text(video: VideoRecord) -> str:
-    # Concatenates title + description + tags + query into one lowercase string for matching
     return " ".join(
         [
             video.title,
@@ -152,7 +151,6 @@ class SkillStrategyExecutor(Protocol):
 
 class _BaseStrategyExecutor:
     def base_candidates(self, videos: list[VideoRecord]) -> list[VideoRecord]:
-        # keeps only: _looks_english AND _is_relevant
         return [
             video for video in videos if _looks_english(video) and _is_relevant(video)
         ]
@@ -162,16 +160,14 @@ class RecencyStrategyExecutor(_BaseStrategyExecutor):
     strategy_name = "recency"
 
     def execute(self, videos: list[VideoRecord]) -> SkillExecutionResult:
-        # filter subscriber >= 1000
         candidates = [
             video
             for video in self.base_candidates(videos)
             if _subscriber_floor(video, 1000)
         ]
-        # prefer videos ≤ 48h old (fall back to full 7d pool if < 3 results
+        # Prefer the 48h window, but fall back to the full candidate pool when it is too sparse.
         recent_candidates = [video for video in candidates if _age_hours(video) <= 48.0]
         pool = recent_candidates if len(recent_candidates) >= 3 else candidates
-        # sort by published_at DESC → top 3
         selected = sorted(pool, key=_published_at, reverse=True)[:3]
         return SkillExecutionResult(
             selected_video_ids=[video.video_id for video in selected],
@@ -190,11 +186,10 @@ class EngagementVelocityStrategyExecutor(_BaseStrategyExecutor):
         primary_pool = [
             video for video in candidates if _subscriber_floor(video, 10000)
         ]
-        # prefer subscriber >= 10,000 (fall back to 1,000 if < 3)
+        # Prefer larger channels, but relax the subscriber floor when the pool is too sparse.
         pool = primary_pool
         if len(pool) < 3:
             pool = [video for video in candidates if _subscriber_floor(video, 1000)]
-        # sort by (views_per_hour, published_at) DESC → top 3
         selected = sorted(
             pool,
             key=lambda video: (video.views_per_hour, _published_at(video)),
@@ -213,8 +208,7 @@ class SubstanceProxyStrategyExecutor(_BaseStrategyExecutor):
     strategy_name = "llm-substance-judge"
 
     def execute(self, videos: list[VideoRecord]) -> SkillExecutionResult:
-        # score each video: transcript_bonus + description_bonus + duration_bonus - short_penalty
-        # → tiebreak by views_per_hour
+        # Approximate substance without an LLM: richer text and reasonable duration rank higher.
         ranked = sorted(
             self.base_candidates(videos),
             key=lambda video: (
@@ -226,7 +220,6 @@ class SubstanceProxyStrategyExecutor(_BaseStrategyExecutor):
             ),
             reverse=True,
         )
-        # sort DESC → top 3
         selected = ranked[:3]
         return SkillExecutionResult(
             selected_video_ids=[video.video_id for video in selected],
@@ -241,7 +234,6 @@ class BaselineSkillExecutor:
     """Executes the current baseline strategies over cached video records."""
 
     def __init__(self, strategies: list[SkillStrategyExecutor] | None = None) -> None:
-        # builds a dict: { "recency": executor, "engagement-velocity": executor, ... }
         strategy_list = strategies or [
             RecencyStrategyExecutor(),
             EngagementVelocityStrategyExecutor(),
@@ -257,7 +249,6 @@ class BaselineSkillExecutor:
             )
             > 1
         }
-        # raises ValueError on duplicate strategy names
         if duplicate_strategy_names:
             raise ValueError(
                 "Duplicate strategy executors registered for: "
@@ -274,10 +265,8 @@ class BaselineSkillExecutor:
     ) -> SkillExecutionResult:
         strategy_name = skill.strategy
         strategy = self._strategies.get(strategy_name or "")
-        # raises ValueError if strategy name is unknown
         if strategy is None:
             raise ValueError(
                 f"Unsupported skill strategy '{strategy_name}'. Add an adapter or use explicit selected IDs."
             )
         return strategy.execute(videos)
-        # reads skill.strategy → looks up executor → calls executor.execute(videos)

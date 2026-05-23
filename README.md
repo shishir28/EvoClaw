@@ -1,151 +1,102 @@
 # EvoClaw
 
-EvoClaw is an **ADAS-style, self-improving YouTube curator** for AI and entrepreneurship content. The target system runs inside a NemoClaw/OpenClaw environment, fetches candidate videos, evaluates curation strategies, evolves better `SKILL.md` prompts over time, and can now run a manual top-3 Telegram digest while full scheduling remains a later step.
+EvoClaw is an **ADAS-style, self-improving YouTube curator** for AI and entrepreneurship content. It fetches YouTube candidates, evaluates curation strategies, evolves better `SKILL.md` prompts, promotes the best skill, sends daily Telegram video picks, and captures Telegram reactions as feedback.
 
-The repository is currently at the **working fetcher + evaluator + baseline comparison + archive + feedback + meta-agent + skill promotion + Telegram delivery + Telegram reaction capture stage**:
+The repository currently includes:
 
 - a YouTube fetcher with caching, `subscriber_count` enrichment, and best-effort transcript support
 - a modular evaluator stack with DTO models, request loading, algorithmic scoring, optional LLM judging, and weighted aggregation
 - a Python adapter that executes the current baseline `SKILL.md` strategies over cached videos
-- a Step 5 comparison flow that evaluates all baselines against one cache and persists detailed results
-- a Step 6 archive flow that writes `SKILL.md`, `result.json`, `meta.json`, and best-skill metadata under `adas/archive/`
-- a Step 7 feedback flow that validates reactions, persists video snapshots atomically, and turns `alignment` into a real heuristic preference signal using channel, topic, and duration similarity
-- a Step 9 meta-agent flow that builds prompt context, generates a candidate skill, runs reflection passes, validates the candidate locally, evaluates it, and archives successful runs
-- a Step 10 skill promoter that copies the archive winner into `skills/youtube-curator/SKILL.md` only when it beats the recorded production deployment
-- a Step 11 Telegram delivery flow that runs the promoted production skill against a cache, formats the top 3 picks, sends them through the Bot API, and records delivery metadata in `delivery_log.json` — live send confirmed working
-- a Step 12 Telegram reaction capture flow that polls for 👍/👎 reactions on digest messages, maps them back to the delivered video picks via `delivery_log.json`, and writes `FeedbackEntry` records to `feedback.json` through the existing Step 7 feedback service
+- a baseline comparison flow that evaluates all baselines against one cache and persists detailed results
+- an archive flow that writes `SKILL.md`, `result.json`, `meta.json`, and best-skill metadata under `adas/archive/`
+- a feedback flow that validates reactions, persists video snapshots atomically, and turns `alignment` into a heuristic preference signal
+- a meta-agent flow that builds prompt context, generates a candidate skill, runs reflection passes, validates the candidate locally, evaluates it, and archives successful runs
+- a skill promoter that copies the archive winner into `skills/youtube-curator/SKILL.md` only when it beats the recorded production deployment
+- a Telegram delivery flow that runs the promoted production skill, sends one Telegram message per selected video, and records per-video message metadata in `delivery_log.json`
+- a Telegram reaction capture flow that polls for reactions, maps each reaction back to the specific delivered video, and writes `FeedbackEntry` records to `feedback.json`
 - lazy default LLM-judge initialization so evaluator construction does not require model client setup unless semantic judging is enabled
-- evaluator and comparison CLIs with safer defaults: evaluator runs a real scoring flow by default, and baseline comparison fails fast when the required cache file is missing
 - typed shared configuration for search, inference, paths, and scoring weights
 - three hand-written baseline skills plus a production `SKILL.md` target
-- a cron configuration stub for future automation
-- a focused pytest suite covering the evaluator path plus Step 5 through Step 11 orchestration
+- a cron runner that generates schedules from `cron/jobs.json` for Docker or native cron
+- a focused pytest suite covering evaluator, archive, feedback, Telegram, and cron behavior
 
-## Target architecture
+## Runtime loop
 
-The planned end-to-end loop is:
+The scheduled loop is defined in `cron/jobs.json`:
 
-1. Fetch candidate videos from YouTube.
-2. Score candidate curation skills on cached datasets.
-3. Use a meta agent to propose improved `SKILL.md` strategies.
-4. Archive results and deploy the best-performing skill.
-5. Run the production skill on a schedule.
-6. Send picks to Telegram and feed the resulting feedback back into evaluation.
+1. Refresh the reusable YouTube cache at 00:30.
+2. Run the ADAS evolution loop at 01:30.
+3. Send the daily Telegram picks at 04:30.
+4. Capture Telegram reactions at 08:30.
+5. Feed captured reactions into future alignment scoring.
 
 ## Repository layout
 
 ```text
 EvoClaw/
-├── adas/
-│   ├── archive/                  # Versioned archive entries and best-skill index
-│   ├── archive_runtime/          # Step 6 archive models, store, and service
-│   ├── baseline/                 # Step 5 baseline comparison internals
-│   ├── baseline_results/         # Saved Step 5 comparison outputs
-│   ├── baselines/                # Seed curation strategies
-│   ├── config.py                 # Shared configuration
-│   ├── deployment/               # Step 10 production skill promotion
-│   ├── evaluation/               # Evaluator models, loader, scorer, judge, executor, service
-│   ├── feedback/                 # Step 7 feedback store and append service
-│   ├── meta/                     # Step 9 meta-agent context, generation, reflection, parsing
-│   ├── telegram/                 # Step 11-12 Telegram digest, sender, reaction poller, feedback capture
-│   ├── baseline_comparison.py    # CLI entrypoint and compatibility wrapper
-│   ├── evaluator.py              # CLI entrypoint and compatibility wrapper
-│   ├── feedback_cli.py           # Manual feedback append CLI
-│   ├── meta_agent.py             # Step 9 meta-agent CLI entrypoint
-│   ├── telegram_digest.py        # Step 11 Telegram digest CLI
-│   ├── telegram_feedback.py      # Step 12 Telegram reaction feedback capture CLI
-│   ├── prompts/                  # Evaluator prompts
-│   ├── test_sets/                # Local caches and feedback artifacts
-│   └── youtube_fetcher.py        # YouTube data collection and caching
-├── cron/
-│   ├── README.md
-│   └── jobs.json                 # Planned automation schedule
-├── skills/
-│   └── youtube-curator/
-│       ├── README.md
-│       └── SKILL.md              # Current production skill target
-├── .env.example                  # Environment variable template
-├── .gitignore                    # Excludes secrets and generated data
-├── Plan.md                       # Original project design and roadmap
-├── README.md
-├── tests/                        # Unit tests for evaluator and Step 5 flow
-└── requirements.txt
+|-- adas/
+|   |-- archive/                  # Versioned archive entries and best-skill index
+|   |-- archive_runtime/          # Archive models, store, and service
+|   |-- baseline/                 # Baseline comparison internals
+|   |-- baseline_results/         # Saved comparison outputs
+|   |-- baselines/                # Seed curation strategies
+|   |-- config.py                 # Shared configuration
+|   |-- deployment/               # Production skill promotion
+|   |-- evaluation/               # Evaluator models, loader, scorer, judge, executor, service
+|   |-- feedback/                 # Feedback store and append service
+|   |-- meta/                     # Meta-agent context, generation, reflection, parsing
+|   |-- telegram/                 # Telegram delivery, reaction polling, and feedback capture
+|   |-- baseline_comparison.py    # CLI entrypoint and compatibility wrapper
+|   |-- evaluator.py              # CLI entrypoint and compatibility wrapper
+|   |-- feedback_cli.py           # Manual feedback append CLI
+|   |-- meta_agent.py             # Meta-agent CLI entrypoint
+|   |-- telegram_digest.py        # Telegram digest CLI
+|   |-- telegram_feedback.py      # Telegram reaction feedback capture CLI
+|   |-- prompts/                  # Evaluator and meta-agent prompts
+|   |-- test_sets/                # Local caches and feedback artifacts
+|   `-- youtube_fetcher.py        # YouTube data collection and caching
+|-- cron/
+|   |-- README.md
+|   `-- jobs.json                 # Canonical automation schedule
+|-- skills/
+|   `-- youtube-curator/
+|       |-- README.md
+|       `-- SKILL.md              # Current production skill target
+|-- .env.example                  # Environment variable template
+|-- .gitignore                    # Excludes secrets and generated data
+|-- Plan.md                       # Original project design and roadmap
+|-- README.md
+|-- tests/                        # Unit tests for evaluator, runtime, Telegram, and cron paths
+`-- requirements.txt
 ```
 
 ## Current status
 
-Implemented now:
+Main implemented pieces:
 
 - `adas/youtube_fetcher.py`
 - `adas/config.py` with typed settings plus backward-compatible constants
 - `adas/evaluation/` for evaluator internals grouped by domain
 - `adas/baseline/` for baseline comparison internals grouped by domain
-- `adas/archive_runtime/` for Step 6 archive internals grouped by domain
-- `adas/feedback/` for Step 7 feedback persistence and append logic
-- `adas/meta/` for Step 9 meta-agent orchestration internals
-- `adas/deployment/` for Step 10 production skill promotion
-- `adas/telegram/` for Step 11-12 digest formatting, sending, delivery metadata logging, reaction polling, and feedback capture
-- top-level `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py`, `adas/meta_agent.py`, `adas/telegram_digest.py`, and `adas/telegram_feedback.py` as CLI entrypoints
-- `adas/prompts/eval_judge.md`
-- `adas/prompts/meta_system.md`, `adas/prompts/meta_design.md`, and `adas/prompts/meta_reflect.md`
+- `adas/archive_runtime/` for archive internals grouped by domain
+- `adas/feedback/` for feedback persistence and append logic
+- `adas/meta/` for meta-agent orchestration internals
+- `adas/deployment/` for production skill promotion
+- `adas/telegram/` for digest formatting, per-video sending, delivery metadata logging, reaction polling, and feedback capture
+- top-level CLI entrypoints for evaluator, baseline comparison, feedback append, meta-agent, digest delivery, and reaction capture
+- `adas/prompts/` evaluator and meta-agent prompts
 - `adas/baselines/*.md`
-- `adas/baseline_results/video_cache_w1/summary.json`
-- `adas/archive/index.json`
+- `adas/baseline_results/` comparison outputs
+- `adas/archive/index.json` and versioned archive entries
 - `skills/youtube-curator/SKILL.md`
-- `skills/youtube-curator/delivery_log.json` after the first Step 11 run
-- `cron/jobs.json`
-- local Step 1 validation: real fetch works and produces a reusable cache in `adas/test_sets/video_cache_w1.json`
-- evaluator architecture cleanup: smaller modules, DTO separation, injected collaborators, and readability-focused helpers
-- baseline comparison results saved under `adas/baseline_results/video_cache_w1/`
-- pytest coverage for evaluator, loader, scorer, executor, and Step 5 comparison modules, including evaluator CLI helpers
-- pytest coverage for `SkillPromoter`, deployment metadata, and opt-in meta-agent promotion wiring
+- `skills/youtube-curator/delivery_log.json` after the first delivery run
+- `cron/jobs.json` as the single schedule source for Docker and native cron
+- atomic persistence for feedback and delivery-log writes
 
-Current baseline comparison snapshot on `video_cache_w1.json`:
+Known limitations:
 
-- `recency-first`: **7.3924**
-- `engagement-velocity`: **7.1419**
-- `llm-substance-judge`: **5.7784**
-
-Current archive snapshot:
-
-- `skill_003` (`recency-first`) is the current best archived skill at **7.3924**
-- `skill_001` to `skill_003` store the three baseline seeds with `SKILL.md`, `result.json`, and `meta.json`
-- `adas/archive/index.json` now tracks archive context and best-skill metadata
-
-Current feedback snapshot:
-
-- `adas/test_sets/feedback.json` now uses a stable `{ "history": [...] }` wrapper
-- feedback entries can persist `skill_version` plus a per-pick video snapshot for later alignment scoring
-- alignment now uses exact history matches first, then snapshot similarity over channel/topic/duration signals
-
-Current deployment snapshot:
-
-- `adas/deployment/promoter.py` can promote the archive winner into `skills/youtube-curator/SKILL.md`
-- promotion writes `deployment.json` beside the production skill and skips when the recorded deployment score is equal or better
-
-Current delivery snapshot:
-
-- `adas/telegram/service.py` runs the production skill against a cache and builds a Telegram digest
-- `adas/telegram/sender.py` sends the digest through Telegram's `sendMessage` API when explicitly enabled
-- `adas/telegram_digest.py` defaults to dry-run mode so message formatting can be checked safely
-- `skills/youtube-curator/delivery_log.json` records delivery time, selected video IDs, digest text, and Telegram message ID when available
-- live send confirmed working with real credentials (`telegram_message_id: 2`)
-
-Current reaction capture snapshot:
-
-- `adas/telegram/reaction_poller.py` polls `getUpdates` for `message_reaction` events
-- `adas/telegram/feedback_capture.py` maps reactions to delivery records and writes `FeedbackEntry` objects via the Step 7 service
-- `adas/telegram_feedback.py` is the CLI (`--delivery-log`, `--feedback`, `--offset-file`)
-- offset state is persisted in `reaction_poll_offset.json` next to the delivery log
-
-Current next milestone:
-
-- wire cron automation for the full scheduled runtime (Step 13)
-
-Planned but not yet implemented:
-
-- real OpenClaw execution
-- end-to-end cron-driven runtime wiring
+- real OpenClaw execution is still represented by the Python adapter
+- generated candidate archive entries beyond the seeded baselines depend on a reachable OpenAI-compatible LLM endpoint
 
 ## Setup
 
@@ -292,7 +243,7 @@ cd /home/shishirmishra/Learnings/EvoClaw
 .venv/bin/python adas/telegram_digest.py --cache adas/test_sets/video_cache_w1.json --send
 ```
 
-This writes `skills/youtube-curator/delivery_log.json` with the digest metadata for later feedback mapping.
+This writes `skills/youtube-curator/delivery_log.json` with per-video message metadata for later feedback mapping.
 
 Capture Telegram reactions into Step 12 feedback:
 
@@ -303,7 +254,7 @@ cd /home/shishirmishra/Learnings/EvoClaw
   --feedback adas/test_sets/feedback.json
 ```
 
-React 👍 or 👎 to the digest message in Telegram, then run the above command. Recognised reactions are written into `feedback.json` and influence future alignment scoring.
+React up or down to an individual video message in Telegram, then run the above command. Recognised reactions are written into `feedback.json` and influence future alignment scoring for that video.
 
 Append manual feedback into Step 7:
 
@@ -321,9 +272,9 @@ cd /home/shishirmishra/Learnings/EvoClaw
 
 ## References
 
-- `Plan.md` describes the full intended design, phases, and success metrics.
+- `Plan.md` is the original design plan. Treat it as historical context when it conflicts with the current docs.
 - `adas/README.md` documents the ADAS workspace in more detail.
-- `ARCHITECTURE.md` explains the current module layout, including the Step 6 to Step 10 modules.
-- `WORKFLOW.md` explains the runnable fetch -> evaluate -> compare -> archive -> feedback -> meta-agent -> promote flow.
+- `ARCHITECTURE.md` explains the current module layout.
+- `WORKFLOW.md` explains the runnable fetch -> evaluate -> compare -> archive -> feedback -> meta-agent -> promote -> deliver -> capture loop.
 - `skills/youtube-curator/README.md` explains the production skill directory.
-- `cron/README.md` explains the planned scheduler wiring.
+- `cron/README.md` explains the scheduler.

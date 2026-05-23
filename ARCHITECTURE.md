@@ -4,7 +4,7 @@ This file explains the **current codebase shape** in plain language so you can u
 
 ## 1. Current architecture in one sentence
 
-EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> feedback -> evolve -> promote -> deliver -> capture reactions** foundation, with scheduled runtime automation still to be built.
+EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> feedback -> evolve -> promote -> deliver -> capture reactions** loop, with schedule definitions centralized in `cron/jobs.json`.
 
 ## 2. Main layers
 
@@ -15,13 +15,13 @@ EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> fee
 | Evaluation internals | Coordinate request loading, skill execution, scoring, and aggregation | `adas/evaluation/` |
 | Baseline comparison internals | Discover, evaluate, and persist baseline comparison runs | `adas/baseline/` |
 | Archive internals | Save versioned archive entries and best-skill metadata | `adas/archive_runtime/` |
-| Feedback internals | Persist feedback history and append manual feedback entries | `adas/feedback/` |
+| Feedback internals | Persist feedback history and append manual or Telegram-derived feedback entries | `adas/feedback/` |
 | Deployment internals | Promote the archive winner into the production skill path | `adas/deployment/` |
 | Telegram delivery internals | Format, send, log the production digest, poll for reactions, and write feedback | `adas/telegram/`, `adas/telegram_digest.py`, `adas/telegram_feedback.py` |
-| CLI compatibility layer | Preserve the remaining manual entrypoints while internals live in grouped packages | `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py` |
+| CLI compatibility layer | Preserve command entrypoints while internals live in grouped packages | `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py` |
 | Prompt assets | Hold reusable evaluator and meta-agent prompt templates | `adas/prompts/eval_judge.md`, `adas/prompts/meta_system.md`, `adas/prompts/meta_design.md`, `adas/prompts/meta_reflect.md` |
 | Production skill target | Live deployment target for the best skill | `skills/youtube-curator/SKILL.md` |
-| Scheduler stub | Planned automation entrypoints | `cron/jobs.json` |
+| Scheduled runtime | Define daily refresh, evolution, digest, and reaction-capture jobs | `cron/jobs.json`, `cron/runner.py` |
 
 ## 3. How the modules relate
 
@@ -65,7 +65,7 @@ telegram/
     feedback_capture.py
 
 top-level CLI entrypoints
-    -> preserve the remaining manual command surfaces
+    -> preserve manual and scheduled command surfaces
 ```
 
 ## 4. Core design choices already visible in the code
@@ -133,7 +133,7 @@ That keeps API access, transcript attachment, cache persistence, and orchestrati
 | `ArchiveIndexEntry` | One archived skill summary in `adas/archive/index.json` |
 | `ArchiveIndex` | Archive-wide best-skill metadata plus archived entries |
 
-## 6. What is implemented vs planned
+## 6. What is implemented vs still adapter-based
 
 ### Implemented now
 
@@ -150,12 +150,13 @@ That keeps API access, transcript attachment, cache persistence, and orchestrati
 - feedback persistence plus snapshot-based alignment scoring
 - first-pass meta-agent orchestration for generate -> reflect -> evaluate -> archive
 - opt-in production skill promotion with `deployment.json` metadata
-- Telegram digest delivery with `delivery_log.json` metadata — live send confirmed
-- Telegram reaction capture via polling, mapping 👍/👎 reactions to feedback entries through the Step 7 service
+- Telegram digest delivery with `delivery_log.json` metadata and per-video message mapping
+- Telegram reaction capture via polling, mapping reactions to feedback entries through the Step 7 service
+- scheduled execution through `cron/jobs.json`, `cron/runner.py`, Docker cron, or native cron
 
-### Planned later
+### Still adapter-based
 
-- cron-driven end-to-end automation
+- real OpenClaw execution
 
 ## 7. Best files to read first
 
@@ -179,8 +180,6 @@ If you want the easiest learning path through the code:
 16. `adas/youtube_fetcher.py`
 
 ## 8. How to run unit tests
-
-The current suite is **270 passing tests**.
 
 ```bash
 # Activate the virtual environment first

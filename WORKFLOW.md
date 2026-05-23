@@ -1,6 +1,6 @@
 # EvoClaw workflow
 
-This file explains **what actually happens today** in the codebase, and **what the future full loop is supposed to look like**.
+This file explains the runnable EvoClaw loop in the current codebase.
 
 ## 1. Current runnable workflow
 
@@ -95,12 +95,6 @@ The default judge client is created lazily, so algorithmic-only runs do not pay 
 
 The required cache path is validated up front here; optional feedback still falls back to an empty history when absent.
 
-Current saved baseline comparison on `video_cache_w1.json`:
-
-1. `recency-first` — `7.3924`
-2. `engagement-velocity` — `7.1419`
-3. `llm-substance-judge` — `5.7784`
-
 ### Step 7: Archive evaluated skills
 
 `adas/archive_runtime/service.py` and `adas/archive_runtime/store.py`:
@@ -109,12 +103,6 @@ Current saved baseline comparison on `video_cache_w1.json`:
 2. allocate or reuse `skill_###` archive IDs for the evaluation context
 3. write `SKILL.md`, `result.json`, and `meta.json` under `adas/archive/skill_###/`
 4. update `adas/archive/index.json` with the archive entries and best-skill metadata
-
-Current archive snapshot:
-
-1. `skill_003` (`recency-first`) — `7.3924`
-2. `skill_002` (`engagement-velocity`) — `7.1419`
-3. `skill_001` (`llm-substance-judge`) — `5.7784`
 
 ### Step 8: Append feedback history
 
@@ -163,7 +151,8 @@ The meta-agent keeps promotion opt-in through `--deploy-best`.
 2. selects the top 3 videos
 3. formats them into a Telegram-friendly digest with title, channel, URL, and `why_watch` text
 4. sends the digest through Telegram's `sendMessage` API when `--send` is used
-5. appends a `DeliveryRecord` to `skills/youtube-curator/delivery_log.json` with `telegram_message_id` and `selected_video_ids`
+5. sends one Telegram message per selected video when `--send` is used
+6. appends a `DeliveryRecord` to `skills/youtube-curator/delivery_log.json` with aggregate message IDs, per-pick message IDs, and selected video IDs
 
 ### Step 12: Capture Telegram reactions as feedback
 
@@ -174,7 +163,7 @@ The meta-agent keeps promotion opt-in through `--deploy-best`.
 3. matches each reaction's `message_id` to a known delivery record
 4. maps recognised emoji (👍/👎 and common aliases) to `VALID_REACTIONS`
 5. loads the original `VideoRecord` data from the delivery record's `cache_path`
-6. writes one `FeedbackEntry` per matched reaction through `FeedbackService`, covering all picks in that delivery
+6. writes one `FeedbackEntry` per matched reaction through `FeedbackService`, targeting the reacted video when per-pick message metadata is available
 7. persists the last processed `update_id` to `reaction_poll_offset.json` to avoid reprocessing on subsequent runs
 
 ## 2. Current workflow as a diagram
@@ -253,15 +242,16 @@ SKILL.md + cache JSON + feedback JSON
         telegram/feedback_capture.py (→ feedback.json via FeedbackService)
 ```
 
-## 3. What is not in the workflow yet
+## 3. Scheduled runtime
 
-The following steps are still planned, not implemented:
+`cron/jobs.json` is the schedule source for Docker and native cron:
 
-1. run the production skill on a schedule (cron automation — Step 13)
+1. `refresh-video-cache` refreshes the YouTube cache at 00:30.
+2. `adas-evolution` runs meta-agent cycles at 01:30 and promotes a better archive winner when available.
+3. `morning-digest` sends the production picks at 04:30.
+4. `reaction-capture` polls Telegram reactions at 08:30 and writes feedback.
 
-## 4. Full End-To-End Workflow Shape
-
-The intended long-term workflow is below. Steps 8–12 are implemented; scheduled cron runtime wiring is the remaining gap.
+## 4. End-to-end workflow shape
 
 1. fetch fresh YouTube candidates
 2. evaluate baseline and generated skills against cached sets
@@ -272,8 +262,8 @@ The intended long-term workflow is below. Steps 8–12 are implemented; schedule
 7. update the archive and best-skill metadata
 8. promote the best `SKILL.md` into `skills/youtube-curator/SKILL.md`
 9. run the production skill on schedule
-10. send a Telegram digest
-11. collect feedback
+10. send Telegram messages for the selected videos
+11. collect per-video feedback
 12. feed that feedback back into future evaluations
 
 ## 5. Best commands to understand the current system
@@ -350,8 +340,4 @@ cd /home/shishirmishra/Learnings/EvoClaw
   --feedback adas/test_sets/feedback.json
 ```
 
-React 👍 or 👎 to the digest message in Telegram, then run the above. Offset state is persisted so repeated runs only process new reactions.
-
-## 6. Immediate next workflow milestone
-
-The next milestone is Step 13: wire cron automation so the full loop (fetch → deliver → capture reactions) runs on a schedule without manual intervention.
+React up or down to an individual video message in Telegram, then run the above. Offset state is persisted so repeated runs only process new reactions.
