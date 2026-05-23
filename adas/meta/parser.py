@@ -14,6 +14,12 @@ try:
 except ImportError:
     from meta.models import Candidate
 
+# The meta-agent response is split into two parts: a small JSON head carrying the
+# structured fields (thought/name, plus verdict/issues/checks for reflection) and a
+# separate fenced ```markdown block carrying the full SKILL.md document. Keeping the
+# multi-line SKILL.md out of the JSON string avoids the unescaped-quote failures and
+# the grammar-constrained run-on that small local models produce when a whole document
+# is embedded inside a single JSON string field.
 REQUIRED_FRONTMATTER_KEYS: frozenset[str] = frozenset(
     {"name", "version", "strategy", "description", "author", "score"}
 )
@@ -66,8 +72,32 @@ def _extract_json_object(text: str) -> dict:
 
 
 def parse_response(text: str) -> dict:
-    """Parse and return the first JSON object found in *text*."""
+    """Parse and return the JSON head object found in *text*.
+
+    Only the small structured head is JSON; the SKILL.md body is delivered in a
+    separate fenced block (see :func:`extract_skill_md_block`)."""
     return _extract_json_object(text)
+
+
+def extract_skill_md_block(text: str) -> str:
+    """Return the SKILL.md document carried after the JSON head in *text*.
+
+    The document is delivered in a fenced markdown block that, per contract, begins
+    with YAML frontmatter ('---'). We anchor on that first frontmatter line rather
+    than on code-fence markers, because models vary the fence width (``` vs ````)
+    and the skill body itself frequently contains nested ``` code fences (e.g. an
+    output-format template). Trailing closing-fence/blank lines are stripped."""
+    lines = text.split("\n")
+    start = next((i for i, ln in enumerate(lines) if ln.strip() == "---"), None)
+    if start is None:
+        raise ValueError(
+            "Response did not contain a SKILL.md document (no '---' frontmatter)."
+        )
+    body = lines[start:]
+    # Drop the model's trailing closing fence (``` / ````) and any blank lines.
+    while body and (not body[-1].strip() or set(body[-1].strip()) == {"`"}):
+        body.pop()
+    return "\n".join(body)
 
 
 def extract_candidate(parsed: dict) -> Candidate:
@@ -82,6 +112,34 @@ def extract_candidate(parsed: dict) -> Candidate:
         name=parsed["name"],
         skill_md=parsed["skill_md"],
     )
+
+
+def parse_candidate_response(text: str) -> Candidate:
+    """Parse a generator response (JSON head + fenced SKILL.md) into a Candidate."""
+    head = parse_response(text)
+    skill_md = extract_skill_md_block(text)
+    for key in ("thought", "name"):
+        if key not in head:
+            raise ValueError(f"Response missing required field: '{key}'")
+        if not isinstance(head[key], str):
+            raise ValueError(
+                f"Field '{key}' must be a string, got {type(head[key]).__name__}."
+            )
+    return Candidate(thought=head["thought"], name=head["name"], skill_md=skill_md)
+
+
+def parse_reflection_response(text: str) -> dict:
+    """Parse a reflector response: JSON head plus an optional fenced SKILL.md block.
+
+    Returns the head dict with ``skill_md`` added when a fenced block is present.
+    On an accept-without-repair (no fenced block) ``skill_md`` is omitted so the
+    caller falls back to the original candidate's document."""
+    head = parse_response(text)
+    try:
+        head["skill_md"] = extract_skill_md_block(text)
+    except ValueError:
+        pass
+    return head
 
 
 def parse_frontmatter(skill_md: str) -> dict[str, str | None]:

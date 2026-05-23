@@ -22,9 +22,8 @@ Your job is to check the candidate for:
 Check each item explicitly:
 
 1. `json_contract`
-   - top-level object exists
-   - contains `thought`, `name`, and `skill_md`
-   - all three are strings
+   - the response has a JSON head object containing `thought` and `name` (both strings)
+   - the SKILL.md is delivered in a separate fenced ```` ```markdown ```` block, not inside the JSON
 
 2. `frontmatter`
    - `skill_md` starts with YAML frontmatter
@@ -76,7 +75,13 @@ If the candidate is still weak after repair, keep the repaired version but mark 
 
 ## Output contract
 
-Return **JSON only** in this exact shape:
+Return your answer in **two parts, in this exact order**, with no other surrounding prose:
+
+1. A single JSON object with the verdict and checks.
+2. The (possibly-repaired) SKILL.md in a fenced ```` ```markdown ```` block.
+
+Do **not** put the SKILL.md inside the JSON. On `accept` with no repairs you may
+omit the SKILL.md block entirely and the original candidate is kept unchanged.
 
 ```json
 {
@@ -93,10 +98,18 @@ Return **JSON only** in this exact shape:
     "runtime_fit": true
   },
   "thought": "brief reflection summary",
-  "name": "candidate skill name",
-  "skill_md": "---\\nname: ...\\n..."
+  "name": "candidate skill name"
 }
 ```
+
+````markdown
+---
+name: candidate skill name
+...
+---
+
+# ...
+````
 
 ### Verdict rules
 

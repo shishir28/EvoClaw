@@ -1,0 +1,66 @@
+{
+  "skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/.meta_tmp/meta_candidate_tidozkwb.md",
+  "skill_name": "recency-first-tactical-enhanced",
+  "status": "partially_scored",
+  "total_score": null,
+  "error": null,
+  "result": {
+    "skill_name": "recency-first-tactical-enhanced",
+    "strategy": "recency",
+    "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
+    "video_count": 48,
+    "dimensions": [
+      {
+        "name": "relevance",
+        "weight": 0.25,
+        "score": null,
+        "detail": "Pending LLM judge."
+      },
+      {
+        "name": "substance",
+        "weight": 0.25,
+        "score": null,
+        "detail": "Pending LLM judge."
+      },
+      {
+        "name": "freshness",
+        "weight": 0.15,
+        "score": 9.0221,
+        "detail": "BaJpfGQ6gMA: 9.39h old -> 9.22; eEUUpcpvKZ0: 12.63h old -> 8.95; Ld3vyudRY68: 13.18h old -> 8.9"
+      },
+      {
+        "name": "diversity",
+        "weight": 0.15,
+        "score": 9.8624,
+        "detail": "3/3 unique channels; avg topical similarity=0.0275"
+      },
+      {
+        "name": "reasoning",
+        "weight": 0.1,
+        "score": null,
+        "detail": "Pending LLM judge."
+      },
+      {
+        "name": "alignment",
+        "weight": 0.1,
+        "score": 5.0,
+        "detail": "No feedback history yet; using neutral placeholder score."
+      }
+    ],
+    "selected_video_ids": [
+      "BaJpfGQ6gMA",
+      "eEUUpcpvKZ0",
+      "Ld3vyudRY68"
+    ],
+    "total_score": null,
+    "status": "partially_scored",
+    "notes": [
+      "Supports partial scoring until every dimension has a value.",
+      "Weighted aggregation is applied once all dimension scores are assigned.",
+      "Only algorithmic dimensions are scored here; LLM-judged dimensions remain pending.",
+      "Executed recency strategy adapter.",
+      "Selected from 48h window.",
+      "Pending dimensions: relevance, substance, reasoning"
+    ]
+  }
+}

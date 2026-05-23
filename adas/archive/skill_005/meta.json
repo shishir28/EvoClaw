@@ -1,0 +1,19 @@
+{
+  "skill_id": "skill_005",
+  "skill_name": "recency-first-tactical-enhanced",
+  "source_type": "meta-agent",
+  "archive_key": "meta-agent:/home/shishirmishra/Learnings/EvoClaw/adas/.meta_tmp/meta_candidate_tidozkwb.md:{\"cache_path\": \"/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json\", \"design_goal\": \"\", \"feedback_path\": \"/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json\", \"reflect_passes\": 2}",
+  "archive_path": "skill_005",
+  "archived_at": "2026-05-23T03:35:30.088335+00:00",
+  "origin_skill_path": "/home/shishirmishra/Learnings/EvoClaw/adas/.meta_tmp/meta_candidate_tidozkwb.md",
+  "status": "partially_scored",
+  "total_score": null,
+  "strategy": "recency",
+  "error": null,
+  "context": {
+    "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
+    "feedback_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json",
+    "design_goal": "",
+    "reflect_passes": 2
+  }
+}

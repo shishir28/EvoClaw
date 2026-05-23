@@ -243,6 +243,10 @@ TELEGRAM_CHAT_ID = SETTINGS.integrations.telegram_chat_id
 INFERENCE_BACKEND = SETTINGS.inference.backend
 LLM_MODEL = SETTINGS.inference.model
 LLM_BASE_URL = SETTINGS.inference.base_url
+# Upper bound on tokens generated per completion — a safety bound on worst-case
+# latency. A known-good candidate skill is ~660 tokens, so 2048 leaves comfortable
+# headroom and is not expected to be hit in normal operation.
+LLM_MAX_TOKENS = int(os.environ.get("LLM_MAX_TOKENS", "2048"))
 
 SCORE_WEIGHTS = dict(SETTINGS.evaluation.score_weights)
 
