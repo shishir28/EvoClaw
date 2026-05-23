@@ -67,6 +67,17 @@
       "required_env": [
         "TELEGRAM_BOT_TOKEN"
       ]
+    },
+    {
+      "name": "daily-status",
+      "schedule": "0 9 * * *",
+      "description": "Write a compact daily status summary at 9:00 AM AEST: cache age, videos fetched, excluded repeats, selected IDs, delivery message IDs, reactions captured, and failures",
+      "module": "adas.status_report",
+      "args": [
+        "--cache",
+        "{PROJECT_ROOT}/adas/test_sets/video_cache_w1.json"
+      ],
+      "required_env": []
     }
   ]
 }
