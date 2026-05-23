@@ -275,6 +275,7 @@ CACHE_MAX_AGE_HOURS = SETTINGS.cache.max_age_hours
 # Meta-agent settings (read from environment, not stored in AppSettings)
 META_REFLECT_PASSES: int = int(os.environ.get("META_REFLECT_PASSES", "2"))
 META_MAX_CYCLES: int = int(os.environ.get("META_MAX_CYCLES", "1"))
+META_USE_LLM_JUDGING: bool = _bool_env("META_USE_LLM_JUDGING", True)
 META_CANDIDATE_TEMP_DIR: str = os.environ.get(
     "META_CANDIDATE_TEMP_DIR",
     str(Path(__file__).resolve().parent / ".meta_tmp"),

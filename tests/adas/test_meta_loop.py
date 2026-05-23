@@ -161,6 +161,59 @@ class TestSuccessCycle:
         ev.score.assert_called_once()
         archive_svc.archive_records.assert_called_once()
 
+    def test_llm_judging_is_enabled_by_default(self, tmp_path):
+        gen = MagicMock()
+        gen.generate.return_value = _CANDIDATE
+        ref = MagicMock()
+        ref.reflect.return_value = _ACCEPT
+        ev = MagicMock()
+        ev.score.return_value = _make_eval_result()
+        archive_svc = MagicMock()
+        archive_svc.archive_records.side_effect = lambda records, **kw: _make_archive_result(
+            records[0].skill_path
+        )
+
+        run_cycle(
+            cache_path=str(tmp_path / "cache.json"),
+            archive_dir=str(tmp_path / "archive"),
+            feedback_path=str(tmp_path / "feedback.json"),
+            temp_dir=str(tmp_path / "tmp"),
+            generator=gen,
+            reflector=ref,
+            evaluator=ev,
+            archive_service=archive_svc,
+            context=_make_context(),
+        )
+
+        assert ev.score.call_args.kwargs["use_llm_judging"] is True
+
+    def test_archive_context_records_llm_judging_setting(self, tmp_path):
+        gen = MagicMock()
+        gen.generate.return_value = _CANDIDATE
+        ref = MagicMock()
+        ref.reflect.return_value = _ACCEPT
+        ev = MagicMock()
+        ev.score.return_value = _make_eval_result()
+        archive_svc = MagicMock()
+        archive_svc.archive_records.side_effect = lambda records, **kw: _make_archive_result(
+            records[0].skill_path
+        )
+
+        run_cycle(
+            cache_path=str(tmp_path / "cache.json"),
+            archive_dir=str(tmp_path / "archive"),
+            feedback_path=str(tmp_path / "feedback.json"),
+            temp_dir=str(tmp_path / "tmp"),
+            use_llm_judging=False,
+            generator=gen,
+            reflector=ref,
+            evaluator=ev,
+            archive_service=archive_svc,
+            context=_make_context(),
+        )
+
+        assert archive_svc.archive_records.call_args.kwargs["context"]["use_llm_judging"] is False
+
     def test_candidate_attached(self, tmp_path):
         gen = MagicMock()
         gen.generate.return_value = _CANDIDATE

@@ -37,6 +37,7 @@ def test_reflect_passes_forwarded(monkeypatch, capsys):
     meta_agent.main()
 
     assert calls[0]["reflect_passes"] == 2
+    assert calls[0]["use_llm_judging"] is True
     output = json.loads(capsys.readouterr().out)
     assert output[0]["outcome"] == "success"
 
@@ -94,5 +95,30 @@ def test_deploy_best_flags_forwarded(monkeypatch, capsys):
     assert calls[0]["promote_best"] is True
     assert calls[0]["production_skill_path"] == "/tmp/youtube-curator/SKILL.md"
     assert calls[0]["deployment_record_path"] == "/tmp/youtube-curator/deployment.json"
+    output = json.loads(capsys.readouterr().out)
+    assert output[0]["outcome"] == "success"
+
+
+def test_no_llm_judge_flag_forwarded(monkeypatch, capsys):
+    calls: list[dict[str, object]] = []
+
+    def _fake_run_cycle(**kwargs):
+        calls.append(kwargs)
+        return CycleResult(outcome="success", candidate=_CANDIDATE)
+
+    monkeypatch.setattr(meta_agent, "run_cycle", _fake_run_cycle)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "meta_agent.py",
+            "--cache",
+            "adas/test_sets/video_cache_w1.json",
+            "--no-llm-judge",
+        ],
+    )
+
+    meta_agent.main()
+
+    assert calls[0]["use_llm_judging"] is False
     output = json.loads(capsys.readouterr().out)
     assert output[0]["outcome"] == "success"
