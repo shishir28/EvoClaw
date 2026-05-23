@@ -32,7 +32,11 @@
         "--cycles",
         "3"
       ],
-      "required_env": []
+      "required_env": [
+        "LLM_BASE_URL",
+        "LLM_MODEL"
+      ],
+      "healthcheck": "openai-compatible"
     },
     {
       "name": "morning-digest",

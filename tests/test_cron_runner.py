@@ -14,11 +14,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "cron"))
 
 from runner import (
     _build_cron_entries,
+    _check_openai_compatible_health,
     _check_required_env,
     _expand_args,
     _find_job,
     _load_env,
+    _models_endpoint,
     _python_executable,
+    _run_healthchecks,
 )
 
 
@@ -260,3 +263,86 @@ class TestBuildCronEntries:
             + str(tmp_path / "cron" / "logs" / "cron-reaction-capture.log")
             + " 2>&1"
         ]
+
+
+# ---------------------------------------------------------------------------
+# LLM health checks
+# ---------------------------------------------------------------------------
+
+class _StubHTTPResponse:
+    def __init__(self, payload: bytes):
+        self._payload = payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def read(self):
+        return self._payload
+
+
+class TestLLMHealthChecks:
+    def test_models_endpoint_appends_models(self):
+        assert _models_endpoint("http://localhost:9000/v1/") == "http://localhost:9000/v1/models"
+
+    def test_models_endpoint_rejects_empty_base_url(self):
+        with pytest.raises(ValueError, match="LLM_BASE_URL"):
+            _models_endpoint("   ")
+
+    def test_openai_compatible_health_passes_when_model_is_present(self, monkeypatch):
+        payload = b'{"data": [{"id": "model-a"}, {"id": "model-b"}]}'
+
+        def _urlopen(request, timeout):
+            assert request.full_url == "http://localhost:9000/v1/models"
+            assert timeout == 5.0
+            return _StubHTTPResponse(payload)
+
+        import runner
+        monkeypatch.setattr(runner.urllib.request, "urlopen", _urlopen)
+
+        ok, message = _check_openai_compatible_health(
+            "http://localhost:9000/v1",
+            "model-b",
+        )
+
+        assert ok is True
+        assert "reachable" in message
+
+    def test_openai_compatible_health_fails_when_model_is_missing(self, monkeypatch):
+        payload = b'{"data": [{"id": "model-a"}]}'
+
+        import runner
+        monkeypatch.setattr(
+            runner.urllib.request,
+            "urlopen",
+            lambda request, timeout: _StubHTTPResponse(payload),
+        )
+
+        ok, message = _check_openai_compatible_health(
+            "http://localhost:9000/v1",
+            "missing-model",
+        )
+
+        assert ok is False
+        assert "missing-model" in message
+        assert "model-a" in message
+
+    def test_run_healthchecks_uses_llm_env_for_openai_compatible_job(self, monkeypatch):
+        monkeypatch.setenv("LLM_BASE_URL", "http://localhost:9000/v1")
+        monkeypatch.setenv("LLM_MODEL", "model-a")
+
+        import runner
+        monkeypatch.setattr(
+            runner,
+            "_check_openai_compatible_health",
+            lambda base_url, model: (base_url == "http://localhost:9000/v1" and model == "model-a", "ok"),
+        )
+
+        assert _run_healthchecks({"name": "adas-evolution", "healthcheck": "openai-compatible"}) == []
+
+    def test_run_healthchecks_reports_unknown_healthcheck(self):
+        failures = _run_healthchecks({"name": "job", "healthcheck": "unknown"})
+
+        assert failures == ["Unknown healthcheck 'unknown' for job 'job'."]

@@ -90,13 +90,16 @@ EVOCLAW_LLM_BASE_URL=http://host.docker.internal:9000/v1 docker compose up -d --
 ## Config validation
 
 `runner.py` validates required env vars before running each job and exits with code 2
-if any are missing, printing which keys are absent. This catches misconfiguration
-before a scheduled job silently fails at midnight.
+if any are missing, printing which keys are absent. Jobs may also declare a
+preflight healthcheck; `adas-evolution` checks the OpenAI-compatible `/models`
+endpoint and exits with code 3 if the LLM backend is unreachable or the configured
+model is not listed. This catches misconfiguration before a scheduled job fails
+deep inside candidate generation.
 
 Required env vars per job:
 
 - `refresh-video-cache` — `YOUTUBE_API_KEY`
-- `adas-evolution` — none (uses cached video data and local LLM settings from `.env`)
+- `adas-evolution` — `LLM_BASE_URL`, `LLM_MODEL`; also checks the OpenAI-compatible `/models` endpoint before starting
 - `morning-digest` — `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
 - `reaction-capture` — `TELEGRAM_BOT_TOKEN`
 

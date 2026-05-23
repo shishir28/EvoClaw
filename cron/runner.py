@@ -18,6 +18,8 @@ import os
 import shlex
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -134,6 +136,61 @@ def _build_cron_entries(
         entries.append(line)
     return entries
 
+
+def _models_endpoint(base_url: str) -> str:
+    """Return the OpenAI-compatible /models endpoint for a configured base URL."""
+    trimmed = base_url.strip().rstrip("/")
+    if not trimmed:
+        raise ValueError("LLM_BASE_URL must not be empty.")
+    return f"{trimmed}/models"
+
+
+def _check_openai_compatible_health(
+    base_url: str,
+    model: str,
+    timeout_seconds: float = 5.0,
+) -> tuple[bool, str]:
+    """Validate that an OpenAI-compatible backend is reachable and exposes the model."""
+    try:
+        endpoint = _models_endpoint(base_url)
+    except ValueError as exc:
+        return False, str(exc)
+
+    request = urllib.request.Request(endpoint, headers={"Accept": "application/json"})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (OSError, urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        return False, f"LLM backend is not reachable at {endpoint}: {exc}"
+
+    models = payload.get("data", []) if isinstance(payload, dict) else []
+    model_ids = {
+        str(item.get("id"))
+        for item in models
+        if isinstance(item, dict) and item.get("id") is not None
+    }
+    if model and model_ids and model not in model_ids:
+        return False, (
+            f"LLM model '{model}' was not found at {endpoint}. "
+            f"Available models: {', '.join(sorted(model_ids))}"
+        )
+    return True, f"LLM backend reachable at {endpoint}."
+
+
+def _run_healthchecks(job: dict) -> list[str]:
+    """Run optional job-specific preflight checks and return failure messages."""
+    healthcheck = str(job.get("healthcheck", "")).strip()
+    if not healthcheck:
+        return []
+    if healthcheck != "openai-compatible":
+        return [f"Unknown healthcheck '{healthcheck}' for job '{job.get('name', '')}'."]
+
+    ok, message = _check_openai_compatible_health(
+        base_url=os.environ.get("LLM_BASE_URL", ""),
+        model=os.environ.get("LLM_MODEL", ""),
+    )
+    return [] if ok else [message]
+
 def _run_job(job: dict, dry_run: bool = False) -> int:
     name = job["name"]
     module = job["module"]
@@ -247,6 +304,16 @@ def main() -> None:
             file=sys.stderr,
         )
         sys.exit(2)
+
+    healthcheck_failures = _run_healthchecks(job)
+    if healthcheck_failures:
+        print(
+            f"ERROR: job '{job['name']}' failed preflight healthcheck(s):",
+            file=sys.stderr,
+        )
+        for failure in healthcheck_failures:
+            print(f"- {failure}", file=sys.stderr)
+        sys.exit(3)
 
     exit_code = _run_job(job, dry_run=args.dry_run)
     sys.exit(exit_code)
