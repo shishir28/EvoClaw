@@ -18,6 +18,7 @@ try:
         FEEDBACK_FILE,
         META_MAX_CYCLES,
         META_REFLECT_PASSES,
+        META_USE_LLM_JUDGING,
         SKILL_PRODUCTION,
     )
     from adas.meta.loop import run_cycle
@@ -27,6 +28,7 @@ except ImportError:
         FEEDBACK_FILE,
         META_MAX_CYCLES,
         META_REFLECT_PASSES,
+        META_USE_LLM_JUDGING,
         SKILL_PRODUCTION,
     )
     from meta.loop import run_cycle
@@ -89,6 +91,19 @@ def _add_cycle_arguments(parser: argparse.ArgumentParser) -> None:
         metavar="PATH",
         help="Feedback JSON file (default: adas/test_sets/feedback.json).",
     )
+    parser.add_argument(
+        "--with-llm-judge",
+        dest="use_llm_judging",
+        action="store_true",
+        default=META_USE_LLM_JUDGING,
+        help="Use the configured LLM backend to score relevance, substance, and reasoning.",
+    )
+    parser.add_argument(
+        "--no-llm-judge",
+        dest="use_llm_judging",
+        action="store_false",
+        help="Skip LLM-judged dimensions and leave meta candidates partially scored.",
+    )
 
 
 def _add_deployment_arguments(parser: argparse.ArgumentParser) -> None:
@@ -138,6 +153,7 @@ def _run_one_cycle(args: argparse.Namespace):
         feedback_path=args.feedback,
         design_goal=args.design_goal,
         reflect_passes=args.reflect_passes,
+        use_llm_judging=args.use_llm_judging,
         promote_best=args.deploy_best,
         production_skill_path=args.production_skill,
         deployment_record_path=args.deployment_record,

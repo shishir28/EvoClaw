@@ -1,0 +1,20 @@
+{
+  "skill_id": "skill_008",
+  "skill_name": "recency-first-tactical-enhanced",
+  "source_type": "meta-agent",
+  "archive_key": "meta-agent:/app/adas/.meta_tmp/meta_candidate_9so2s562.md:{\"cache_path\": \"/app/adas/test_sets/video_cache_w1.json\", \"design_goal\": \"\", \"feedback_path\": \"/app/adas/test_sets/feedback.json\", \"reflect_passes\": 2, \"use_llm_judging\": true}",
+  "archive_path": "skill_008",
+  "archived_at": "2026-05-23T15:33:35.634751+00:00",
+  "origin_skill_path": "/app/adas/.meta_tmp/meta_candidate_9so2s562.md",
+  "status": "scored",
+  "total_score": 5.6543,
+  "strategy": "recency",
+  "error": null,
+  "context": {
+    "cache_path": "/app/adas/test_sets/video_cache_w1.json",
+    "feedback_path": "/app/adas/test_sets/feedback.json",
+    "design_goal": "",
+    "reflect_passes": 2,
+    "use_llm_judging": true
+  }
+}

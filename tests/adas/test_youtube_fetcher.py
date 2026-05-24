@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
+import youtube_fetcher
 from youtube_fetcher import TranscriptProvider, VideoCacheRepository
 
 
@@ -42,6 +43,30 @@ class TestTranscriptProvider:
 
         assert result is videos
         assert result[0]["transcript"] is None
+
+    def test_builds_generic_proxy_config_from_urls(self, monkeypatch):
+        monkeypatch.setattr(youtube_fetcher, "TRANSCRIPT_WEBSHARE_USERNAME", "")
+        monkeypatch.setattr(youtube_fetcher, "TRANSCRIPT_WEBSHARE_PASSWORD", "")
+        monkeypatch.setattr(youtube_fetcher, "TRANSCRIPT_PROXY_HTTP_URL", "http://proxy.local:8080")
+        monkeypatch.setattr(youtube_fetcher, "TRANSCRIPT_PROXY_HTTPS_URL", "https://proxy.local:8443")
+
+        proxy_config = youtube_fetcher._build_transcript_proxy_config()
+
+        assert proxy_config.to_requests_dict() == {
+            "http": "http://proxy.local:8080",
+            "https": "https://proxy.local:8443",
+        }
+
+    def test_builds_webshare_proxy_config_when_credentials_are_set(self, monkeypatch):
+        monkeypatch.setattr(youtube_fetcher, "TRANSCRIPT_WEBSHARE_USERNAME", "user")
+        monkeypatch.setattr(youtube_fetcher, "TRANSCRIPT_WEBSHARE_PASSWORD", "pass")
+        monkeypatch.setattr(youtube_fetcher, "TRANSCRIPT_WEBSHARE_LOCATIONS", ("AU",))
+        monkeypatch.setattr(youtube_fetcher, "TRANSCRIPT_PROXY_RETRIES_WHEN_BLOCKED", 3)
+
+        proxy_config = youtube_fetcher._build_transcript_proxy_config()
+
+        assert proxy_config.retries_when_blocked == 3
+        assert proxy_config.to_requests_dict()["https"].startswith("http://user-AU-rotate:pass@")
 
 
 def _write_cache(path, fetched_at: str, count: int = 2) -> None:

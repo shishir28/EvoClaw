@@ -50,9 +50,46 @@ _BUSINESS_TERMS = {
 _BLOCKED_SCRIPT_RANGES = [
     ("\u0600", "\u06ff"),
     ("\u0900", "\u097f"),
+    ("\u0b80", "\u0bff"),
     ("\u0c00", "\u0c7f"),
+    ("\u0c80", "\u0cff"),
+    ("\u0d00", "\u0d7f"),
     ("\u4e00", "\u9fff"),
 ]
+
+_ALLOWED_LANGUAGE_PREFIXES = ("en",)
+
+_NON_ENGLISH_LANGUAGE_CODES = {
+    "hi",
+    "kn",
+    "ml",
+    "ta",
+    "te",
+    "ur",
+    "vi",
+    "zh",
+}
+
+_NON_ENGLISH_LATIN_MARKERS = {
+    "hindi",
+    "hinglish",
+    "kannada",
+    "malayalam",
+    "tamil",
+    "telangana",
+    "telugu",
+    "singam",
+    "erangiruchu",
+}
+
+_HINDI_LATIN_PARTICLES = {
+    "ne",
+    "ko",
+    "mein",
+    "maine",
+    "kiye",
+    "sabse",
+}
 
 
 def _text(video: VideoRecord) -> str:
@@ -72,10 +109,39 @@ def _contains_blocked_script(text: str) -> bool:
     )
 
 
+def _language_code_is_english(code: str) -> bool:
+    normalized = (code or "").lower()
+    return not normalized or normalized.startswith(_ALLOWED_LANGUAGE_PREFIXES)
+
+
+def _has_non_english_language_code(video: VideoRecord) -> bool:
+    codes = [
+        getattr(video, "default_language", ""),
+        getattr(video, "default_audio_language", ""),
+    ]
+    normalized_codes = [code.lower() for code in codes if code]
+    return any(
+        code.split("-")[0] in _NON_ENGLISH_LANGUAGE_CODES
+        or not _language_code_is_english(code)
+        for code in normalized_codes
+    )
+
+
+def _has_non_english_latin_markers(video: VideoRecord) -> bool:
+    words = set(re.findall(r"[a-z]+", _text(video)))
+    if words & _NON_ENGLISH_LATIN_MARKERS:
+        return True
+    return len(words & _HINDI_LATIN_PARTICLES) >= 2
+
+
 def _looks_english(video: VideoRecord) -> bool:
-    # Rejects videos with Arabic/Hindi/Chinese/Telugu script, requires ≥85% ASCII alpha chars
+    # Reject explicit non-English language metadata, blocked scripts, and common Latin-script language markers.
     source = " ".join([video.title, video.description])
+    if _has_non_english_language_code(video):
+        return False
     if _contains_blocked_script(source):
+        return False
+    if _has_non_english_latin_markers(video):
         return False
     ascii_chars = sum(1 for ch in source if ord(ch) < 128 and ch.isalpha())
     alpha_chars = sum(1 for ch in source if ch.isalpha())
@@ -109,6 +175,16 @@ def _age_hours(video: VideoRecord) -> float:
 
 def _minutes(video: VideoRecord) -> float:
     return max(float(video.duration_seconds or 0) / 60.0, 0.0)
+
+
+MIN_PREFERRED_DURATION_MINUTES = 5.0
+
+
+def _preferred_duration_pool(
+    candidates: list[VideoRecord],
+    minimum_minutes: float = MIN_PREFERRED_DURATION_MINUTES,
+) -> list[VideoRecord]:
+    return [video for video in candidates if _minutes(video) >= minimum_minutes]
 
 
 def _subscriber_floor(video: VideoRecord, threshold: int) -> bool:
@@ -168,11 +244,27 @@ class RecencyStrategyExecutor(_BaseStrategyExecutor):
         # Prefer the 48h window, but fall back to the full candidate pool when it is too sparse.
         recent_candidates = [video for video in candidates if _age_hours(video) <= 48.0]
         pool = recent_candidates if len(recent_candidates) >= 3 else candidates
-        selected = sorted(pool, key=_published_at, reverse=True)[:3]
+
+        preferred = sorted(
+            _preferred_duration_pool(pool),
+            key=_published_at,
+            reverse=True,
+        )
+        fallback = sorted(
+            [video for video in pool if video not in preferred],
+            key=_published_at,
+            reverse=True,
+        )
+        selected = (preferred + fallback)[:3]
+        duration_note = (
+            f"Preferred {min(len(preferred), 3)} video(s) at least "
+            f"{MIN_PREFERRED_DURATION_MINUTES:g} minutes long."
+        )
         return SkillExecutionResult(
             selected_video_ids=[video.video_id for video in selected],
             notes=[
                 "Executed recency strategy adapter.",
+                duration_note,
                 f"Selected from {'48h window' if pool is recent_candidates else '7d fallback pool'}.",
             ],
         )

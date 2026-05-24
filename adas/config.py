@@ -235,6 +235,18 @@ SEARCH_QUERIES = list(SETTINGS.search.queries)
 MAX_RESULTS_PER_QUERY = SETTINGS.search.max_results_per_query
 VIDEO_WINDOW_DAYS = SETTINGS.search.video_window_days
 TRANSCRIPT_ENABLED = SETTINGS.search.transcript_enabled
+TRANSCRIPT_PROXY_HTTP_URL = os.environ.get("TRANSCRIPT_PROXY_HTTP_URL", "")
+TRANSCRIPT_PROXY_HTTPS_URL = os.environ.get("TRANSCRIPT_PROXY_HTTPS_URL", "")
+TRANSCRIPT_WEBSHARE_USERNAME = os.environ.get("TRANSCRIPT_WEBSHARE_USERNAME", "")
+TRANSCRIPT_WEBSHARE_PASSWORD = os.environ.get("TRANSCRIPT_WEBSHARE_PASSWORD", "")
+TRANSCRIPT_WEBSHARE_LOCATIONS = tuple(
+    location.strip()
+    for location in os.environ.get("TRANSCRIPT_WEBSHARE_LOCATIONS", "").split(",")
+    if location.strip()
+)
+TRANSCRIPT_PROXY_RETRIES_WHEN_BLOCKED = int(
+    os.environ.get("TRANSCRIPT_PROXY_RETRIES_WHEN_BLOCKED", "10")
+)
 
 YOUTUBE_API_KEY = SETTINGS.integrations.youtube_api_key
 TELEGRAM_BOT_TOKEN = SETTINGS.integrations.telegram_bot_token
@@ -275,6 +287,7 @@ CACHE_MAX_AGE_HOURS = SETTINGS.cache.max_age_hours
 # Meta-agent settings (read from environment, not stored in AppSettings)
 META_REFLECT_PASSES: int = int(os.environ.get("META_REFLECT_PASSES", "2"))
 META_MAX_CYCLES: int = int(os.environ.get("META_MAX_CYCLES", "1"))
+META_USE_LLM_JUDGING: bool = _bool_env("META_USE_LLM_JUDGING", True)
 META_CANDIDATE_TEMP_DIR: str = os.environ.get(
     "META_CANDIDATE_TEMP_DIR",
     str(Path(__file__).resolve().parent / ".meta_tmp"),

@@ -201,3 +201,23 @@ class TestSkillPromoter:
         assert d["promoted"] is True
         assert d["status"] == "promoted"
         assert d["skill_id"] == "skill_001"
+
+    def test_successful_promotion_appends_history_log(self, tmp_path):
+        archive_dir = tmp_path / "archive"
+        production_skill = tmp_path / "skills" / "youtube-curator" / "SKILL.md"
+        _write_archive(archive_dir, score=8.5, skill_text="history skill")
+
+        promoter = SkillPromoter(
+            archive_dir=str(archive_dir),
+            production_skill_path=str(production_skill),
+            deployed_at_factory=lambda: "2026-05-05T01:00:00+00:00",
+        )
+
+        promoter.promote_best_skill()
+
+        history_path = production_skill.parent / "deployment_history.jsonl"
+        lines = history_path.read_text().splitlines()
+        assert len(lines) == 1
+        payload = json.loads(lines[0])
+        assert payload["deployed_skill_id"] == "skill_001"
+        assert payload["deployed_at"] == "2026-05-05T01:00:00+00:00"

@@ -17,6 +17,7 @@ try:
         FEEDBACK_FILE,
         META_CANDIDATE_TEMP_DIR,
         META_REFLECT_PASSES,
+        META_USE_LLM_JUDGING,
     )
     from ..deployment.promoter import DeploymentRecordStore, SkillPromoter
     from ..evaluation.service import Evaluator
@@ -35,6 +36,7 @@ except ImportError:
         FEEDBACK_FILE,
         META_CANDIDATE_TEMP_DIR,
         META_REFLECT_PASSES,
+        META_USE_LLM_JUDGING,
     )
     from deployment.promoter import DeploymentRecordStore, SkillPromoter
     from evaluation.service import Evaluator
@@ -103,6 +105,7 @@ def _archive_context(
     feedback_path: str,
     design_goal: str,
     reflect_passes: int,
+    use_llm_judging: bool,
 ) -> dict[str, Any]:
     """Package cycle-level parameters into the context dict stored with each archive entry.
     Stored verbatim so the archive record is self-describing for later inspection."""
@@ -111,6 +114,7 @@ def _archive_context(
         "feedback_path": feedback_path,
         "design_goal": design_goal,
         "reflect_passes": reflect_passes,
+        "use_llm_judging": use_llm_judging,
     }
 
 
@@ -144,6 +148,7 @@ class MetaCycleRunner:
     design_goal: str = ""
     temp_dir: str = META_CANDIDATE_TEMP_DIR
     reflect_passes: int = META_REFLECT_PASSES
+    use_llm_judging: bool = META_USE_LLM_JUDGING
     generator: Generator | None = None
     reflector: Reflector | None = None
     evaluator: Evaluator | None = None
@@ -280,6 +285,7 @@ class MetaCycleRunner:
                 skill_path=str(temp_path),
                 cache_path=self.cache_path,
                 feedback_path=self.feedback_path,
+                use_llm_judging=self.use_llm_judging,
             )
         except Exception as exc:
             _log.error("Evaluation failed: %s", exc)
@@ -306,6 +312,7 @@ class MetaCycleRunner:
                     feedback_path=self.feedback_path,
                     design_goal=self.design_goal,
                     reflect_passes=self.reflect_passes,
+                    use_llm_judging=self.use_llm_judging,
                 ),
             )
         except Exception as exc:
@@ -419,6 +426,7 @@ def run_cycle(
     design_goal: str = "",
     temp_dir: str = META_CANDIDATE_TEMP_DIR,
     reflect_passes: int = META_REFLECT_PASSES,
+    use_llm_judging: bool = META_USE_LLM_JUDGING,
     generator: Generator | None = None,
     reflector: Reflector | None = None,
     evaluator: Evaluator | None = None,
@@ -438,6 +446,7 @@ def run_cycle(
         design_goal=design_goal,
         temp_dir=temp_dir,
         reflect_passes=reflect_passes,
+        use_llm_judging=use_llm_judging,
         generator=generator,
         reflector=reflector,
         evaluator=evaluator,

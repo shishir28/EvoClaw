@@ -76,14 +76,24 @@ class DeploymentRecord:
 class DeploymentRecordStore:
     """Load and save deployment metadata beside the production skill."""
 
-    def __init__(self, path: str | Path) -> None:
-        """Create a store bound to a single metadata JSON path."""
+    def __init__(self, path: str | Path, history_path: str | Path | None = None) -> None:
+        """Create a store bound to a metadata JSON path and append-only history log."""
         self._path = Path(path)
+        self._history_path = (
+            Path(history_path)
+            if history_path is not None
+            else self._path.with_name("deployment_history.jsonl")
+        )
 
     @property
     def path(self) -> Path:
         """Expose the metadata path for CLI and result reporting."""
         return self._path
+
+    @property
+    def history_path(self) -> Path:
+        """Expose the append-only promotion history log path."""
+        return self._history_path
 
     def load(self) -> DeploymentRecord | None:
         """Return the current deployment record, or None before first deploy."""
@@ -92,12 +102,32 @@ class DeploymentRecordStore:
         payload = json.loads(self._path.read_text())
         return DeploymentRecord.from_dict(payload)
 
+    def load_history(self) -> list[DeploymentRecord]:
+        """Return promotion history in append order, oldest to newest."""
+        if not self._history_path.exists():
+            return []
+        history: list[DeploymentRecord] = []
+        for line in self._history_path.read_text().splitlines():
+            if not line.strip():
+                continue
+            history.append(DeploymentRecord.from_dict(json.loads(line)))
+        return history
+
     def save(self, record: DeploymentRecord) -> None:
         """Persist deployment metadata using a temp-file replace."""
         self._path.parent.mkdir(parents=True, exist_ok=True)
         temp_path = self._path.with_name(f".{self._path.name}.tmp")
         temp_path.write_text(json.dumps(record.to_dict(), indent=2, ensure_ascii=False))
         temp_path.replace(self._path)
+
+    def append_history(self, record: DeploymentRecord) -> None:
+        """Append one successful promotion to the deployment history log."""
+        self._history_path.parent.mkdir(parents=True, exist_ok=True)
+        existing = self._history_path.read_text().splitlines() if self._history_path.exists() else []
+        existing.append(json.dumps(record.to_dict(), ensure_ascii=False))
+        temp_path = self._history_path.with_name(f".{self._history_path.name}.tmp")
+        temp_path.write_text("\n".join(existing) + "\n")
+        temp_path.replace(self._history_path)
 
 
 @dataclass(frozen=True, slots=True)
@@ -189,6 +219,7 @@ class SkillPromoter:
             current_record=current_record,
         )
         self._deployment_store.save(record)
+        self._deployment_store.append_history(record)
         return self._promoted_result(record)
 
     @staticmethod

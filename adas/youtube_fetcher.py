@@ -26,9 +26,12 @@ try:
         TranscriptsDisabled,
         YouTubeTranscriptApi,
     )
+    from youtube_transcript_api.proxies import GenericProxyConfig, WebshareProxyConfig
 
     _TRANSCRIPT_AVAILABLE = True
 except ImportError:
+    GenericProxyConfig = None
+    WebshareProxyConfig = None
     _TRANSCRIPT_AVAILABLE = False
 
 try:
@@ -36,6 +39,12 @@ try:
         MAX_RESULTS_PER_QUERY,
         TEST_SETS_DIR,
         TRANSCRIPT_ENABLED,
+        TRANSCRIPT_PROXY_HTTP_URL,
+        TRANSCRIPT_PROXY_HTTPS_URL,
+        TRANSCRIPT_PROXY_RETRIES_WHEN_BLOCKED,
+        TRANSCRIPT_WEBSHARE_LOCATIONS,
+        TRANSCRIPT_WEBSHARE_PASSWORD,
+        TRANSCRIPT_WEBSHARE_USERNAME,
         VIDEO_WINDOW_DAYS,
         YOUTUBE_API_KEY,
     )
@@ -45,6 +54,12 @@ except ModuleNotFoundError:
         MAX_RESULTS_PER_QUERY,
         TEST_SETS_DIR,
         TRANSCRIPT_ENABLED,
+        TRANSCRIPT_PROXY_HTTP_URL,
+        TRANSCRIPT_PROXY_HTTPS_URL,
+        TRANSCRIPT_PROXY_RETRIES_WHEN_BLOCKED,
+        TRANSCRIPT_WEBSHARE_LOCATIONS,
+        TRANSCRIPT_WEBSHARE_PASSWORD,
+        TRANSCRIPT_WEBSHARE_USERNAME,
         VIDEO_WINDOW_DAYS,
         YOUTUBE_API_KEY,
     )
@@ -72,6 +87,8 @@ class VideoRecordPayload(VideoStub, total=False):
     duration_seconds: int
     tags: list[str]
     category_id: str
+    default_language: str
+    default_audio_language: str
     views_per_hour: float
     url: str
     transcript: str | None
@@ -140,6 +157,8 @@ class YouTubeAPIClient:
             "duration_seconds": duration_sec,
             "tags": snippet.get("tags", []),
             "category_id": snippet.get("categoryId", ""),
+            "default_language": snippet.get("defaultLanguage", ""),
+            "default_audio_language": snippet.get("defaultAudioLanguage", ""),
             "views_per_hour": _views_per_hour(views, stub["published_at"]),
             "url": f"https://www.youtube.com/watch?v={stub['video_id']}",
         }
@@ -158,6 +177,8 @@ class YouTubeAPIClient:
             "duration_seconds": 0,
             "tags": [],
             "category_id": "",
+            "default_language": "",
+            "default_audio_language": "",
             "views_per_hour": 0.0,
             "url": f"https://www.youtube.com/watch?v={stub['video_id']}",
             "transcript": None,
@@ -272,10 +293,33 @@ class YouTubeAPIClient:
         }
 
 
+def _build_transcript_proxy_config():
+    if not _TRANSCRIPT_AVAILABLE:
+        return None
+    if TRANSCRIPT_WEBSHARE_USERNAME and TRANSCRIPT_WEBSHARE_PASSWORD:
+        return WebshareProxyConfig(
+            proxy_username=TRANSCRIPT_WEBSHARE_USERNAME,
+            proxy_password=TRANSCRIPT_WEBSHARE_PASSWORD,
+            filter_ip_locations=list(TRANSCRIPT_WEBSHARE_LOCATIONS),
+            retries_when_blocked=TRANSCRIPT_PROXY_RETRIES_WHEN_BLOCKED,
+        )
+    if TRANSCRIPT_PROXY_HTTP_URL or TRANSCRIPT_PROXY_HTTPS_URL:
+        return GenericProxyConfig(
+            http_url=TRANSCRIPT_PROXY_HTTP_URL or None,
+            https_url=TRANSCRIPT_PROXY_HTTPS_URL or None,
+        )
+    return None
+
+
 class TranscriptProvider:
-    def __init__(self, pacing_seconds: float = 0.2) -> None:
+    def __init__(self, pacing_seconds: float = 0.2, proxy_config=None) -> None:
         """Initialise the transcript API client and configure inter-request pacing delay."""
-        self._transcript_api = YouTubeTranscriptApi() if _TRANSCRIPT_AVAILABLE else None
+        if _TRANSCRIPT_AVAILABLE:
+            self._transcript_api = YouTubeTranscriptApi(
+                proxy_config=proxy_config or _build_transcript_proxy_config()
+            )
+        else:
+            self._transcript_api = None
         self._pacing_seconds = pacing_seconds
 
     @property
