@@ -63,6 +63,22 @@ class TestLooksEnglish:
         v = video().with_title("AI Startup: 10x Growth — What Works").build()
         assert _looks_english(v) is True
 
+    def test_non_english_audio_language_fails(self):
+        v = (video().with_title("AI startup founder interview")
+                    .with_default_audio_language("te-IN").build())
+        assert _looks_english(v) is False
+
+    def test_latin_script_tamil_metadata_fails(self):
+        v = (video().with_title("It is Completely About Ai | SINGAM KALAM ERANGIRUCHU")
+                    .with_description("StartupSingam TamilStartups Entrepreneurship")
+                    .with_tags(["ai", "entrepreneurship", "tamil"]).build())
+        assert _looks_english(v) is False
+
+    def test_latin_script_hindi_description_fails(self):
+        v = (video().with_title("Google Just KILLED AI Startups")
+                    .with_description("Google I/O 2026 ne AI industry ko hila diya. Is video mein maine breakdown kiye.").build())
+        assert _looks_english(v) is False
+
 
 # ---------------------------------------------------------------------------
 # _is_relevant
@@ -148,6 +164,56 @@ class TestRecencyStrategyExecutor:
         pool = self._english_relevant_pool(6, hours_step=6.0)
         result = self.executor.execute(pool)
         assert set(result.selected_video_ids) == {"r0", "r1", "r2"}
+
+    def test_prefers_videos_at_least_5_minutes_long(self):
+        shorts = [
+            video().with_id(f"short{i}").with_channel("Shorts", f"sch{i}")
+                   .with_title("AI startup entrepreneur tips")
+                   .with_description("Founder guide.")
+                   .with_age_hours(float(i + 1))
+                   .with_duration_seconds(60)
+                   .with_subscriber_count(5_000)
+                   .build()
+            for i in range(3)
+        ]
+        longer = [
+            video().with_id(f"long{i}").with_channel("TechCasts", f"lch{i}")
+                   .with_title("AI startup entrepreneur tips")
+                   .with_description("Founder guide.")
+                   .with_age_hours(float(10 + i))
+                   .with_duration_seconds(600)
+                   .with_subscriber_count(5_000)
+                   .build()
+            for i in range(3)
+        ]
+        result = self.executor.execute(shorts + longer)
+        assert set(result.selected_video_ids) == {"long0", "long1", "long2"}
+        assert any("at least 5 minutes" in note for note in result.notes)
+
+    def test_duration_preference_falls_back_when_pool_too_sparse(self):
+        shorts = [
+            video().with_id(f"short{i}").with_channel("Shorts", f"sch{i}")
+                   .with_title("AI startup entrepreneur tips")
+                   .with_description("Founder guide.")
+                   .with_age_hours(float(i + 1))
+                   .with_duration_seconds(60)
+                   .with_subscriber_count(5_000)
+                   .build()
+            for i in range(3)
+        ]
+        longer = [
+            video().with_id("long0").with_channel("TechCasts", "lch0")
+                   .with_title("AI startup entrepreneur tips")
+                   .with_description("Founder guide.")
+                   .with_age_hours(10.0)
+                   .with_duration_seconds(600)
+                   .with_subscriber_count(5_000)
+                   .build()
+        ]
+        result = self.executor.execute(shorts + longer)
+        assert len(result.selected_video_ids) == 3
+        assert "long0" in result.selected_video_ids
+        assert any("Preferred 1 video(s)" in note for note in result.notes)
 
     def test_falls_back_to_7d_pool_when_under_3_in_48h(self):
         pool = self._english_relevant_pool(5, hours_step=30.0)

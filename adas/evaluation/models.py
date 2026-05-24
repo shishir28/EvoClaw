@@ -57,6 +57,8 @@ class VideoRecord:
     duration_seconds: int = 0
     tags: list[str] = field(default_factory=list)
     category_id: str = ""
+    default_language: str = ""
+    default_audio_language: str = ""
     views_per_hour: float = 0.0
     url: str = ""
     transcript: str | None = None
@@ -82,6 +84,8 @@ class VideoRecord:
             duration_seconds=int(payload.get("duration_seconds", 0) or 0),
             tags=list(payload.get("tags", [])),
             category_id=payload.get("category_id", ""),
+            default_language=payload.get("default_language", ""),
+            default_audio_language=payload.get("default_audio_language", ""),
             views_per_hour=float(payload.get("views_per_hour", 0.0) or 0.0),
             url=payload.get("url", ""),
             transcript=payload.get("transcript"),

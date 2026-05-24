@@ -59,6 +59,8 @@ class VideoRecordBuilder:
         self._tags: list[str] = []
         self._thumbnail = ""
         self._query_matched = "AI startup 2026"
+        self._default_language = ""
+        self._default_audio_language = ""
 
     def with_id(self, video_id: str) -> "VideoRecordBuilder":
         self._video_id = video_id
@@ -105,6 +107,14 @@ class VideoRecordBuilder:
         self._query_matched = query
         return self
 
+    def with_default_language(self, language: str) -> "VideoRecordBuilder":
+        self._default_language = language
+        return self
+
+    def with_default_audio_language(self, language: str) -> "VideoRecordBuilder":
+        self._default_audio_language = language
+        return self
+
     def build(self) -> VideoRecord:
         return VideoRecord(
             video_id=self._video_id,
@@ -118,6 +128,8 @@ class VideoRecordBuilder:
             duration_seconds=self._duration_seconds,
             tags=self._tags,
             category_id="28",
+            default_language=self._default_language,
+            default_audio_language=self._default_audio_language,
             views_per_hour=self._views_per_hour,
             url=f"https://www.youtube.com/watch?v={self._video_id}",
             description=self._description,

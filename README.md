@@ -156,7 +156,25 @@ The current fetcher output includes:
 - `subscriber_count`
 - `transcript` when available
 
-Transcript fetching is **best-effort**. Some videos may still have `transcript: null` if YouTube blocks caption retrieval for the current IP.
+Transcript fetching is **best-effort**. Some videos may still have `transcript: null` if YouTube blocks caption retrieval for the current IP. The selector still filters non-English candidates using YouTube language metadata plus title/description/tag heuristics, so the digest does not depend on transcripts being available.
+
+If the current IP is blocked, configure a residential or rotating proxy through `.env` and restart the Docker scheduler:
+
+```bash
+TRANSCRIPT_PROXY_HTTP_URL=http://user:pass@proxy-host:port
+TRANSCRIPT_PROXY_HTTPS_URL=http://user:pass@proxy-host:port
+```
+
+For Webshare residential proxies, use:
+
+```bash
+TRANSCRIPT_WEBSHARE_USERNAME=your-webshare-username
+TRANSCRIPT_WEBSHARE_PASSWORD=your-webshare-password
+TRANSCRIPT_WEBSHARE_LOCATIONS=AU,US
+TRANSCRIPT_PROXY_RETRIES_WHEN_BLOCKED=10
+```
+
+Cookie-based transcript auth is not wired because the installed `youtube-transcript-api` version has cookie support disabled internally; proxy support is the supported path here.
 
 The evaluator currently supports:
 

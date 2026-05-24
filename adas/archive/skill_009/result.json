@@ -1,0 +1,66 @@
+{
+  "skill_path": "/app/adas/.meta_tmp/meta_candidate_p_ncjze0.md",
+  "skill_name": "recency-first-tactical-enhanced-v2",
+  "status": "scored",
+  "total_score": 5.6536,
+  "error": null,
+  "result": {
+    "skill_name": "recency-first-tactical-enhanced-v2",
+    "strategy": "recency",
+    "cache_path": "/app/adas/test_sets/video_cache_w1.json",
+    "video_count": 49,
+    "dimensions": [
+      {
+        "name": "relevance",
+        "weight": 0.25,
+        "score": 5.0,
+        "detail": "The videos are somewhat related to AI and entrepreneurship, but the first video is not clearly focused on tactical founder content, and the third video is more about AI ethics than practical entrepreneurship."
+      },
+      {
+        "name": "substance",
+        "weight": 0.25,
+        "score": 3.0,
+        "detail": "The second video lacks a transcript and has a shallow summary. The other two videos have transcripts but do not provide substantial insights or detailed tactics."
+      },
+      {
+        "name": "freshness",
+        "weight": 0.15,
+        "score": 9.7718,
+        "detail": "GJhUqTyO-uU: 1.61h old -> 9.87; F5isJKsOMOg: 1.96h old -> 9.84; QNskSH9OP5s: 4.65h old -> 9.61"
+      },
+      {
+        "name": "diversity",
+        "weight": 0.15,
+        "score": 9.9187,
+        "detail": "3/3 unique channels; avg topical similarity=0.0163"
+      },
+      {
+        "name": "reasoning",
+        "weight": 0.1,
+        "score": 2.0,
+        "detail": "The `why_watch_summary` for the first video is overly simplistic and does not accurately reflect the content. The summaries for the other two videos are either too generic or lack detail."
+      },
+      {
+        "name": "alignment",
+        "weight": 0.1,
+        "score": 5.0,
+        "detail": "No feedback history yet; using neutral placeholder score."
+      }
+    ],
+    "selected_video_ids": [
+      "GJhUqTyO-uU",
+      "F5isJKsOMOg",
+      "QNskSH9OP5s"
+    ],
+    "total_score": 5.6536,
+    "status": "scored",
+    "notes": [
+      "Supports partial scoring until every dimension has a value.",
+      "Weighted aggregation is applied once all dimension scores are assigned.",
+      "Only algorithmic dimensions are scored here; LLM-judged dimensions remain pending.",
+      "Executed recency strategy adapter.",
+      "Selected from 48h window.",
+      "Applied LLM-judged scores for relevance, substance, and reasoning."
+    ]
+  }
+}

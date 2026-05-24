@@ -802,6 +802,307 @@
         "Selected from 48h window."
       ],
       "message_text": "🎬 Pick 1: \"AI Interview Founder: Big Tech’s New Coding Interview Explained!\"\n@Aman Manazir · 50 min · 13 hours ago\n🔗 https://www.youtube.com/watch?v=Ld3vyudRY68\n-> Computer science students, new graduates, and software engineers...want to land your dream software engineering.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"EasyBrandKit: The AI-Powered Product Testing and Growth Tool for Shopify Sellers#shopfiy#ai #aitools\"\n@Wini_Tangbuy · 1 min · 14 hours ago\n🔗 https://www.youtube.com/watch?v=n3ROpwGIkds\n-> Useful for staying current on ai product launch, with roughly 5 views per hour right now.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"217_CEO: Scale, Support &amp; AI: Building Event Tech That Can’t Fail ft Mohammed Younas\"\n@Events Demystified Podcast · 51 min · 15 hours ago\n🔗 https://www.youtube.com/watch?v=XaSu6NLIAYo\n-> Host Anca Platon Trifan interviews Mohammed Younas, founder and CEO of vFairs, on the Events Demystified Podcast (CEO.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
+    },
+    {
+      "delivered_at": "2026-05-23T18:30:04.084552+00:00",
+      "dry_run": false,
+      "skill_name": "recency-first",
+      "skill_version": "1.0",
+      "strategy": "recency",
+      "production_skill_path": "/app/skills/youtube-curator/SKILL.md",
+      "cache_path": "/app/adas/test_sets/video_cache_w1.json",
+      "feedback_path": "/app/adas/test_sets/feedback.json",
+      "telegram_chat_id": "8770142442",
+      "telegram_message_id": 74,
+      "selected_video_ids": [
+        "GJhUqTyO-uU",
+        "F5isJKsOMOg",
+        "QNskSH9OP5s"
+      ],
+      "telegram_message_ids": [
+        74,
+        75,
+        76
+      ],
+      "pick_message_ids": {
+        "GJhUqTyO-uU": 74,
+        "F5isJKsOMOg": 75,
+        "QNskSH9OP5s": 76
+      },
+      "picks": [
+        {
+          "rank": 1,
+          "video_id": "GJhUqTyO-uU",
+          "title": "It is Completely About Ai🔥 | SINGAM KALAM ERANGIRUCHU",
+          "channel": "BlackSheep TV",
+          "url": "https://www.youtube.com/watch?v=GJhUqTyO-uU",
+          "duration_minutes": 1,
+          "age_label": "4 hours ago",
+          "why_watch": "Practically it is possible online particular Yes, it is completely entrepreneurship again."
+        },
+        {
+          "rank": 2,
+          "video_id": "F5isJKsOMOg",
+          "title": "🤯 Google Just KILLED AI Startups at I/O 2026",
+          "channel": "Paras Arora | AI for Business",
+          "url": "https://www.youtube.com/watch?v=F5isJKsOMOg",
+          "duration_minutes": 1,
+          "age_label": "5 hours ago",
+          "why_watch": "Google I/O 2026 ne AI industry ko literally hila diya Is video mein maine breakdown kiye Google ke 3 sabse dangerous AI."
+        },
+        {
+          "rank": 3,
+          "video_id": "QNskSH9OP5s",
+          "title": "Could Humanity Become Extinct With AI? | Anthropic Co-Founder Jack Clark",
+          "channel": "ETV Telangana",
+          "url": "https://www.youtube.com/watch?v=QNskSH9OP5s",
+          "duration_minutes": 1,
+          "age_label": "8 hours ago",
+          "why_watch": "Useful for staying current on ai founder interview, with roughly 372 views per hour right now."
+        }
+      ],
+      "execution_notes": [
+        "Excluded 9 previously delivered video(s).",
+        "Executed recency strategy adapter.",
+        "Selected from 48h window."
+      ],
+      "message_text": "🎬 Pick 1: \"It is Completely About Ai🔥 | SINGAM KALAM ERANGIRUCHU\"\n@BlackSheep TV · 1 min · 4 hours ago\n🔗 https://www.youtube.com/watch?v=GJhUqTyO-uU\n-> Practically it is possible online particular Yes, it is completely entrepreneurship again.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"🤯 Google Just KILLED AI Startups at I/O 2026\"\n@Paras Arora | AI for Business · 1 min · 5 hours ago\n🔗 https://www.youtube.com/watch?v=F5isJKsOMOg\n-> Google I/O 2026 ne AI industry ko literally hila diya Is video mein maine breakdown kiye Google ke 3 sabse dangerous AI.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"Could Humanity Become Extinct With AI? | Anthropic Co-Founder Jack Clark\"\n@ETV Telangana · 1 min · 8 hours ago\n🔗 https://www.youtube.com/watch?v=QNskSH9OP5s\n-> Useful for staying current on ai founder interview, with roughly 372 views per hour right now.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
+    },
+    {
+      "delivered_at": "2026-05-24T01:50:52.142396+00:00",
+      "dry_run": true,
+      "skill_name": "recency-first",
+      "skill_version": "1.0",
+      "strategy": "recency",
+      "production_skill_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/skills/youtube-curator/SKILL.md",
+      "cache_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/adas/test_sets/video_cache_w1.json",
+      "feedback_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/adas/test_sets/feedback.json",
+      "telegram_chat_id": null,
+      "telegram_message_id": null,
+      "selected_video_ids": [
+        "Wsd1RqtXfyk",
+        "Y4NLEAC9KrI",
+        "VhNDwVnZRIQ"
+      ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
+      "picks": [
+        {
+          "rank": 1,
+          "video_id": "Wsd1RqtXfyk",
+          "title": "Most Powerful AI Model?",
+          "channel": "Technomanagers",
+          "url": "https://www.youtube.com/watch?v=Wsd1RqtXfyk",
+          "duration_minutes": 1,
+          "age_label": "16 hours ago",
+          "why_watch": "Become an AI Product Builder in 12 Weeks - Crack AI Business Roles."
+        },
+        {
+          "rank": 2,
+          "video_id": "Y4NLEAC9KrI",
+          "title": "Stop Overpaying! 🛑 This AI Hack Finds the Lowest Online Price Instantly 💸",
+          "channel": "FlikkerFlux",
+          "url": "https://www.youtube.com/watch?v=Y4NLEAC9KrI",
+          "duration_minutes": 1,
+          "age_label": "19 hours ago",
+          "why_watch": "Ever feel like you're missing out on a better deal?."
+        },
+        {
+          "rank": 3,
+          "video_id": "VhNDwVnZRIQ",
+          "title": "Flowcode&#39;s Tim Armstrong on Why Outsourcing AI is Self-Defeating #ai #adtech #qrcode",
+          "channel": "The LionTree Podcast",
+          "url": "https://www.youtube.com/watch?v=VhNDwVnZRIQ",
+          "duration_minutes": 1,
+          "age_label": "2 days ago",
+          "why_watch": "If you don't get deep on your business, and you don't understand how to make AI work, and you're just outsourcing all your AI to a big platform constantly, and they're becoming the gatekeepers, you're you're you're you'r."
+        }
+      ],
+      "execution_notes": [
+        "Excluded 12 previously delivered video(s).",
+        "Executed recency strategy adapter.",
+        "Selected from 48h window."
+      ],
+      "message_text": "🎬 Pick 1: \"Most Powerful AI Model?\"\n@Technomanagers · 1 min · 16 hours ago\n🔗 https://www.youtube.com/watch?v=Wsd1RqtXfyk\n-> Become an AI Product Builder in 12 Weeks - Crack AI Business Roles.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"Stop Overpaying! 🛑 This AI Hack Finds the Lowest Online Price Instantly 💸\"\n@FlikkerFlux · 1 min · 19 hours ago\n🔗 https://www.youtube.com/watch?v=Y4NLEAC9KrI\n-> Ever feel like you're missing out on a better deal?.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"Flowcode&#39;s Tim Armstrong on Why Outsourcing AI is Self-Defeating #ai #adtech #qrcode\"\n@The LionTree Podcast · 1 min · 2 days ago\n🔗 https://www.youtube.com/watch?v=VhNDwVnZRIQ\n-> If you don't get deep on your business, and you don't understand how to make AI work, and you're just outsourcing all your AI to a big platform constantly, and they're becoming the gatekeepers, you're you're you're you'r.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
+    },
+    {
+      "delivered_at": "2026-05-24T02:05:28.880839+00:00",
+      "dry_run": true,
+      "skill_name": "recency-first",
+      "skill_version": "1.0",
+      "strategy": "recency",
+      "production_skill_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/skills/youtube-curator/SKILL.md",
+      "cache_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/adas/test_sets/video_cache_w1.json",
+      "feedback_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/adas/test_sets/feedback.json",
+      "telegram_chat_id": null,
+      "telegram_message_id": null,
+      "selected_video_ids": [
+        "Wsd1RqtXfyk",
+        "Y4NLEAC9KrI",
+        "VhNDwVnZRIQ"
+      ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
+      "picks": [
+        {
+          "rank": 1,
+          "video_id": "Wsd1RqtXfyk",
+          "title": "Most Powerful AI Model?",
+          "channel": "Technomanagers",
+          "url": "https://www.youtube.com/watch?v=Wsd1RqtXfyk",
+          "duration_minutes": 1,
+          "age_label": "16 hours ago",
+          "why_watch": "Become an AI Product Builder in 12 Weeks - Crack AI Business Roles."
+        },
+        {
+          "rank": 2,
+          "video_id": "Y4NLEAC9KrI",
+          "title": "Stop Overpaying! 🛑 This AI Hack Finds the Lowest Online Price Instantly 💸",
+          "channel": "FlikkerFlux",
+          "url": "https://www.youtube.com/watch?v=Y4NLEAC9KrI",
+          "duration_minutes": 1,
+          "age_label": "19 hours ago",
+          "why_watch": "Ever feel like you're missing out on a better deal?."
+        },
+        {
+          "rank": 3,
+          "video_id": "VhNDwVnZRIQ",
+          "title": "Flowcode&#39;s Tim Armstrong on Why Outsourcing AI is Self-Defeating #ai #adtech #qrcode",
+          "channel": "The LionTree Podcast",
+          "url": "https://www.youtube.com/watch?v=VhNDwVnZRIQ",
+          "duration_minutes": 1,
+          "age_label": "2 days ago",
+          "why_watch": "If you don't get deep on your business, and you don't understand how to make AI work, and you're just outsourcing all your AI to a big platform constantly, and they're becoming the gatekeepers, you're you're you're you'r."
+        }
+      ],
+      "execution_notes": [
+        "Excluded 12 previously delivered video(s).",
+        "Executed recency strategy adapter.",
+        "Selected from 48h window."
+      ],
+      "message_text": "🎬 Pick 1: \"Most Powerful AI Model?\"\n@Technomanagers · 1 min · 16 hours ago\n🔗 https://www.youtube.com/watch?v=Wsd1RqtXfyk\n-> Become an AI Product Builder in 12 Weeks - Crack AI Business Roles.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"Stop Overpaying! 🛑 This AI Hack Finds the Lowest Online Price Instantly 💸\"\n@FlikkerFlux · 1 min · 19 hours ago\n🔗 https://www.youtube.com/watch?v=Y4NLEAC9KrI\n-> Ever feel like you're missing out on a better deal?.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"Flowcode&#39;s Tim Armstrong on Why Outsourcing AI is Self-Defeating #ai #adtech #qrcode\"\n@The LionTree Podcast · 1 min · 2 days ago\n🔗 https://www.youtube.com/watch?v=VhNDwVnZRIQ\n-> If you don't get deep on your business, and you don't understand how to make AI work, and you're just outsourcing all your AI to a big platform constantly, and they're becoming the gatekeepers, you're you're you're you'r.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
+    },
+    {
+      "delivered_at": "2026-05-24T02:06:21.010496+00:00",
+      "dry_run": true,
+      "skill_name": "recency-first",
+      "skill_version": "1.0",
+      "strategy": "recency",
+      "production_skill_path": "/app/skills/youtube-curator/SKILL.md",
+      "cache_path": "/app/adas/test_sets/video_cache_w1.json",
+      "feedback_path": "/app/adas/test_sets/feedback.json",
+      "telegram_chat_id": null,
+      "telegram_message_id": null,
+      "selected_video_ids": [
+        "Wsd1RqtXfyk",
+        "Y4NLEAC9KrI",
+        "VhNDwVnZRIQ"
+      ],
+      "telegram_message_ids": [],
+      "pick_message_ids": {},
+      "picks": [
+        {
+          "rank": 1,
+          "video_id": "Wsd1RqtXfyk",
+          "title": "Most Powerful AI Model?",
+          "channel": "Technomanagers",
+          "url": "https://www.youtube.com/watch?v=Wsd1RqtXfyk",
+          "duration_minutes": 1,
+          "age_label": "16 hours ago",
+          "why_watch": "Become an AI Product Builder in 12 Weeks - Crack AI Business Roles."
+        },
+        {
+          "rank": 2,
+          "video_id": "Y4NLEAC9KrI",
+          "title": "Stop Overpaying! 🛑 This AI Hack Finds the Lowest Online Price Instantly 💸",
+          "channel": "FlikkerFlux",
+          "url": "https://www.youtube.com/watch?v=Y4NLEAC9KrI",
+          "duration_minutes": 1,
+          "age_label": "19 hours ago",
+          "why_watch": "Ever feel like you're missing out on a better deal?."
+        },
+        {
+          "rank": 3,
+          "video_id": "VhNDwVnZRIQ",
+          "title": "Flowcode&#39;s Tim Armstrong on Why Outsourcing AI is Self-Defeating #ai #adtech #qrcode",
+          "channel": "The LionTree Podcast",
+          "url": "https://www.youtube.com/watch?v=VhNDwVnZRIQ",
+          "duration_minutes": 1,
+          "age_label": "2 days ago",
+          "why_watch": "If you don't get deep on your business, and you don't understand how to make AI work, and you're just outsourcing all your AI to a big platform constantly, and they're becoming the gatekeepers, you're you're you're you'r."
+        }
+      ],
+      "execution_notes": [
+        "Excluded 12 previously delivered video(s).",
+        "Executed recency strategy adapter.",
+        "Selected from 48h window."
+      ],
+      "message_text": "🎬 Pick 1: \"Most Powerful AI Model?\"\n@Technomanagers · 1 min · 16 hours ago\n🔗 https://www.youtube.com/watch?v=Wsd1RqtXfyk\n-> Become an AI Product Builder in 12 Weeks - Crack AI Business Roles.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"Stop Overpaying! 🛑 This AI Hack Finds the Lowest Online Price Instantly 💸\"\n@FlikkerFlux · 1 min · 19 hours ago\n🔗 https://www.youtube.com/watch?v=Y4NLEAC9KrI\n-> Ever feel like you're missing out on a better deal?.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"Flowcode&#39;s Tim Armstrong on Why Outsourcing AI is Self-Defeating #ai #adtech #qrcode\"\n@The LionTree Podcast · 1 min · 2 days ago\n🔗 https://www.youtube.com/watch?v=VhNDwVnZRIQ\n-> If you don't get deep on your business, and you don't understand how to make AI work, and you're just outsourcing all your AI to a big platform constantly, and they're becoming the gatekeepers, you're you're you're you'r.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
+    },
+    {
+      "delivered_at": "2026-05-24T02:27:03.223459+00:00",
+      "dry_run": false,
+      "skill_name": "recency-first",
+      "skill_version": "1.0",
+      "strategy": "recency",
+      "production_skill_path": "/app/skills/youtube-curator/SKILL.md",
+      "cache_path": "/app/adas/test_sets/video_cache_w1.json",
+      "feedback_path": "/app/adas/test_sets/feedback.json",
+      "telegram_chat_id": "8770142442",
+      "telegram_message_id": 77,
+      "selected_video_ids": [
+        "Wsd1RqtXfyk",
+        "Y4NLEAC9KrI",
+        "VhNDwVnZRIQ"
+      ],
+      "telegram_message_ids": [
+        77,
+        78,
+        79
+      ],
+      "pick_message_ids": {
+        "Wsd1RqtXfyk": 77,
+        "Y4NLEAC9KrI": 78,
+        "VhNDwVnZRIQ": 79
+      },
+      "picks": [
+        {
+          "rank": 1,
+          "video_id": "Wsd1RqtXfyk",
+          "title": "Most Powerful AI Model?",
+          "channel": "Technomanagers",
+          "url": "https://www.youtube.com/watch?v=Wsd1RqtXfyk",
+          "duration_minutes": 1,
+          "age_label": "17 hours ago",
+          "why_watch": "Become an AI Product Builder in 12 Weeks - Crack AI Business Roles."
+        },
+        {
+          "rank": 2,
+          "video_id": "Y4NLEAC9KrI",
+          "title": "Stop Overpaying! 🛑 This AI Hack Finds the Lowest Online Price Instantly 💸",
+          "channel": "FlikkerFlux",
+          "url": "https://www.youtube.com/watch?v=Y4NLEAC9KrI",
+          "duration_minutes": 1,
+          "age_label": "19 hours ago",
+          "why_watch": "Ever feel like you're missing out on a better deal?."
+        },
+        {
+          "rank": 3,
+          "video_id": "VhNDwVnZRIQ",
+          "title": "Flowcode&#39;s Tim Armstrong on Why Outsourcing AI is Self-Defeating #ai #adtech #qrcode",
+          "channel": "The LionTree Podcast",
+          "url": "https://www.youtube.com/watch?v=VhNDwVnZRIQ",
+          "duration_minutes": 1,
+          "age_label": "2 days ago",
+          "why_watch": "If you don't get deep on your business, and you don't understand how to make AI work, and you're just outsourcing all your AI to a big platform constantly, and they're becoming the gatekeepers, you're you're you're you'r."
+        }
+      ],
+      "execution_notes": [
+        "Excluded 12 previously delivered video(s).",
+        "Executed recency strategy adapter.",
+        "Selected from 48h window."
+      ],
+      "message_text": "🎬 Pick 1: \"Most Powerful AI Model?\"\n@Technomanagers · 1 min · 17 hours ago\n🔗 https://www.youtube.com/watch?v=Wsd1RqtXfyk\n-> Become an AI Product Builder in 12 Weeks - Crack AI Business Roles.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"Stop Overpaying! 🛑 This AI Hack Finds the Lowest Online Price Instantly 💸\"\n@FlikkerFlux · 1 min · 19 hours ago\n🔗 https://www.youtube.com/watch?v=Y4NLEAC9KrI\n-> Ever feel like you're missing out on a better deal?.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"Flowcode&#39;s Tim Armstrong on Why Outsourcing AI is Self-Defeating #ai #adtech #qrcode\"\n@The LionTree Podcast · 1 min · 2 days ago\n🔗 https://www.youtube.com/watch?v=VhNDwVnZRIQ\n-> If you don't get deep on your business, and you don't understand how to make AI work, and you're just outsourcing all your AI to a big platform constantly, and they're becoming the gatekeepers, you're you're you're you'r.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
     }
   ]
 }
