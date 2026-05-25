@@ -4,9 +4,11 @@ Tests for end-to-end Step 5 orchestration across catalog, runner, and store.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
-from baseline_comparison import BaselineComparisonService
+from adas.baseline_comparison import BaselineComparisonService
 
 
 class _StubCatalog:
@@ -82,12 +84,8 @@ class TestBaselineComparisonService:
             use_llm_judging=True,
         )
 
-        expected_cache_path = (
-            "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json"
-        )
-        expected_feedback_path = (
-            "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json"
-        )
+        expected_cache_path = str(Path("adas/test_sets/video_cache_w1.json").resolve())
+        expected_feedback_path = str(Path("adas/test_sets/feedback.json").resolve())
         assert runner.calls == [
             {
                 "skill_paths": ["a.md", "b.md", "c.md"],
@@ -177,13 +175,15 @@ class TestBaselineComparisonService:
             archive_results=True,
         )
 
+        expected_cache_path = str(Path("adas/test_sets/video_cache_w1.json").resolve())
+        expected_feedback_path = str(Path("adas/test_sets/feedback.json").resolve())
         assert archive_service.calls == [
             {
                 "records": [{"skill_path": "a.md"}, {"skill_path": "b.md"}, {"skill_path": "c.md"}],
                 "source_type": "baseline",
                 "context": {
-                    "cache_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/video_cache_w1.json",
-                    "feedback_path": "/home/shishirmishra/Learnings/EvoClaw/adas/test_sets/feedback.json",
+                    "cache_path": expected_cache_path,
+                    "feedback_path": expected_feedback_path,
                     "use_llm_judging": True,
                 },
             }

@@ -13,10 +13,15 @@ from typing import Protocol
 
 import pytest
 
-from evaluator import Evaluator
-from evaluation.models import DimensionScore, EvaluationResult, SkillDocument, VideoRecord
-from evaluation.executor import SkillExecutionResult
-from config import SCORE_WEIGHTS
+from adas.evaluator import Evaluator
+from adas.evaluation.models import (
+    DimensionScore,
+    EvaluationResult,
+    SkillDocument,
+    VideoRecord,
+)
+from adas.evaluation.executor import SkillExecutionResult
+from adas.config import SCORE_WEIGHTS
 from builders import video, skill, make_request, make_result
 
 

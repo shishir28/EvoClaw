@@ -8,9 +8,9 @@ import json
 
 import pytest
 
-from evaluation.models import FeedbackEntry, FeedbackPick
-from feedback.service import FeedbackService, ManualFeedbackPick
-from feedback.store import FeedbackStore
+from adas.evaluation.models import FeedbackEntry, FeedbackPick
+from adas.feedback.service import FeedbackService, ManualFeedbackPick
+from adas.feedback.store import FeedbackStore
 from builders import video
 
 

@@ -12,40 +12,22 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import urlparse
 
-try:
-    from .archive_runtime.store import ArchiveStore
-    from .config import (
-        ARCHIVE_DIR,
-        BASE_DIR,
-        CACHE_MAX_AGE_HOURS,
-        CACHE_STALE_WARN_HOURS,
-        DELIVERY_LOG,
-        FEEDBACK_FILE,
-        SKILL_PRODUCTION,
-        TEST_SETS_DIR,
-    )
-    from .deployment.promoter import DeploymentRecord, DeploymentRecordStore
-    from .feedback.store import FeedbackStore
-    from .status_report import DailyStatusReport, DailyStatusReporter, JobFailure
-    from .telegram.delivery_log import DeliveryLogStore
-    from .telegram.models import DeliveryRecord
-except ImportError:
-    from archive_runtime.store import ArchiveStore
-    from config import (
-        ARCHIVE_DIR,
-        BASE_DIR,
-        CACHE_MAX_AGE_HOURS,
-        CACHE_STALE_WARN_HOURS,
-        DELIVERY_LOG,
-        FEEDBACK_FILE,
-        SKILL_PRODUCTION,
-        TEST_SETS_DIR,
-    )
-    from deployment.promoter import DeploymentRecord, DeploymentRecordStore
-    from feedback.store import FeedbackStore
-    from status_report import DailyStatusReport, DailyStatusReporter, JobFailure
-    from telegram.delivery_log import DeliveryLogStore
-    from telegram.models import DeliveryRecord
+from adas.archive_runtime.store import ArchiveStore
+from adas.config import (
+    ARCHIVE_DIR,
+    BASE_DIR,
+    CACHE_MAX_AGE_HOURS,
+    CACHE_STALE_WARN_HOURS,
+    DELIVERY_LOG,
+    FEEDBACK_FILE,
+    SKILL_PRODUCTION,
+    TEST_SETS_DIR,
+)
+from adas.deployment.promoter import DeploymentRecord, DeploymentRecordStore
+from adas.feedback.store import FeedbackStore
+from adas.status_report import DailyStatusReport, DailyStatusReporter, JobFailure
+from adas.telegram.delivery_log import DeliveryLogStore
+from adas.telegram.models import DeliveryRecord
 
 _DEFAULT_CACHE_PATH = str(Path(TEST_SETS_DIR) / "video_cache_w1.json")
 _DEFAULT_STATUS_LOG_PATH = str(Path(BASE_DIR) / "cron" / "logs" / "daily_status.jsonl")

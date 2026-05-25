@@ -12,14 +12,9 @@ from typing import Any, Callable
 
 _log = logging.getLogger(__name__)
 
-try:
-    from ..baseline.models import BaselineEvaluationRecord
-    from .models import ArchiveIndex, ArchiveIndexEntry
-    from .store import ArchiveStore
-except ImportError:
-    from archive_runtime.models import ArchiveIndex, ArchiveIndexEntry
-    from archive_runtime.store import ArchiveStore
-    from baseline.models import BaselineEvaluationRecord
+from adas.archive_runtime.models import ArchiveIndex, ArchiveIndexEntry
+from adas.archive_runtime.store import ArchiveStore
+from adas.baseline.models import BaselineEvaluationRecord
 
 
 class ArchiveService:

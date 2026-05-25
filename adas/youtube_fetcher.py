@@ -37,36 +37,20 @@ except ImportError:
     WebshareProxyConfig = None
     _TRANSCRIPT_AVAILABLE = False
 
-try:
-    from config import (
-        MAX_RESULTS_PER_QUERY,
-        TEST_SETS_DIR,
-        TRANSCRIPT_ENABLED,
-        TRANSCRIPT_PROXY_HTTP_URL,
-        TRANSCRIPT_PROXY_HTTPS_URL,
-        TRANSCRIPT_PROXY_RETRIES_WHEN_BLOCKED,
-        TRANSCRIPT_WEBSHARE_LOCATIONS,
-        TRANSCRIPT_WEBSHARE_PASSWORD,
-        TRANSCRIPT_WEBSHARE_USERNAME,
-        VIDEO_WINDOW_DAYS,
-        YOUTUBE_API_KEY,
-    )
-    from utils.paths import write_text_atomic
-except ModuleNotFoundError:
-    from adas.config import (
-        MAX_RESULTS_PER_QUERY,
-        TEST_SETS_DIR,
-        TRANSCRIPT_ENABLED,
-        TRANSCRIPT_PROXY_HTTP_URL,
-        TRANSCRIPT_PROXY_HTTPS_URL,
-        TRANSCRIPT_PROXY_RETRIES_WHEN_BLOCKED,
-        TRANSCRIPT_WEBSHARE_LOCATIONS,
-        TRANSCRIPT_WEBSHARE_PASSWORD,
-        TRANSCRIPT_WEBSHARE_USERNAME,
-        VIDEO_WINDOW_DAYS,
-        YOUTUBE_API_KEY,
-    )
-    from adas.utils.paths import write_text_atomic
+from adas.config import (
+    MAX_RESULTS_PER_QUERY,
+    TEST_SETS_DIR,
+    TRANSCRIPT_ENABLED,
+    TRANSCRIPT_PROXY_HTTP_URL,
+    TRANSCRIPT_PROXY_HTTPS_URL,
+    TRANSCRIPT_PROXY_RETRIES_WHEN_BLOCKED,
+    TRANSCRIPT_WEBSHARE_LOCATIONS,
+    TRANSCRIPT_WEBSHARE_PASSWORD,
+    TRANSCRIPT_WEBSHARE_USERNAME,
+    VIDEO_WINDOW_DAYS,
+    YOUTUBE_API_KEY,
+)
+from adas.utils.paths import write_text_atomic
 
 # ISO 8601 duration → seconds
 _DURATION_RE = re.compile(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?")
@@ -512,10 +496,7 @@ class YouTubeFetcher:
 if __name__ == "__main__":
     import argparse
 
-    try:
-        from config import SEARCH_QUERIES, VIDEO_WINDOW_DAYS
-    except ModuleNotFoundError:
-        from adas.config import SEARCH_QUERIES, VIDEO_WINDOW_DAYS
+    from adas.config import SEARCH_QUERIES, VIDEO_WINDOW_DAYS
 
     parser = argparse.ArgumentParser(description="Fetch and cache YouTube videos")
     parser.add_argument("--days", type=int, default=VIDEO_WINDOW_DAYS)

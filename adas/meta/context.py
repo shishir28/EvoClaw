@@ -6,18 +6,11 @@ import json
 from pathlib import Path
 from typing import Any
 
-try:
-    from ..archive_runtime.store import ArchiveStore
-    from ..config import ARCHIVE_DIR, FEEDBACK_FILE
-    from ..feedback.store import FeedbackStore
-    from .models import MetaContext
-    from .parser import parse_frontmatter
-except ImportError:
-    from archive_runtime.store import ArchiveStore
-    from config import ARCHIVE_DIR, FEEDBACK_FILE
-    from feedback.store import FeedbackStore
-    from meta.models import MetaContext
-    from meta.parser import parse_frontmatter
+from adas.archive_runtime.store import ArchiveStore
+from adas.config import ARCHIVE_DIR, FEEDBACK_FILE
+from adas.feedback.store import FeedbackStore
+from adas.meta.models import MetaContext
+from adas.meta.parser import parse_frontmatter
 
 _POSITIVE_REACTIONS: frozenset[str] = frozenset(
     {"up", "thumbs_up", "like", "liked", "positive", "👍"}

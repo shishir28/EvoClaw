@@ -5,18 +5,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-try:
-    from ..config import PROMPTS_DIR
-    from ..evaluation.judge import ChatCompletionClient
-    from .client import make_client
-    from .models import Candidate, MetaContext, ReflectionResult
-    from .parser import parse_reflection_response
-except ImportError:
-    from config import PROMPTS_DIR
-    from evaluation.judge import ChatCompletionClient
-    from meta.client import make_client
-    from meta.models import Candidate, MetaContext, ReflectionResult
-    from meta.parser import parse_reflection_response
+from adas.config import PROMPTS_DIR
+from adas.evaluation.judge import ChatCompletionClient
+from adas.meta.client import make_client
+from adas.meta.models import Candidate, MetaContext, ReflectionResult
+from adas.meta.parser import parse_reflection_response
 
 
 class Reflector:

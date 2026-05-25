@@ -6,14 +6,9 @@ from __future__ import annotations
 
 import json
 
-try:
-    from adas.evaluation.models import VideoRecord
-    from adas.feedback.service import FeedbackService, ManualFeedbackPick
-    from adas.youtube_fetcher import VideoCacheRepository
-except ModuleNotFoundError:
-    from evaluation.models import VideoRecord
-    from feedback.service import FeedbackService, ManualFeedbackPick
-    from youtube_fetcher import VideoCacheRepository
+from adas.evaluation.models import VideoRecord
+from adas.feedback.service import FeedbackService, ManualFeedbackPick
+from adas.youtube_fetcher import VideoCacheRepository
 
 
 def _parse_pick(raw_pick: str) -> ManualFeedbackPick:

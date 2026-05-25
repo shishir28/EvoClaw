@@ -8,10 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-try:
-    from ..evaluation.models import EvaluationResult
-except ImportError:
-    from evaluation.models import EvaluationResult
+from adas.evaluation.models import EvaluationResult
 
 
 @dataclass(slots=True)

@@ -9,20 +9,12 @@ import argparse
 from pathlib import Path
 from typing import Any, Protocol
 
-try:
-    from ..archive_runtime.service import ArchiveService
-    from ..config import BASELINE_RESULTS_DIR, FEEDBACK_FILE
-    from ..evaluation.service import Evaluator
-    from .catalog import BaselineCatalog
-    from .result_store import EvaluationResultStore
-    from .runner import BaselineEvaluationRunner
-except ImportError:
-    from archive_runtime.service import ArchiveService
-    from config import BASELINE_RESULTS_DIR, FEEDBACK_FILE
-    from evaluation.service import Evaluator
-    from baseline.catalog import BaselineCatalog
-    from baseline.result_store import EvaluationResultStore
-    from baseline.runner import BaselineEvaluationRunner
+from adas.archive_runtime.service import ArchiveService
+from adas.config import BASELINE_RESULTS_DIR, FEEDBACK_FILE
+from adas.evaluation.service import Evaluator
+from adas.baseline.catalog import BaselineCatalog
+from adas.baseline.result_store import EvaluationResultStore
+from adas.baseline.runner import BaselineEvaluationRunner
 
 
 class BaselineSkillCatalogProtocol(Protocol):

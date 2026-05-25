@@ -9,10 +9,7 @@ from __future__ import annotations
 import json
 import re
 
-try:
-    from .models import Candidate
-except ImportError:
-    from meta.models import Candidate
+from adas.meta.models import Candidate
 
 # The meta-agent response is split into two parts: a small JSON head carrying the
 # structured fields (thought/name, plus verdict/issues/checks for reflection) and a

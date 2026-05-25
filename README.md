@@ -64,7 +64,8 @@ EvoClaw/
 |       `-- SKILL.md              # Current production skill target
 |-- .env.example                  # Environment variable template
 |-- .gitignore                    # Excludes secrets and generated data
-|-- Plan.md                       # Original project design and roadmap
+|-- docs/
+|   `-- history/                  # Original design plan and implementation checklist (historical)
 |-- README.md
 |-- tests/                        # Unit tests for evaluator, runtime, Telegram, and cron paths
 `-- requirements.txt
@@ -278,7 +279,7 @@ cd /home/shishirmishra/Learnings/EvoClaw
 
 ## References
 
-- `Plan.md` is the original design plan. Treat it as historical context when it conflicts with the current docs.
+- `docs/history/` holds the original design plan (`Plan.md`) and implementation checklist. Treat them as historical context when they conflict with the current docs.
 - `adas/README.md` documents the ADAS workspace in more detail.
 - `ARCHITECTURE.md` explains the current module layout.
 - `WORKFLOW.md` explains the runnable fetch -> evaluate -> compare -> archive -> feedback -> meta-agent -> promote -> deliver -> capture loop.

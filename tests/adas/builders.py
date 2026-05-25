@@ -10,13 +10,9 @@ Design notes (SOLID):
 
 from __future__ import annotations
 
-import sys
 from datetime import datetime, timezone, timedelta
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "adas"))
-
-from evaluation.models import (
+from adas.evaluation.models import (
     DimensionScore,
     EvaluationRequest,
     EvaluationResult,
@@ -25,7 +21,7 @@ from evaluation.models import (
     SkillDocument,
     VideoRecord,
 )
-from config import SCORE_WEIGHTS
+from adas.config import SCORE_WEIGHTS
 
 
 # ---------------------------------------------------------------------------

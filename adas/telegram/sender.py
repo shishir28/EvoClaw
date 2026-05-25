@@ -6,14 +6,9 @@ from dataclasses import dataclass
 
 import requests
 
-try:
-    from ..config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
-    from .models import TelegramSendReceipt
-    from ..utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
-except ImportError:
-    from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
-    from telegram.models import TelegramSendReceipt
-    from utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
+from adas.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+from adas.telegram.models import TelegramSendReceipt
+from adas.utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
 
 
 @dataclass(slots=True)

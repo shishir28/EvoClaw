@@ -7,12 +7,8 @@ from typing import Any
 
 import requests
 
-try:
-    from ..config import TELEGRAM_BOT_TOKEN
-    from ..utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
-except ImportError:
-    from config import TELEGRAM_BOT_TOKEN
-    from utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
+from adas.config import TELEGRAM_BOT_TOKEN
+from adas.utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
 
 
 @dataclass(slots=True)

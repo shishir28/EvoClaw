@@ -7,12 +7,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Callable
 
-try:
-    from ..evaluation.models import VideoRecord
-    from .models import TelegramDigestPick
-except ImportError:
-    from evaluation.models import VideoRecord
-    from telegram.models import TelegramDigestPick
+from adas.evaluation.models import VideoRecord
+from adas.telegram.models import TelegramDigestPick
 
 
 _URL_PATTERN = re.compile(r"https?://\S+")

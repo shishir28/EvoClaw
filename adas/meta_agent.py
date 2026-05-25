@@ -12,26 +12,15 @@ import json
 import logging
 import sys
 
-try:
-    from adas.config import (
-        ARCHIVE_DIR,
-        FEEDBACK_FILE,
-        META_MAX_CYCLES,
-        META_REFLECT_PASSES,
-        META_USE_LLM_JUDGING,
-        SKILL_PRODUCTION,
-    )
-    from adas.meta.loop import run_cycle
-except ImportError:
-    from config import (
-        ARCHIVE_DIR,
-        FEEDBACK_FILE,
-        META_MAX_CYCLES,
-        META_REFLECT_PASSES,
-        META_USE_LLM_JUDGING,
-        SKILL_PRODUCTION,
-    )
-    from meta.loop import run_cycle
+from adas.config import (
+    ARCHIVE_DIR,
+    FEEDBACK_FILE,
+    META_MAX_CYCLES,
+    META_REFLECT_PASSES,
+    META_USE_LLM_JUDGING,
+    SKILL_PRODUCTION,
+)
+from adas.meta.loop import run_cycle
 
 logging.basicConfig(
     level=logging.INFO,

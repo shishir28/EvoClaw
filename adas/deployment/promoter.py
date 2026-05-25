@@ -11,14 +11,9 @@ from typing import Callable, Protocol
 
 _log = logging.getLogger(__name__)
 
-try:
-    from ..archive_runtime.models import ArchiveIndex, ArchiveIndexEntry
-    from ..archive_runtime.store import ArchiveStore
-    from ..config import ARCHIVE_DIR, SKILL_PRODUCTION
-except ImportError:
-    from archive_runtime.models import ArchiveIndex, ArchiveIndexEntry
-    from archive_runtime.store import ArchiveStore
-    from config import ARCHIVE_DIR, SKILL_PRODUCTION
+from adas.archive_runtime.models import ArchiveIndex, ArchiveIndexEntry
+from adas.archive_runtime.store import ArchiveStore
+from adas.config import ARCHIVE_DIR, SKILL_PRODUCTION
 
 
 class ArchiveIndexReader(Protocol):

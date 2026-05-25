@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from evaluation.loader import EvaluationRequestLoader, _parse_frontmatter
+from adas.evaluation.loader import EvaluationRequestLoader, _parse_frontmatter
 
 
 # ---------------------------------------------------------------------------

@@ -9,20 +9,17 @@ import math
 from pathlib import Path
 from typing import Any
 
-try:
-    from ..config import FEEDBACK_FILE, SCORE_WEIGHTS
-    from .executor import BaselineSkillExecutor
-    from .judge import LLMJudge
-    from .loader import EvaluationRequestLoader
-    from .models import DimensionScore, EvaluationRequest, EvaluationResult, VideoRecord
-    from .scorer import AlgorithmicScorer
-except ImportError:
-    from config import FEEDBACK_FILE, SCORE_WEIGHTS
-    from evaluation.executor import BaselineSkillExecutor
-    from evaluation.judge import LLMJudge
-    from evaluation.loader import EvaluationRequestLoader
-    from evaluation.models import DimensionScore, EvaluationRequest, EvaluationResult, VideoRecord
-    from evaluation.scorer import AlgorithmicScorer
+from adas.config import FEEDBACK_FILE, SCORE_WEIGHTS
+from adas.evaluation.executor import BaselineSkillExecutor
+from adas.evaluation.judge import LLMJudge
+from adas.evaluation.loader import EvaluationRequestLoader
+from adas.evaluation.models import (
+    DimensionScore,
+    EvaluationRequest,
+    EvaluationResult,
+    VideoRecord,
+)
+from adas.evaluation.scorer import AlgorithmicScorer
 
 
 class Evaluator:

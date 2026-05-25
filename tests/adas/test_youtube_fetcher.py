@@ -7,8 +7,8 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-import youtube_fetcher
-from youtube_fetcher import TranscriptProvider, VideoCacheRepository
+import adas.youtube_fetcher as youtube_fetcher
+from adas.youtube_fetcher import TranscriptProvider, VideoCacheRepository
 
 
 class TestTranscriptProvider:

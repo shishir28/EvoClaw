@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from baseline.catalog import BaselineCatalog
+from adas.baseline.catalog import BaselineCatalog
 
 
 class TestBaselineCatalog:

@@ -5,8 +5,8 @@ Tests for adas/llm_judge.py
 from __future__ import annotations
 
 from builders import make_request, skill, video
-import evaluation.judge as judge_module
-from evaluation.judge import LLMJudge, _extract_json_object
+import adas.evaluation.judge as judge_module
+from adas.evaluation.judge import LLMJudge, _extract_json_object
 
 
 class _StubPromptLoader:

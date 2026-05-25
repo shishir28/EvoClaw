@@ -13,10 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Protocol
 
-try:
-    from .models import SkillDocument, VideoRecord
-except ImportError:
-    from evaluation.models import SkillDocument, VideoRecord
+from adas.evaluation.models import SkillDocument, VideoRecord
 
 
 _AI_TERMS = {

@@ -8,24 +8,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-try:
-    from ..config import DELIVERY_LOG, FEEDBACK_FILE
-    from ..evaluation.models import VideoRecord
-    from ..feedback.service import FeedbackService, ManualFeedbackPick
-    from ..utils.paths import write_text_atomic
-    from ..youtube_fetcher import VideoCacheRepository
-    from .delivery_log import DeliveryLogStore
-    from .models import DeliveryRecord
-    from .reaction_poller import ReactionUpdate, TelegramReactionPoller
-except ImportError:
-    from config import DELIVERY_LOG, FEEDBACK_FILE
-    from evaluation.models import VideoRecord
-    from feedback.service import FeedbackService, ManualFeedbackPick
-    from utils.paths import write_text_atomic
-    from youtube_fetcher import VideoCacheRepository
-    from telegram.delivery_log import DeliveryLogStore
-    from telegram.models import DeliveryRecord
-    from telegram.reaction_poller import ReactionUpdate, TelegramReactionPoller
+from adas.config import DELIVERY_LOG, FEEDBACK_FILE
+from adas.evaluation.models import VideoRecord
+from adas.feedback.service import FeedbackService, ManualFeedbackPick
+from adas.utils.paths import write_text_atomic
+from adas.youtube_fetcher import VideoCacheRepository
+from adas.telegram.delivery_log import DeliveryLogStore
+from adas.telegram.models import DeliveryRecord
+from adas.telegram.reaction_poller import ReactionUpdate, TelegramReactionPoller
 
 
 # Emoji reactions that map to positive/negative signals.
