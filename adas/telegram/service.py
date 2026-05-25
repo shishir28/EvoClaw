@@ -177,9 +177,16 @@ class ProductionDigestService:
             ]
         if freshness_notes:
             execution_notes = [*freshness_notes, *execution_notes]
-        if len(selected_video_ids) != 3:
-            raise ValueError(
-                f"Production digest requires exactly 3 selected videos, got {len(selected_video_ids)}."
+        if not selected_video_ids:
+            raise ValueError("Production digest requires at least 1 selected video.")
+        if len(selected_video_ids) > 3:
+            execution_notes.append(
+                f"Production strategy returned {len(selected_video_ids)} video(s); capping digest at 3 picks."
+            )
+            selected_video_ids = selected_video_ids[:3]
+        elif len(selected_video_ids) < 3:
+            execution_notes.append(
+                f"Production strategy returned {len(selected_video_ids)} video(s); sending a short digest."
             )
         videos = self.evaluator.resolve_selected_videos(request, selected_video_ids)
         picks = self.formatter.build_picks(videos)

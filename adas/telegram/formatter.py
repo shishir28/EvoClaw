@@ -111,8 +111,8 @@ class TelegramDigestFormatter:
         )
 
     def format_digest(self, picks: list[TelegramDigestPick]) -> str:
-        if len(picks) != 3:
-            raise ValueError(f"Telegram digests require exactly 3 picks, got {len(picks)}.")
+        if not picks:
+            raise ValueError("Telegram digests require at least 1 pick.")
 
         blocks = [self.format_pick_message(pick) for pick in picks]
         return "\n\n---\n\n".join(blocks)

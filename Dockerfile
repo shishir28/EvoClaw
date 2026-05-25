@@ -9,16 +9,12 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends cron ca-certificates tzdata gosu \
+    && apt-get install -y --no-install-recommends ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
 
-COPY docker/entrypoint.sh /usr/local/bin/evoclaw-entrypoint
-RUN chmod +x /usr/local/bin/evoclaw-entrypoint
-
 COPY . /app
 
-ENTRYPOINT ["evoclaw-entrypoint"]
-CMD ["cron"]
+CMD ["tail", "-f", "/dev/null"]

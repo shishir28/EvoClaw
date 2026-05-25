@@ -1103,6 +1103,72 @@
         "Selected from 48h window."
       ],
       "message_text": "🎬 Pick 1: \"Most Powerful AI Model?\"\n@Technomanagers · 1 min · 17 hours ago\n🔗 https://www.youtube.com/watch?v=Wsd1RqtXfyk\n-> Become an AI Product Builder in 12 Weeks - Crack AI Business Roles.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"Stop Overpaying! 🛑 This AI Hack Finds the Lowest Online Price Instantly 💸\"\n@FlikkerFlux · 1 min · 19 hours ago\n🔗 https://www.youtube.com/watch?v=Y4NLEAC9KrI\n-> Ever feel like you're missing out on a better deal?.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"Flowcode&#39;s Tim Armstrong on Why Outsourcing AI is Self-Defeating #ai #adtech #qrcode\"\n@The LionTree Podcast · 1 min · 2 days ago\n🔗 https://www.youtube.com/watch?v=VhNDwVnZRIQ\n-> If you don't get deep on your business, and you don't understand how to make AI work, and you're just outsourcing all your AI to a big platform constantly, and they're becoming the gatekeepers, you're you're you're you'r.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
+    },
+    {
+      "delivered_at": "2026-05-24T11:48:10.210893+00:00",
+      "dry_run": false,
+      "skill_name": "recency-first",
+      "skill_version": "1.0",
+      "strategy": "recency",
+      "production_skill_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/skills/youtube-curator/SKILL.md",
+      "cache_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/adas/test_sets/video_cache_w1.json",
+      "feedback_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/adas/test_sets/feedback.json",
+      "telegram_chat_id": "8770142442",
+      "telegram_message_id": 83,
+      "selected_video_ids": [
+        "s8UcA_YexSg",
+        "UlcY9jkGgSk",
+        "Lzrbujmu8wY"
+      ],
+      "telegram_message_ids": [
+        83,
+        84,
+        85
+      ],
+      "pick_message_ids": {
+        "s8UcA_YexSg": 83,
+        "UlcY9jkGgSk": 84,
+        "Lzrbujmu8wY": 85
+      },
+      "picks": [
+        {
+          "rank": 1,
+          "video_id": "s8UcA_YexSg",
+          "title": "Hottest AI Startups in Silicon Valley 2026 🔥",
+          "channel": "Little Movie Magic🌟",
+          "url": "https://www.youtube.com/watch?v=s8UcA_YexSg",
+          "duration_minutes": 17,
+          "age_label": "5 hours ago",
+          "why_watch": "Hottest AI Startups in Silicon Valley 2026 Discover the hottest AI startups in Silicon Valley that are transforming the future of."
+        },
+        {
+          "rank": 2,
+          "video_id": "UlcY9jkGgSk",
+          "title": "Day 109 Building My Startup — 12 Hours of Unstoppable Coding 🚀",
+          "channel": "Injajul's Vision",
+          "url": "https://www.youtube.com/watch?v=UlcY9jkGgSk",
+          "duration_minutes": 67,
+          "age_label": "13 hours ago",
+          "why_watch": "Day 109 Building My Startup 12 hours of coding today as I build VisionVersity — a real-time collaborative SaaS platform with AI."
+        },
+        {
+          "rank": 3,
+          "video_id": "Lzrbujmu8wY",
+          "title": "Interview with Jason Wells of AI Dev Lab",
+          "channel": "Inside Analysis & DM Radio",
+          "url": "https://www.youtube.com/watch?v=Lzrbujmu8wY",
+          "duration_minutes": 15,
+          "age_label": "20 hours ago",
+          "why_watch": "Listen to this interview with Jason Wells, Founder of AI Dev Lab."
+        }
+      ],
+      "execution_notes": [
+        "Excluded 15 previously delivered video(s).",
+        "Executed recency strategy adapter.",
+        "Preferred 3 video(s) at least 5 minutes long.",
+        "Selected from 48h window."
+      ],
+      "message_text": "🎬 Pick 1: \"Hottest AI Startups in Silicon Valley 2026 🔥\"\n@Little Movie Magic🌟 · 17 min · 5 hours ago\n🔗 https://www.youtube.com/watch?v=s8UcA_YexSg\n-> Hottest AI Startups in Silicon Valley 2026 Discover the hottest AI startups in Silicon Valley that are transforming the future of.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"Day 109 Building My Startup — 12 Hours of Unstoppable Coding 🚀\"\n@Injajul's Vision · 67 min · 13 hours ago\n🔗 https://www.youtube.com/watch?v=UlcY9jkGgSk\n-> Day 109 Building My Startup 12 hours of coding today as I build VisionVersity — a real-time collaborative SaaS platform with AI.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"Interview with Jason Wells of AI Dev Lab\"\n@Inside Analysis & DM Radio · 15 min · 20 hours ago\n🔗 https://www.youtube.com/watch?v=Lzrbujmu8wY\n-> Listen to this interview with Jason Wells, Founder of AI Dev Lab.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
     }
   ]
 }

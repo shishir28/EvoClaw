@@ -152,7 +152,7 @@ That keeps API access, transcript attachment, cache persistence, and orchestrati
 - opt-in production skill promotion with `deployment.json` metadata
 - Telegram digest delivery with `delivery_log.json` metadata and per-video message mapping
 - Telegram reaction capture via polling, mapping reactions to feedback entries through the Step 7 service
-- scheduled execution through `cron/jobs.json`, `cron/runner.py`, Docker cron, or native cron
+- scheduled execution through `cron/jobs.json`, `cron/runner.py`, and the external NemoClaw/OpenShell scheduler
 
 ### Still adapter-based
 

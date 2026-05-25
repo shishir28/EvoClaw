@@ -9,6 +9,9 @@ Usage:
 
 import json
 import os
+
+import httplib2
+import requests
 import re
 import sys
 import time
@@ -110,6 +113,13 @@ def _views_per_hour(views: int, published_at: str) -> float:
     return round(views / age_hours, 2)
 
 
+def _build_youtube_api_http():
+    # The host environment exposes a proxy that times out on Google APIs, while
+    # direct egress works. Use a direct client here so cache refreshes do not
+    # depend on proxy state.
+    return httplib2.Http(timeout=30)
+
+
 class YouTubeAPIClient:
     def __init__(self, api_key: str = YOUTUBE_API_KEY) -> None:
         """Build the YouTube API service client and initialise the per-session subscriber cache."""
@@ -117,7 +127,10 @@ class YouTubeAPIClient:
             raise ValueError(
                 "YOUTUBE_API_KEY is not set. Export it as an env variable."
             )
-        self._yt = build("youtube", "v3", developerKey=api_key)
+        self._api_key = api_key
+        self._base_url = "https://www.googleapis.com/youtube/v3"
+        self._session = requests.Session()
+        self._session.trust_env = False
         self._subscriber_count_cache: dict[str, int | None] = {}
 
     def _build_video_stub(self, item: dict, query: str) -> VideoStub:
@@ -184,6 +197,15 @@ class YouTubeAPIClient:
             "transcript": None,
         }
 
+    def _request_json(self, path: str, params: dict) -> dict:
+        response = self._session.get(
+            self._base_url + "/" + path,
+            params={**params, "key": self._api_key},
+            timeout=30,
+        )
+        response.raise_for_status()
+        return response.json()
+
     def search(
         self,
         query: str,
@@ -192,21 +214,20 @@ class YouTubeAPIClient:
     ) -> list[VideoStub]:
         """Search YouTube for videos matching query published after the given ISO timestamp."""
         try:
-            resp = (
-                self._yt.search()
-                .list(
-                    q=query,
-                    part="id,snippet",
-                    type="video",
-                    order="date",
-                    publishedAfter=published_after,
-                    maxResults=min(max_results, 50),
-                    relevanceLanguage="en",
-                )
-                .execute()
+            resp = self._request_json(
+                "search",
+                {
+                    "q": query,
+                    "part": "id,snippet",
+                    "type": "video",
+                    "order": "date",
+                    "publishedAfter": published_after,
+                    "maxResults": min(max_results, 50),
+                    "relevanceLanguage": "en",
+                },
             )
-        except HttpError as e:
-            print(f"[search] HttpError for '{query}': {e}", file=sys.stderr)
+        except requests.RequestException as e:
+            print(f"[search] Request error for {query}: {e}", file=sys.stderr)
             return []
 
         results: list[VideoStub] = []
@@ -222,14 +243,13 @@ class YouTubeAPIClient:
             batch = stubs[i : i + 50]
             ids = ",".join(v["video_id"] for v in batch)
             try:
-                resp = (
-                    self._yt.videos()
-                    .list(part="statistics,contentDetails,snippet", id=ids)
-                    .execute()
+                resp = self._request_json(
+                    "videos",
+                    {"part": "statistics,contentDetails,snippet", "id": ids},
                 )
-            except HttpError as e:
+            except requests.RequestException as e:
                 print(
-                    f"[enrich] HttpError for batch, skipping {len(batch)} videos: {e}",
+                    f"[enrich] Request error for batch, skipping {len(batch)} videos: {e}",
                     file=sys.stderr,
                 )
                 continue
@@ -266,13 +286,12 @@ class YouTubeAPIClient:
         for i in range(0, len(missing_channel_ids), 50):
             batch = missing_channel_ids[i : i + 50]
             try:
-                resp = (
-                    self._yt.channels()
-                    .list(part="statistics", id=",".join(batch))
-                    .execute()
+                resp = self._request_json(
+                    "channels",
+                    {"part": "statistics", "id": ",".join(batch)},
                 )
-            except HttpError as e:
-                print(f"[channels] HttpError: {e}", file=sys.stderr)
+            except requests.RequestException as e:
+                print(f"[channels] Request error: {e}", file=sys.stderr)
                 for channel_id in batch:
                     self._subscriber_count_cache[channel_id] = None
                 continue

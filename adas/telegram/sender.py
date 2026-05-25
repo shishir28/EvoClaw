@@ -32,6 +32,8 @@ class TelegramSender:
             raise ValueError("TELEGRAM_CHAT_ID is required to send Telegram messages.")
         if self.session is None:
             self.session = requests.Session()
+            # The host can reach Telegram directly; bypass the broken proxy.
+            self.session.trust_env = False
 
     @property
     def endpoint(self) -> str:

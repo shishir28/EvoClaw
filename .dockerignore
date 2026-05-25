@@ -4,4 +4,5 @@
 __pycache__
 *.pyc
 cron/logs/*.log
+adas/test_sets/video_cache_w1.json
 .env

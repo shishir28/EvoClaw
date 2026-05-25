@@ -1,0 +1,89 @@
+version: 1
+filesystem_policy:
+  include_workdir: true
+  read_only:
+    - /usr
+    - /lib
+    - /bin
+    - /sbin
+    - /proc
+    - /dev/urandom
+    - /etc
+    - /var/log
+  read_write:
+    - /app
+    - /sandbox
+    - /tmp
+    - /dev/null
+    - /home
+    - /run
+landlock:
+  compatibility: best_effort
+process:
+  run_as_user: sandbox
+  run_as_group: sandbox
+network_policies:
+  egress_rules:
+    name: outbound
+    endpoints:
+      - host: "10.43.0.10"
+        ports: [53]
+        protocol: udp
+        access: allow
+      - host: "10.43.0.10"
+        ports: [53]
+        protocol: tcp
+        access: allow
+      - host: "youtube.googleapis.com"
+        ports: [443]
+        tls: true
+        rules:
+          - allow:
+              method: GET
+        allowed_ips:
+          - 142.250.183.42
+          - 142.250.195.234
+          - 172.217.25.170
+          - 142.251.42.106
+          - 142.250.207.10
+          - 142.251.222.234
+          - 142.250.195.106
+          - 142.251.222.10
+          - 142.250.195.138
+      - host: "www.googleapis.com"
+        ports: [443]
+        tls: true
+        rules:
+          - allow:
+              method: GET
+        allowed_ips:
+          - 142.250.183.42
+          - 142.250.195.234
+          - 172.217.25.170
+          - 142.251.42.106
+          - 142.250.207.10
+          - 142.251.222.234
+          - 142.250.195.106
+          - 142.251.222.10
+          - 142.250.195.138
+      - host: "youtube.com"
+        ports: [443]
+        tls: true
+        access: allow
+      - host: "host.docker.internal"
+        ports: [9000]
+        access: allow
+      - host: "api.telegram.org"
+        ports: [443]
+        tls: true
+        access: allow
+    binaries: []
+  default_action:
+    name: deny
+    endpoints: []
+    binaries: []
+
+
+
+
+

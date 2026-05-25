@@ -254,18 +254,20 @@ def test_send_calls_telegram_and_persists_message_id(tmp_path):
     assert persisted["pick_message_ids"] == {"v1": 99, "v2": 100, "v3": 101}
 
 
-def test_delivery_requires_exactly_three_picks(tmp_path):
+def test_delivery_allows_short_digest(tmp_path):
     request = make_request(videos=_videos(), skill_doc=skill().build())
     service = ProductionDigestService(
         evaluator=_StubEvaluator(request, ["v1", "v2"]),
-        delivery_log_store=DeliveryLogStore(tmp_path / "delivery_log.json"),
+        delivery_log_store=DeliveryLogStore(tmp_path / "delivery_log.json", safe_base=tmp_path),
     )
 
-    with pytest.raises(ValueError, match="exactly 3 selected videos"):
-        service.deliver(
-            cache_path="adas/test_sets/video_cache_w1.json",
-            production_skill_path=str(tmp_path / "skills" / "youtube-curator" / "SKILL.md"),
-        )
+    result = service.deliver(
+        cache_path="adas/test_sets/video_cache_w1.json",
+        production_skill_path=str(tmp_path / "skills" / "youtube-curator" / "SKILL.md"),
+    )
+
+    assert result.selected_video_ids == ["v1", "v2"]
+    assert any("sending a short digest" in note for note in result.execution_notes)
 
 
 def test_delivery_excludes_previously_sent_video_ids(tmp_path):
