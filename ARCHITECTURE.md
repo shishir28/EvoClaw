@@ -4,7 +4,7 @@ This file explains the **current codebase shape** in plain language so you can u
 
 ## 1. Current architecture in one sentence
 
-EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> feedback -> evolve -> promote -> deliver -> capture reactions** loop, with schedule definitions centralized in `cron/jobs.json`.
+EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> feedback -> evolve -> promote -> deliver -> capture reactions** loop, with schedule definitions centralized in `cron/jobs.json` and fired by an external NemoClaw/OpenShell scheduler.
 
 ## 2. Main layers
 
@@ -21,7 +21,7 @@ EvoClaw currently has a working **fetch -> evaluate -> compare -> archive -> fee
 | CLI compatibility layer | Preserve command entrypoints while internals live in grouped packages | `adas/evaluator.py`, `adas/baseline_comparison.py`, `adas/feedback_cli.py` |
 | Prompt assets | Hold reusable evaluator and meta-agent prompt templates | `adas/prompts/eval_judge.md`, `adas/prompts/meta_system.md`, `adas/prompts/meta_design.md`, `adas/prompts/meta_reflect.md` |
 | Production skill target | Live deployment target for the best skill | `skills/youtube-curator/SKILL.md` |
-| Scheduled runtime | Define daily refresh, evolution, digest, and reaction-capture jobs | `cron/jobs.json`, `cron/runner.py` |
+| Scheduled runtime | Define daily refresh, evolution, digest, and reaction-capture jobs for the external scheduler to launch | `cron/jobs.json`, `cron/runner.py` |
 
 ## 3. How the modules relate
 

@@ -1,6 +1,6 @@
 # EvoClaw implementation checklist
 
-This file is the practical companion to `Plan.md`. This checklist is historical in places; use `README.md`, `WORKFLOW.md`, and `cron/README.md` for current runtime behavior.
+This file is the practical companion to `Plan.md`. This checklist is historical in places; use `README.md`, `WORKFLOW.md`, and `cron/README.md` for current runtime behavior and the external scheduler boundary.
 
 Use it to answer two questions quickly:
 
@@ -54,7 +54,7 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [x] `adas/feedback/store.py`
 - [x] `adas/feedback/service.py`
 - [x] `adas/feedback_cli.py`
-- [x] canonical cron config in `cron/jobs.json`
+- [x] canonical job catalog in `cron/jobs.json`
 - [x] repository documentation in `README.md` files
 - [x] high-level orientation docs in `ARCHITECTURE.md` and `WORKFLOW.md`
 - [x] unit tests for evaluator, loader, scorer, executor, evaluator CLI helpers, and Step 5 comparison flow
@@ -66,7 +66,7 @@ It is written as a learning-oriented checklist so you can follow the system incr
 - [ ] generated candidate archive entries beyond the current baseline seeds
 - [x] Telegram digest sender
 - [x] Telegram reaction capture / feedback ingestion automation
-- [x] actual scheduled runtime wiring
+- [x] actual external scheduled runtime wiring
 - [ ] NemoClaw policy configuration in runnable form
 
 ---
@@ -584,7 +584,7 @@ The reaction capture path now:
 
 ---
 
-## Step 13 - Wire cron and runtime automation
+## Step 13 - Wire external runtime automation
 
 **Goal:** make the full loop run on schedule.
 

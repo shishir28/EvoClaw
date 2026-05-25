@@ -2,7 +2,7 @@
 
 `cron/jobs.json` is the canonical schedule source for EvoClaw jobs. `cron/runner.py` is the executor that validates env vars, runs a named job, and writes per-run logs under `cron/logs/`.
 
-Scheduling itself now lives outside EvoClaw in NemoClaw/OpenShell. This folder keeps the job catalog and runner logic only.
+Scheduling itself lives outside EvoClaw in NemoClaw/OpenShell. This folder keeps the job catalog and runner logic only.
 
 ## Files
 
@@ -14,7 +14,7 @@ Scheduling itself now lives outside EvoClaw in NemoClaw/OpenShell. This folder k
 
 ## Jobs
 
-The jobs in `jobs.json` run daily in the `Australia/Sydney` timezone:
+The jobs in `jobs.json` are configured for daily runs in the `Australia/Sydney` timezone:
 
 | Job | Schedule | What it does |
 |---|---|---|
