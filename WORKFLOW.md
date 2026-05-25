@@ -244,7 +244,7 @@ SKILL.md + cache JSON + feedback JSON
 
 ## 3. Scheduled runtime
 
-`cron/jobs.json` is the schedule source for Docker and native cron:
+`cron/jobs.json` is the canonical schedule source, and NemoClaw/OpenShell owns when those jobs fire:
 
 1. `refresh-video-cache` refreshes the YouTube cache at 00:30.
 2. `adas-evolution` runs meta-agent cycles at 01:30 and promotes a better archive winner when available.

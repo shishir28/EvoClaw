@@ -18,22 +18,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-try:
-    from .config import BASE_DIR, DELIVERY_LOG, FEEDBACK_FILE, TEST_SETS_DIR
-    from .evaluation.models import FeedbackEntry
-    from .feedback.store import FeedbackStore
-    from .telegram.delivery_log import DeliveryLogStore
-    from .telegram.models import DeliveryRecord
-    from .utils.paths import write_text_atomic
-    from .youtube_fetcher import VideoCacheRepository
-except ImportError:
-    from config import BASE_DIR, DELIVERY_LOG, FEEDBACK_FILE, TEST_SETS_DIR
-    from evaluation.models import FeedbackEntry
-    from feedback.store import FeedbackStore
-    from telegram.delivery_log import DeliveryLogStore
-    from telegram.models import DeliveryRecord
-    from utils.paths import write_text_atomic
-    from youtube_fetcher import VideoCacheRepository
+from adas.config import BASE_DIR, DELIVERY_LOG, FEEDBACK_FILE, TEST_SETS_DIR
+from adas.evaluation.models import FeedbackEntry
+from adas.feedback.store import FeedbackStore
+from adas.telegram.delivery_log import DeliveryLogStore
+from adas.telegram.models import DeliveryRecord
+from adas.utils.paths import write_text_atomic
+from adas.youtube_fetcher import VideoCacheRepository
 
 
 # Production delivery records carry an execution note like

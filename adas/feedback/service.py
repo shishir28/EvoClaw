@@ -9,12 +9,13 @@ from dataclasses import dataclass
 
 _log = logging.getLogger(__name__)
 
-try:
-    from ..evaluation.models import FeedbackEntry, FeedbackPick, FeedbackVideoSnapshot, VideoRecord
-    from .store import FeedbackStore
-except ImportError:
-    from evaluation.models import FeedbackEntry, FeedbackPick, FeedbackVideoSnapshot, VideoRecord
-    from feedback.store import FeedbackStore
+from adas.evaluation.models import (
+    FeedbackEntry,
+    FeedbackPick,
+    FeedbackVideoSnapshot,
+    VideoRecord,
+)
+from adas.feedback.store import FeedbackStore
 
 
 VALID_REACTIONS: frozenset[str] = frozenset({

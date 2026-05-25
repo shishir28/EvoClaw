@@ -9,12 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-try:
-    from ..utils.paths import write_text_atomic
-    from .models import BaselineEvaluationRecord
-except ImportError:
-    from utils.paths import write_text_atomic
-    from baseline.models import BaselineEvaluationRecord
+from adas.utils.paths import write_text_atomic
+from adas.baseline.models import BaselineEvaluationRecord
 
 
 class EvaluationResultStore:

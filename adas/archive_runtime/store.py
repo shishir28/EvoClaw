@@ -8,14 +8,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-try:
-    from ..config import ARCHIVE_DIR, ARCHIVE_INDEX
-    from ..utils.paths import write_text_atomic
-    from .models import ArchiveIndex
-except ImportError:
-    from config import ARCHIVE_DIR, ARCHIVE_INDEX
-    from utils.paths import write_text_atomic
-    from archive_runtime.models import ArchiveIndex
+from adas.config import ARCHIVE_DIR, ARCHIVE_INDEX
+from adas.utils.paths import write_text_atomic
+from adas.archive_runtime.models import ArchiveIndex
 
 
 class ArchiveStore:

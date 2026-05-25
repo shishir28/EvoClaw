@@ -9,14 +9,9 @@ import re
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
-try:
-    from ..config import LLM_BASE_URL, LLM_MAX_TOKENS, LLM_MODEL, PROMPTS_DIR
-    from .models import EvaluationRequest, VideoRecord
-    from ..utils.retry import call_with_retry
-except ImportError:
-    from config import LLM_BASE_URL, LLM_MAX_TOKENS, LLM_MODEL, PROMPTS_DIR
-    from evaluation.models import EvaluationRequest, VideoRecord
-    from utils.retry import call_with_retry
+from adas.config import LLM_BASE_URL, LLM_MAX_TOKENS, LLM_MODEL, PROMPTS_DIR
+from adas.evaluation.models import EvaluationRequest, VideoRecord
+from adas.utils.retry import call_with_retry
 
 
 def _first_sentence(text: str) -> str:

@@ -6,10 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-try:
-    from ..config import BASELINES_DIR
-except ImportError:
-    from config import BASELINES_DIR
+from adas.config import BASELINES_DIR
 
 
 class BaselineCatalog:

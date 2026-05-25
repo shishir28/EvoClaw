@@ -9,14 +9,9 @@ import os
 import tempfile
 from pathlib import Path
 
-try:
-    from ..config import BASE_DIR, FEEDBACK_FILE
-    from ..evaluation.models import FeedbackEntry
-    from ..utils.paths import assert_safe_write_path
-except ImportError:
-    from config import BASE_DIR, FEEDBACK_FILE
-    from evaluation.models import FeedbackEntry
-    from utils.paths import assert_safe_write_path
+from adas.config import BASE_DIR, FEEDBACK_FILE
+from adas.evaluation.models import FeedbackEntry
+from adas.utils.paths import assert_safe_write_path
 
 
 class FeedbackStore:

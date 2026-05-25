@@ -14,7 +14,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from builders import video, FeedbackFactory
-from evaluation.models import VideoRecord
+from adas.evaluation.models import VideoRecord
 
 
 @pytest.fixture

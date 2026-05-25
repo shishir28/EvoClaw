@@ -6,14 +6,9 @@ from dataclasses import dataclass
 
 import requests
 
-try:
-    from ..config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
-    from .models import TelegramSendReceipt
-    from ..utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
-except ImportError:
-    from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
-    from telegram.models import TelegramSendReceipt
-    from utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
+from adas.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+from adas.telegram.models import TelegramSendReceipt
+from adas.utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
 
 
 @dataclass(slots=True)
@@ -32,6 +27,8 @@ class TelegramSender:
             raise ValueError("TELEGRAM_CHAT_ID is required to send Telegram messages.")
         if self.session is None:
             self.session = requests.Session()
+            # The host can reach Telegram directly; bypass the broken proxy.
+            self.session.trust_env = False
 
     @property
     def endpoint(self) -> str:

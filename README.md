@@ -17,12 +17,12 @@ The repository currently includes:
 - lazy default LLM-judge initialization so evaluator construction does not require model client setup unless semantic judging is enabled
 - typed shared configuration for search, inference, paths, and scoring weights
 - three hand-written baseline skills plus a production `SKILL.md` target
-- a cron runner that generates schedules from `cron/jobs.json` for Docker or native cron
-- a focused pytest suite covering evaluator, archive, feedback, Telegram, and cron behavior
+- a job runner that executes schedules defined in `cron/jobs.json`
+- a focused pytest suite covering evaluator, archive, feedback, Telegram, and scheduler behavior
 
 ## Runtime loop
 
-The scheduled loop is defined in `cron/jobs.json`:
+The scheduled loop is defined in `cron/jobs.json` and is driven externally by NemoClaw/OpenShell:
 
 1. Refresh the reusable YouTube cache at 00:30.
 2. Run the ADAS evolution loop at 01:30.
@@ -64,7 +64,8 @@ EvoClaw/
 |       `-- SKILL.md              # Current production skill target
 |-- .env.example                  # Environment variable template
 |-- .gitignore                    # Excludes secrets and generated data
-|-- Plan.md                       # Original project design and roadmap
+|-- docs/
+|   `-- history/                  # Original design plan and implementation checklist (historical)
 |-- README.md
 |-- tests/                        # Unit tests for evaluator, runtime, Telegram, and cron paths
 `-- requirements.txt
@@ -90,7 +91,7 @@ Main implemented pieces:
 - `adas/archive/index.json` and versioned archive entries
 - `skills/youtube-curator/SKILL.md`
 - `skills/youtube-curator/delivery_log.json` after the first delivery run
-- `cron/jobs.json` as the single schedule source for Docker and native cron
+- `cron/jobs.json` as the canonical schedule source
 - atomic persistence for feedback and delivery-log writes
 
 Known limitations:
@@ -119,24 +120,12 @@ Known limitations:
    - `TELEGRAM_CHAT_ID`
    - optional inference settings such as `INFERENCE_BACKEND`, `LLM_BASE_URL`, and `LLM_MODEL`
 
-### Docker scheduler
+### External scheduler
 
-EvoClaw can run its scheduled jobs inside Docker instead of installing cron on
-the host:
-
-```bash
-docker compose up -d --build evoclaw
-docker compose logs -f evoclaw
-```
-
-The compose service bind-mounts this repository at `/app`. Any files created by
-scheduled runs are written back into the current directory structure, including
-`cron/logs/`, `adas/archive/`, `adas/test_sets/feedback.json`, and
-`skills/youtube-curator/` delivery/deployment files.
-
-When using a vLLM server published on the host at port `9000`, the container uses
-`http://host.docker.internal:9000/v1` by default. Override it with
-`EVOCLAW_LLM_BASE_URL` if needed.
+EvoClaw does not install its own cron scheduler. The daily jobs are launched by
+NemoClaw/OpenShell using the schedule in `cron/jobs.json`. The job runner still
+executes inside the EvoClaw codebase, but scheduling is owned by the gateway
+layer.
 
 ## Usage
 
@@ -158,7 +147,7 @@ The current fetcher output includes:
 
 Transcript fetching is **best-effort**. Some videos may still have `transcript: null` if YouTube blocks caption retrieval for the current IP. The selector still filters non-English candidates using YouTube language metadata plus title/description/tag heuristics, so the digest does not depend on transcripts being available.
 
-If the current IP is blocked, configure a residential or rotating proxy through `.env` and restart the Docker scheduler:
+If the current IP is blocked, configure a residential or rotating proxy through `.env` and restart EvoClaw or the gateway service:
 
 ```bash
 TRANSCRIPT_PROXY_HTTP_URL=http://user:pass@proxy-host:port
@@ -290,7 +279,7 @@ cd /home/shishirmishra/Learnings/EvoClaw
 
 ## References
 
-- `Plan.md` is the original design plan. Treat it as historical context when it conflicts with the current docs.
+- `docs/history/` holds the original design plan (`Plan.md`) and implementation checklist. Treat them as historical context when they conflict with the current docs.
 - `adas/README.md` documents the ADAS workspace in more detail.
 - `ARCHITECTURE.md` explains the current module layout.
 - `WORKFLOW.md` explains the runnable fetch -> evaluate -> compare -> archive -> feedback -> meta-agent -> promote -> deliver -> capture loop.

@@ -2,12 +2,8 @@
 
 import json
 
-try:
-    from adas.telegram.feedback_capture import ReactionFeedbackCapture
-    from adas.config import DELIVERY_LOG, FEEDBACK_FILE
-except ModuleNotFoundError:
-    from telegram.feedback_capture import ReactionFeedbackCapture  # type: ignore
-    from config import DELIVERY_LOG, FEEDBACK_FILE  # type: ignore
+from adas.telegram.feedback_capture import ReactionFeedbackCapture
+from adas.config import DELIVERY_LOG, FEEDBACK_FILE
 
 
 def main() -> None:

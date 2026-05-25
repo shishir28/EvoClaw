@@ -40,7 +40,7 @@ Remaining major adapter gap: real OpenClaw execution.
 │  Network + filesystem isolation, policy enforcement         │
 │                                                             │
 │  ┌───────────────────────────────────────────────────────┐  │
-│  │  Meta Agent (runs nightly via cron)                   │  │
+│  │  Meta Agent (is launched nightly by the external NemoClaw/OpenShell scheduler)                   │  │
 │  │  Reads archive → designs new SKILL.md → self-reflects │  │
 │  └──────────┬──────────────────────────┬─────────────────┘  │
 │             │ writes new skill         │ reads history       │
@@ -60,7 +60,7 @@ Remaining major adapter gap: real OpenClaw execution.
 │             │                        │                       │
 │             ▼                        ▼                       │
 │  ┌──────────────────┐    ┌──────────────────┐               │
-│  │  Telegram         │    │  Cron Scheduler  │               │
+│  │  Telegram         │    │  External Scheduler  │               │
 │  │  Daily delivery   │    │  Overnight ADAS  │               │
 │  │  + feedback (👍👎) │    │  evolution loop  │               │
 │  └──────────────────┘    └──────────────────┘               │
@@ -241,7 +241,7 @@ The first Step 9 version now exists as a local CLI-driven loop. It is not yet th
 5. evaluate it with the existing evaluator
 6. archive the result
 
-The production form now has cron wiring and Telegram delivery; multi-iteration operational hardening remains ongoing.
+The production form now has external scheduling wiring and Telegram delivery; multi-iteration operational hardening remains ongoing.
 
 **Configuration:**
 - Iterations per night: 5 (start conservative, increase as you gain confidence)
@@ -286,7 +286,7 @@ The self-reflection prompts check for:
 
 ### Component 5: Telegram delivery + feedback loop
 
-**Morning delivery (current cron schedule sends at 4:30 AM local time):**
+**Morning delivery (current external schedule sends at 4:30 AM local time):**
 
 The production skill (best from archive) runs and sends a Telegram message like:
 
@@ -339,30 +339,15 @@ React 👍 or 👎 to each to help me improve picks.
 
 ---
 
-### Component 6: Cron schedule
+### Component 6: External schedule source
 
-Two cron jobs in NemoClaw:
+`cron/jobs.json` is the authoritative job catalog. NemoClaw/OpenShell reads it and launches:
 
-```json
-{
-  "jobs": [
-    {
-      "name": "adas-evolution",
-      "schedule": "0 2 * * *",
-      "command": "python3 ~/.openclaw/workspace/adas/meta_agent.py",
-      "description": "Run ADAS loop at 2 AM — 5 iterations"
-    },
-    {
-      "name": "morning-digest",
-      "schedule": "0 4 * * *",
-      "command": "openclaw agent --agent main --local -m '/youtube-curator'",
-      "description": "Send top 3 videos to Telegram at 4 AM"
-    }
-  ]
-}
-```
-
----
+- `refresh-video-cache` at 00:30
+- `adas-evolution` at 01:30
+- `morning-digest` at 04:30
+- `reaction-capture` at 08:30
+- `daily-status` at 09:00
 
 ## NemoClaw security configuration
 

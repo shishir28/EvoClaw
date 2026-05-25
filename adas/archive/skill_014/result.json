@@ -1,0 +1,67 @@
+{
+  "skill_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/adas/.meta_tmp/meta_candidate_8xo82jdg.md",
+  "skill_name": "recency-first-tactical-enhanced-v4",
+  "status": "scored",
+  "total_score": 5.5263,
+  "error": null,
+  "result": {
+    "skill_name": "recency-first-tactical-enhanced-v4",
+    "strategy": "recency",
+    "cache_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/adas/test_sets/video_cache_w1.json",
+    "video_count": 49,
+    "dimensions": [
+      {
+        "name": "relevance",
+        "weight": 0.25,
+        "score": 5.0,
+        "detail": "The videos are somewhat related to AI and entrepreneurship but lack specific focus on tactical founder content."
+      },
+      {
+        "name": "substance",
+        "weight": 0.25,
+        "score": 3.0,
+        "detail": "The videos have limited substance, with one being a speculative list of startups and another being a personal coding update without detailed insights."
+      },
+      {
+        "name": "freshness",
+        "weight": 0.15,
+        "score": 8.8418,
+        "detail": "g0SFb0WKP2o: 0.64h old -> 9.95; UlcY9jkGgSk: 37.61h old -> 6.87; L_vkXPWfeqs: 3.45h old -> 9.71"
+      },
+      {
+        "name": "diversity",
+        "weight": 0.15,
+        "score": 10.0,
+        "detail": "3/3 unique channels; avg topical similarity=0.0"
+      },
+      {
+        "name": "reasoning",
+        "weight": 0.1,
+        "score": 2.0,
+        "detail": "The summaries do not accurately reflect the content of the videos, especially the first video which lacks a transcript and is described inaccurately."
+      },
+      {
+        "name": "alignment",
+        "weight": 0.1,
+        "score": 5.0,
+        "detail": "No feedback history yet; using neutral placeholder score."
+      }
+    ],
+    "selected_video_ids": [
+      "g0SFb0WKP2o",
+      "UlcY9jkGgSk",
+      "L_vkXPWfeqs"
+    ],
+    "total_score": 5.5263,
+    "status": "scored",
+    "notes": [
+      "Supports partial scoring until every dimension has a value.",
+      "Weighted aggregation is applied once all dimension scores are assigned.",
+      "Only algorithmic dimensions are scored here; LLM-judged dimensions remain pending.",
+      "Executed recency strategy adapter.",
+      "Preferred 2 video(s) at least 5 minutes long.",
+      "Selected from 48h window.",
+      "Applied LLM-judged scores for relevance, substance, and reasoning."
+    ]
+  }
+}

@@ -6,12 +6,8 @@ from __future__ import annotations
 
 from typing import Protocol
 
-try:
-    from ..evaluation.models import EvaluationResult
-    from .models import BaselineEvaluationRecord
-except ImportError:
-    from evaluation.models import EvaluationResult
-    from baseline.models import BaselineEvaluationRecord
+from adas.evaluation.models import EvaluationResult
+from adas.baseline.models import BaselineEvaluationRecord
 
 
 class EvaluatorProtocol(Protocol):

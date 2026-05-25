@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from feedback.store import FeedbackStore
-from status_report import DailyStatusReport, DailyStatusReporter, JobFailure
-from telegram.delivery_log import DeliveryLogStore
-from telegram.models import DeliveryRecord
+from adas.feedback.store import FeedbackStore
+from adas.status_report import DailyStatusReport, DailyStatusReporter, JobFailure
+from adas.telegram.delivery_log import DeliveryLogStore
+from adas.telegram.models import DeliveryRecord
 
 _NOW = datetime(2026, 5, 23, 9, 0, tzinfo=timezone.utc)
 _TODAY = "2026-05-23"

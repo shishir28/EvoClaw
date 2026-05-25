@@ -8,12 +8,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from itertools import combinations
 
-try:
-    from .models import EvaluationRequest, FeedbackVideoSnapshot, VideoRecord
-    from .topic_terms import extract_topic_terms
-except ImportError:
-    from evaluation.models import EvaluationRequest, FeedbackVideoSnapshot, VideoRecord
-    from evaluation.topic_terms import extract_topic_terms
+from adas.evaluation.models import EvaluationRequest, FeedbackVideoSnapshot, VideoRecord
+from adas.evaluation.topic_terms import extract_topic_terms
 
 
 def _normalize_reaction(reaction: str | None) -> float:

@@ -5,14 +5,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-try:
-    from .models import DeliveryRecord
-    from ..config import BASE_DIR
-    from ..utils.paths import assert_safe_write_path
-except ImportError:
-    from telegram.models import DeliveryRecord
-    from config import BASE_DIR
-    from utils.paths import assert_safe_write_path
+from adas.telegram.models import DeliveryRecord
+from adas.config import BASE_DIR
+from adas.utils.paths import assert_safe_write_path
 
 
 class DeliveryLogStore:

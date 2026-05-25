@@ -6,12 +6,8 @@ duplicating transport logic.
 
 from __future__ import annotations
 
-try:
-    from ..config import LLM_BASE_URL, LLM_MODEL
-    from ..evaluation.judge import ChatCompletionClient, OpenAIChatCompletionClient
-except ImportError:
-    from config import LLM_BASE_URL, LLM_MODEL
-    from evaluation.judge import ChatCompletionClient, OpenAIChatCompletionClient
+from adas.config import LLM_BASE_URL, LLM_MODEL
+from adas.evaluation.judge import ChatCompletionClient, OpenAIChatCompletionClient
 
 
 def make_client(

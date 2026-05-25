@@ -12,7 +12,8 @@
         "--max-per-query",
         "10",
         "--output",
-        "video_cache_w1.json"
+        "video_cache_w1.json",
+        "--no-transcripts"
       ],
       "required_env": [
         "YOUTUBE_API_KEY"

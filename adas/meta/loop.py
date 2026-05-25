@@ -8,44 +8,24 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-try:
-    from ..archive_runtime.service import ArchiveService
-    from ..archive_runtime.store import ArchiveStore
-    from ..baseline.models import BaselineEvaluationRecord
-    from ..config import (
-        ARCHIVE_DIR,
-        FEEDBACK_FILE,
-        META_CANDIDATE_TEMP_DIR,
-        META_REFLECT_PASSES,
-        META_USE_LLM_JUDGING,
-    )
-    from ..deployment.promoter import DeploymentRecordStore, SkillPromoter
-    from ..evaluation.service import Evaluator
-    from .context import build_context
-    from .dedupe import is_duplicate
-    from .generator import Generator
-    from .models import Candidate, CycleResult, MetaContext
-    from .parser import validate_candidate
-    from .reflector import Reflector
-except ImportError:
-    from archive_runtime.service import ArchiveService
-    from archive_runtime.store import ArchiveStore
-    from baseline.models import BaselineEvaluationRecord
-    from config import (
-        ARCHIVE_DIR,
-        FEEDBACK_FILE,
-        META_CANDIDATE_TEMP_DIR,
-        META_REFLECT_PASSES,
-        META_USE_LLM_JUDGING,
-    )
-    from deployment.promoter import DeploymentRecordStore, SkillPromoter
-    from evaluation.service import Evaluator
-    from meta.context import build_context
-    from meta.dedupe import is_duplicate
-    from meta.generator import Generator
-    from meta.models import Candidate, CycleResult, MetaContext
-    from meta.parser import validate_candidate
-    from meta.reflector import Reflector
+from adas.archive_runtime.service import ArchiveService
+from adas.archive_runtime.store import ArchiveStore
+from adas.baseline.models import BaselineEvaluationRecord
+from adas.config import (
+    ARCHIVE_DIR,
+    FEEDBACK_FILE,
+    META_CANDIDATE_TEMP_DIR,
+    META_REFLECT_PASSES,
+    META_USE_LLM_JUDGING,
+)
+from adas.deployment.promoter import DeploymentRecordStore, SkillPromoter
+from adas.evaluation.service import Evaluator
+from adas.meta.context import build_context
+from adas.meta.dedupe import is_duplicate
+from adas.meta.generator import Generator
+from adas.meta.models import Candidate, CycleResult, MetaContext
+from adas.meta.parser import validate_candidate
+from adas.meta.reflector import Reflector
 
 _log = logging.getLogger(__name__)
 _META_SOURCE_TYPE = "meta-agent"

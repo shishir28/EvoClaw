@@ -6,10 +6,10 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import evaluator as evaluator_module
+import adas.evaluator as evaluator_module
 from builders import make_request, make_result, video
-from evaluator import Evaluator, _build_cli_output
-from evaluation.executor import SkillExecutionResult
+from adas.evaluator import Evaluator, _build_cli_output
+from adas.evaluation.executor import SkillExecutionResult
 
 
 class _StubRequestLoader:

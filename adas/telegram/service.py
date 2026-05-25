@@ -11,36 +11,24 @@ from typing import Callable, Protocol
 
 _log = logging.getLogger(__name__)
 
-try:
-    from ..config import (
-        CACHE_MAX_AGE_HOURS,
-        CACHE_STALE_WARN_HOURS,
-        DELIVERY_LOG,
-        FEEDBACK_FILE,
-        SKILL_PRODUCTION,
-    )
-    from ..evaluation.models import EvaluationRequest, SkillDocument, VideoRecord
-    from ..evaluation.service import Evaluator
-    from ..youtube_fetcher import VideoCacheRepository
-    from .delivery_log import DeliveryLogStore
-    from .formatter import TelegramDigestFormatter
-    from .models import DeliveryRecord, DigestDeliveryResult, TelegramDigestPick
-    from .sender import TelegramSender
-except ImportError:
-    from config import (
-        CACHE_MAX_AGE_HOURS,
-        CACHE_STALE_WARN_HOURS,
-        DELIVERY_LOG,
-        FEEDBACK_FILE,
-        SKILL_PRODUCTION,
-    )
-    from evaluation.models import EvaluationRequest, SkillDocument, VideoRecord
-    from evaluation.service import Evaluator
-    from youtube_fetcher import VideoCacheRepository
-    from telegram.delivery_log import DeliveryLogStore
-    from telegram.formatter import TelegramDigestFormatter
-    from telegram.models import DeliveryRecord, DigestDeliveryResult, TelegramDigestPick
-    from telegram.sender import TelegramSender
+from adas.config import (
+    CACHE_MAX_AGE_HOURS,
+    CACHE_STALE_WARN_HOURS,
+    DELIVERY_LOG,
+    FEEDBACK_FILE,
+    SKILL_PRODUCTION,
+)
+from adas.evaluation.models import EvaluationRequest, SkillDocument, VideoRecord
+from adas.evaluation.service import Evaluator
+from adas.youtube_fetcher import VideoCacheRepository
+from adas.telegram.delivery_log import DeliveryLogStore
+from adas.telegram.formatter import TelegramDigestFormatter
+from adas.telegram.models import (
+    DeliveryRecord,
+    DigestDeliveryResult,
+    TelegramDigestPick,
+)
+from adas.telegram.sender import TelegramSender
 
 
 class DigestSender(Protocol):
@@ -177,9 +165,16 @@ class ProductionDigestService:
             ]
         if freshness_notes:
             execution_notes = [*freshness_notes, *execution_notes]
-        if len(selected_video_ids) != 3:
-            raise ValueError(
-                f"Production digest requires exactly 3 selected videos, got {len(selected_video_ids)}."
+        if not selected_video_ids:
+            raise ValueError("Production digest requires at least 1 selected video.")
+        if len(selected_video_ids) > 3:
+            execution_notes.append(
+                f"Production strategy returned {len(selected_video_ids)} video(s); capping digest at 3 picks."
+            )
+            selected_video_ids = selected_video_ids[:3]
+        elif len(selected_video_ids) < 3:
+            execution_notes.append(
+                f"Production strategy returned {len(selected_video_ids)} video(s); sending a short digest."
             )
         videos = self.evaluator.resolve_selected_videos(request, selected_video_ids)
         picks = self.formatter.build_picks(videos)

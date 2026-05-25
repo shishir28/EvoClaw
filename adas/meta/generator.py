@@ -4,18 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-try:
-    from ..config import PROMPTS_DIR
-    from ..evaluation.judge import ChatCompletionClient
-    from .client import make_client
-    from .models import Candidate, MetaContext
-    from .parser import parse_candidate_response
-except ImportError:
-    from config import PROMPTS_DIR
-    from evaluation.judge import ChatCompletionClient
-    from meta.client import make_client
-    from meta.models import Candidate, MetaContext
-    from meta.parser import parse_candidate_response
+from adas.config import PROMPTS_DIR
+from adas.evaluation.judge import ChatCompletionClient
+from adas.meta.client import make_client
+from adas.meta.models import Candidate, MetaContext
+from adas.meta.parser import parse_candidate_response
 
 
 class Generator:

@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import json
 
-from baseline.models import BaselineEvaluationRecord
-from baseline.result_store import EvaluationResultStore
+from adas.baseline.models import BaselineEvaluationRecord
+from adas.baseline.result_store import EvaluationResultStore
 from builders import make_scored_result
 
 

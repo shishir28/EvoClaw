@@ -225,7 +225,7 @@ The evaluator runtime is now split cleanly:
 10. `feedback/service.py` can append manual feedback entries for later alignment scoring
 11. `deployment/promoter.py` can promote the archive winner into production
 
-The Telegram delivery path, reaction capture path, and scheduled runtime wiring are implemented. Cron job definitions live in `../cron/jobs.json`.
+The Telegram delivery path, reaction capture path, and scheduled runtime wiring are implemented. Job definitions live in `../cron/jobs.json` and are launched externally.
 
 ### `meta/`
 

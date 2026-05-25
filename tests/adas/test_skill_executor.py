@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from evaluation.executor import (
+from adas.evaluation.executor import (
     BaselineSkillExecutor,
     EngagementVelocityStrategyExecutor,
     RecencyStrategyExecutor,
