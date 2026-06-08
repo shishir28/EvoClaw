@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import requests
 
 from adas.config import TELEGRAM_BOT_TOKEN
 from adas.utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
+
+_TELEGRAM_API_HOST = "api.telegram.org"
 
 
 @dataclass(slots=True)
@@ -37,6 +39,10 @@ class TelegramReactionPoller:
         if self.session is None:
             self.session = requests.Session()
 
+    @property
+    def endpoint(self) -> str:
+        return f"https://{_TELEGRAM_API_HOST}/bot{self.bot_token}/getUpdates"
+
     def poll(self, offset: int | None = None, limit: int = 100) -> list[ReactionUpdate]:
         """Return new reaction updates since offset, or all recent if offset is None."""
         params: dict[str, Any] = {
@@ -49,7 +55,7 @@ class TelegramReactionPoller:
         def _attempt() -> requests.Response:
             try:
                 resp = self.session.get(
-                    f"https://api.telegram.org/bot{self.bot_token}/getUpdates",
+                    self.endpoint,
                     params=params,
                     timeout=self.timeout_seconds,
                 )

@@ -120,6 +120,24 @@ Known limitations:
    - `TELEGRAM_CHAT_ID`
    - optional inference settings such as `INFERENCE_BACKEND`, `LLM_BASE_URL`, and `LLM_MODEL`
 
+### Docker with bundled vLLM
+
+`docker-compose.yml` can run EvoClaw and a sibling `vllm-evo` container on the
+same Docker network. By default:
+
+- `vllm-evo` serves `${EVOCLAW_VLLM_MODEL:-Qwen/Qwen2.5-7B-Instruct}`
+- EvoClaw points `LLM_BASE_URL` at `http://vllm-evo:8000/v1`
+- the vLLM API is also published to the host on `${EVOCLAW_VLLM_PORT:-9001}`
+
+Bring the stack up with:
+
+```bash
+docker compose up -d --build
+```
+
+If you want EvoClaw to keep using some other endpoint, override
+`EVOCLAW_LLM_BASE_URL` or `LLM_BASE_URL` in `.env`.
+
 ### External scheduler
 
 EvoClaw does not install its own cron scheduler. The daily jobs are launched by

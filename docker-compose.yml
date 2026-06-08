@@ -1,4 +1,39 @@
 services:
+  vllm-evo:
+    image: nvcr.io/nvidia/vllm:25.11-py3
+    container_name: evoclaw-vllm-evo
+    restart: unless-stopped
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+      HUGGING_FACE_HUB_TOKEN: ${HUGGING_FACE_HUB_TOKEN:-}
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      HTTP_PROXY: ${HTTP_PROXY:-}
+      HTTPS_PROXY: ${HTTPS_PROXY:-}
+      http_proxy: ${http_proxy:-}
+      https_proxy: ${https_proxy:-}
+      NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,host.docker.internal,172.22.0.1,10.200.0.1,10.43.0.10}
+      no_proxy: ${no_proxy:-localhost,127.0.0.1,host.docker.internal,172.22.0.1,10.200.0.1,10.43.0.10}
+    command:
+      - python3
+      - -m
+      - vllm.entrypoints.openai.api_server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --model
+      - ${EVOCLAW_VLLM_MODEL:-Qwen/Qwen2.5-Coder-14B-Instruct}
+      - --gpu-memory-utilization
+      - "0.70"
+    ports:
+      - "${EVOCLAW_VLLM_PORT:-9001}:8000"
+    volumes:
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+    shm_size: 16gb
+    ipc: host
+    gpus: all
+
   evoclaw:
     build:
       context: .
@@ -10,10 +45,12 @@ services:
     environment:
       TZ: Australia/Sydney
       EVOCLAW_PYTHON: /usr/local/bin/python
-      # Inside Docker, localhost is the EvoClaw container. This reaches the
-      # host-published vLLM endpoint started on port 9000.
-      LLM_BASE_URL: ${EVOCLAW_LLM_BASE_URL:-http://host.docker.internal:9000/v1}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      # Default to the sibling vLLM service on the compose network.
+      LLM_BASE_URL: ${EVOCLAW_LLM_BASE_URL:-http://vllm-evo:8000/v1}
+      LLM_MODEL: ${EVOCLAW_LLM_MODEL:-Qwen/Qwen2.5-Coder-14B-Instruct}
+      NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,host.docker.internal,172.22.0.1,10.200.0.1,10.43.0.10},vllm-evo
+      no_proxy: ${no_proxy:-localhost,127.0.0.1,host.docker.internal,172.22.0.1,10.200.0.1,10.43.0.10},vllm-evo
+    depends_on:
+      - vllm-evo
     volumes:
       - .:/app
