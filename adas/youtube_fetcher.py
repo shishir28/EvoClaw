@@ -98,9 +98,6 @@ def _views_per_hour(views: int, published_at: str) -> float:
 
 
 def _build_youtube_api_http():
-    # The host environment exposes a proxy that times out on Google APIs, while
-    # direct egress works. Use a direct client here so cache refreshes do not
-    # depend on proxy state.
     return httplib2.Http(timeout=30)
 
 
@@ -114,7 +111,6 @@ class YouTubeAPIClient:
         self._api_key = api_key
         self._base_url = "https://www.googleapis.com/youtube/v3"
         self._session = requests.Session()
-        self._session.trust_env = False
         self._subscriber_count_cache: dict[str, int | None] = {}
 
     def _build_video_stub(self, item: dict, query: str) -> VideoStub:

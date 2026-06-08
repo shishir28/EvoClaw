@@ -10,6 +10,8 @@ from adas.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 from adas.telegram.models import TelegramSendReceipt
 from adas.utils.retry import RETRYABLE_HTTP_STATUSES, call_with_retry
 
+_TELEGRAM_API_HOST = "api.telegram.org"
+
 
 @dataclass(slots=True)
 class TelegramSender:
@@ -27,12 +29,10 @@ class TelegramSender:
             raise ValueError("TELEGRAM_CHAT_ID is required to send Telegram messages.")
         if self.session is None:
             self.session = requests.Session()
-            # The host can reach Telegram directly; bypass the broken proxy.
-            self.session.trust_env = False
 
     @property
     def endpoint(self) -> str:
-        return f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
+        return f"https://{_TELEGRAM_API_HOST}/bot{self.bot_token}/sendMessage"
 
     def send_message(self, text: str) -> TelegramSendReceipt:
         response = self._post(text)

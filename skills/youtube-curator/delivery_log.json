@@ -1235,6 +1235,204 @@
         "Selected from 48h window."
       ],
       "message_text": "🎬 Pick 1: \"Nvidia CEO Jensen Huang on what kids should be studying in the age of AI\"\n@CNA · 2 min · 2 hours ago\n🔗 https://www.youtube.com/watch?v=L_vkXPWfeqs\n-> What should parents suggest their children study to stay relevant in an age of widespread AI use?.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"Will AI make people lazier thinkers? Nvidia CEO Jensen Huang says no\"\n@CNA · 3 min · 2 hours ago\n🔗 https://www.youtube.com/watch?v=wwGBADh1bKk\n-> Could frequent use of AI make people lazier in their thinking?.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"Is one-size-fits-all SaaS dying? #ai  #smallbusiness  #entrepreneurship\"\n@moversandshakershq · 1 min · 5 hours ago\n🔗 https://www.youtube.com/watch?v=DWNw_y5LK_Y\n-> For years, small businesses had to adapt to generic software because custom tools were too expensive to build.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
+    },
+    {
+      "delivered_at": "2026-05-25T12:30:27.846688+00:00",
+      "dry_run": false,
+      "skill_name": "recency-first",
+      "skill_version": "1.0",
+      "strategy": "recency",
+      "production_skill_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/skills/youtube-curator/SKILL.md",
+      "cache_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/adas/test_sets/video_cache_w1.json",
+      "feedback_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/adas/test_sets/feedback.json",
+      "telegram_chat_id": "8770142442",
+      "telegram_message_id": 89,
+      "selected_video_ids": [
+        "g0SFb0WKP2o",
+        "tDQcQv6M5e4",
+        "G5xsan8zK_0"
+      ],
+      "telegram_message_ids": [
+        89,
+        90,
+        91
+      ],
+      "pick_message_ids": {
+        "g0SFb0WKP2o": 89,
+        "tDQcQv6M5e4": 90,
+        "G5xsan8zK_0": 91
+      },
+      "picks": [
+        {
+          "rank": 1,
+          "video_id": "g0SFb0WKP2o",
+          "title": "Hottest AI Startups in Silicon Valley 2026 🔥",
+          "channel": "Little Movie Magic🌟",
+          "url": "https://www.youtube.com/watch?v=g0SFb0WKP2o",
+          "duration_minutes": 21,
+          "age_label": "less than 1 hour ago",
+          "why_watch": "Hottest AI Startups in Silicon Valley 2026 Discover the hottest AI startups in Silicon Valley that are transforming the future of."
+        },
+        {
+          "rank": 2,
+          "video_id": "tDQcQv6M5e4",
+          "title": "Narrative that connects AI to job loss ‘too lazy’: Nvidia CEO Jensen Huang",
+          "channel": "CNA",
+          "url": "https://www.youtube.com/watch?v=tDQcQv6M5e4",
+          "duration_minutes": 1,
+          "age_label": "8 hours ago",
+          "why_watch": "The narrative that connects AI to job loss is \"too lazy\", Nvidia founder and CEO Jensen Huang told CNA on Monday (May 25)."
+        },
+        {
+          "rank": 3,
+          "video_id": "G5xsan8zK_0",
+          "title": "&#39;AI CAN NOW DO WORK&#39;: Nvidia&#39;s Huang on tech evolution #shorts",
+          "channel": "Fox Business",
+          "url": "https://www.youtube.com/watch?v=G5xsan8zK_0",
+          "duration_minutes": 1,
+          "age_label": "20 hours ago",
+          "why_watch": "Nvidia founder and CEO Jensen Huang explains the evolution of AI from generative to agentic, highlighting that artificial."
+        }
+      ],
+      "execution_notes": [
+        "Excluded 21 previously delivered video(s).",
+        "Executed recency strategy adapter.",
+        "Preferred 1 video(s) at least 5 minutes long.",
+        "Selected from 48h window."
+      ],
+      "message_text": "🎬 Pick 1: \"Hottest AI Startups in Silicon Valley 2026 🔥\"\n@Little Movie Magic🌟 · 21 min · less than 1 hour ago\n🔗 https://www.youtube.com/watch?v=g0SFb0WKP2o\n-> Hottest AI Startups in Silicon Valley 2026 Discover the hottest AI startups in Silicon Valley that are transforming the future of.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"Narrative that connects AI to job loss ‘too lazy’: Nvidia CEO Jensen Huang\"\n@CNA · 1 min · 8 hours ago\n🔗 https://www.youtube.com/watch?v=tDQcQv6M5e4\n-> The narrative that connects AI to job loss is \"too lazy\", Nvidia founder and CEO Jensen Huang told CNA on Monday (May 25).\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"&#39;AI CAN NOW DO WORK&#39;: Nvidia&#39;s Huang on tech evolution #shorts\"\n@Fox Business · 1 min · 20 hours ago\n🔗 https://www.youtube.com/watch?v=G5xsan8zK_0\n-> Nvidia founder and CEO Jensen Huang explains the evolution of AI from generative to agentic, highlighting that artificial.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
+    },
+    {
+      "delivered_at": "2026-06-07T11:11:10.902333+00:00",
+      "dry_run": false,
+      "skill_name": "recency-first",
+      "skill_version": "1.0",
+      "strategy": "recency",
+      "production_skill_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/skills/youtube-curator/SKILL.md",
+      "cache_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/adas/test_sets/video_cache_w1.json",
+      "feedback_path": "/home/shishirmishra/Learnings/ClawVerse/EvoClaw/adas/test_sets/feedback.json",
+      "telegram_chat_id": "8770142442",
+      "telegram_message_id": 92,
+      "selected_video_ids": [
+        "xH5xSqlzwkY",
+        "dHHLQaCir9Q",
+        "9qk9rVIAiJ8"
+      ],
+      "telegram_message_ids": [
+        92,
+        93,
+        94
+      ],
+      "pick_message_ids": {
+        "xH5xSqlzwkY": 92,
+        "dHHLQaCir9Q": 93,
+        "9qk9rVIAiJ8": 94
+      },
+      "picks": [
+        {
+          "rank": 1,
+          "video_id": "xH5xSqlzwkY",
+          "title": "Day 16 Live (Stream 2) | Building an Open Source AI Platform Until We Build a $1,000,000,000 Company",
+          "channel": "Krishna Founder",
+          "url": "https://www.youtube.com/watch?v=xH5xSqlzwkY",
+          "duration_minutes": 77,
+          "age_label": "14 hours ago",
+          "why_watch": "Current Valuation: $2M Revenue Till Now: $1.7K We are now building PlumoAI publicly toward a $1B AI vision."
+        },
+        {
+          "rank": 2,
+          "video_id": "dHHLQaCir9Q",
+          "title": "Interview and Presentation with Chris Royse, Founder of Leapable.ai",
+          "channel": "Information Physics Institute",
+          "url": "https://www.youtube.com/watch?v=dHHLQaCir9Q",
+          "duration_minutes": 48,
+          "age_label": "15 hours ago",
+          "why_watch": "Interview and Presentation with Chris Royse, Founder of Leapable.ai More details about Chris's research."
+        },
+        {
+          "rank": 3,
+          "video_id": "9qk9rVIAiJ8",
+          "title": "The Biggest Problem With India’s School System | Himanshu Chaurasia | Vijender Masijeevi | Cograd",
+          "channel": "Vijender Masijeevi",
+          "url": "https://www.youtube.com/watch?v=9qk9rVIAiJ8",
+          "duration_minutes": 35,
+          "age_label": "22 hours ago",
+          "why_watch": "Can a school charging just ₹500 per month provide AI education, robotics labs, smart classrooms and quality teachers?."
+        }
+      ],
+      "execution_notes": [
+        "Excluded 24 previously delivered video(s).",
+        "Executed recency strategy adapter.",
+        "Preferred 3 video(s) at least 5 minutes long.",
+        "Selected from 48h window."
+      ],
+      "message_text": "🎬 Pick 1: \"Day 16 Live (Stream 2) | Building an Open Source AI Platform Until We Build a $1,000,000,000 Company\"\n@Krishna Founder · 77 min · 14 hours ago\n🔗 https://www.youtube.com/watch?v=xH5xSqlzwkY\n-> Current Valuation: $2M Revenue Till Now: $1.7K We are now building PlumoAI publicly toward a $1B AI vision.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"Interview and Presentation with Chris Royse, Founder of Leapable.ai\"\n@Information Physics Institute · 48 min · 15 hours ago\n🔗 https://www.youtube.com/watch?v=dHHLQaCir9Q\n-> Interview and Presentation with Chris Royse, Founder of Leapable.ai More details about Chris's research.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"The Biggest Problem With India’s School System | Himanshu Chaurasia | Vijender Masijeevi | Cograd\"\n@Vijender Masijeevi · 35 min · 22 hours ago\n🔗 https://www.youtube.com/watch?v=9qk9rVIAiJ8\n-> Can a school charging just ₹500 per month provide AI education, robotics labs, smart classrooms and quality teachers?.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
+    },
+    {
+      "delivered_at": "2026-06-08T08:22:09.690588+00:00",
+      "dry_run": false,
+      "skill_name": "recency-first",
+      "skill_version": "1.0",
+      "strategy": "recency",
+      "production_skill_path": "/app/skills/youtube-curator/SKILL.md",
+      "cache_path": "/app/adas/test_sets/video_cache_w1.json",
+      "feedback_path": "/app/adas/test_sets/feedback.json",
+      "telegram_chat_id": "8770142442",
+      "telegram_message_id": 100,
+      "selected_video_ids": [
+        "-AkaoJW-Fko",
+        "84WXpFphXRA",
+        "2SjzeExf_zs"
+      ],
+      "telegram_message_ids": [
+        100,
+        101,
+        102
+      ],
+      "pick_message_ids": {
+        "-AkaoJW-Fko": 100,
+        "84WXpFphXRA": 101,
+        "2SjzeExf_zs": 102
+      },
+      "picks": [
+        {
+          "rank": 1,
+          "video_id": "-AkaoJW-Fko",
+          "title": "BIG Studio Move &amp; NEW Content Coming Soon!",
+          "channel": "Multiples AI (Tom Granot)",
+          "url": "https://www.youtube.com/watch?v=-AkaoJW-Fko",
+          "duration_minutes": 1,
+          "age_label": "less than 1 hour ago",
+          "why_watch": "Big news: Syntax Go-to-Market is now Multiples AI."
+        },
+        {
+          "rank": 2,
+          "video_id": "84WXpFphXRA",
+          "title": "The unfair advantage of building startups in 2026. 🚀💻  If I were 22 years old right now, with zero c",
+          "channel": "Michael Ballard / slashdev",
+          "url": "https://www.youtube.com/watch?v=84WXpFphXRA",
+          "duration_minutes": 1,
+          "age_label": "3 hours ago",
+          "why_watch": "The unfair advantage of building startups in 2026."
+        },
+        {
+          "rank": 3,
+          "video_id": "2SjzeExf_zs",
+          "title": "PROVEN AI Success: Mac vs. PC for Entrepreneurs (Secret Weapon Revealed)",
+          "channel": "Jonathan Acuña - Doctor AI",
+          "url": "https://www.youtube.com/watch?v=2SjzeExf_zs",
+          "duration_minutes": 1,
+          "age_label": "5 hours ago",
+          "why_watch": "Stop guessing which computer is holding you back from AI success."
+        }
+      ],
+      "execution_notes": [
+        "Excluded 27 previously delivered video(s).",
+        "Executed recency strategy adapter.",
+        "Preferred 0 video(s) at least 5 minutes long.",
+        "Selected from 48h window."
+      ],
+      "message_text": "🎬 Pick 1: \"BIG Studio Move &amp; NEW Content Coming Soon!\"\n@Multiples AI (Tom Granot) · 1 min · less than 1 hour ago\n🔗 https://www.youtube.com/watch?v=-AkaoJW-Fko\n-> Big news: Syntax Go-to-Market is now Multiples AI.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 2: \"The unfair advantage of building startups in 2026. 🚀💻  If I were 22 years old right now, with zero c\"\n@Michael Ballard / slashdev · 1 min · 3 hours ago\n🔗 https://www.youtube.com/watch?v=84WXpFphXRA\n-> The unfair advantage of building startups in 2026.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations.\n\n---\n\n🎬 Pick 3: \"PROVEN AI Success: Mac vs. PC for Entrepreneurs (Secret Weapon Revealed)\"\n@Jonathan Acuña - Doctor AI · 1 min · 5 hours ago\n🔗 https://www.youtube.com/watch?v=2SjzeExf_zs\n-> Stop guessing which computer is holding you back from AI success.\n\nReact 👍 or 👎 to this pick to help me improve future recommendations."
     }
   ]
 }

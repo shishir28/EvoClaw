@@ -23,67 +23,67 @@ process:
   run_as_user: sandbox
   run_as_group: sandbox
 network_policies:
-  egress_rules:
-    name: outbound
+  dns_udp:
+    name: dns-udp
     endpoints:
       - host: "10.43.0.10"
-        ports: [53]
+        port: 53
         protocol: udp
-        access: allow
+        access: full
+    binaries:
+      - path: /usr/local/bin/python
+      - path: /usr/local/bin/python3.12
+  dns_tcp:
+    name: dns-tcp
+    endpoints:
       - host: "10.43.0.10"
-        ports: [53]
+        port: 53
         protocol: tcp
-        access: allow
-      - host: "youtube.googleapis.com"
-        ports: [443]
+        access: full
+    binaries:
+      - path: /usr/local/bin/python
+      - path: /usr/local/bin/python3.12
+  youtube_api:
+    name: youtube-api
+    endpoints:
+      - host: youtube.googleapis.com
+        port: 443
+        protocol: rest
         tls: true
-        rules:
-          - allow:
-              method: GET
-        allowed_ips:
-          - 142.250.183.42
-          - 142.250.195.234
-          - 172.217.25.170
-          - 142.251.42.106
-          - 142.250.207.10
-          - 142.251.222.234
-          - 142.250.195.106
-          - 142.251.222.10
-          - 142.250.195.138
-      - host: "www.googleapis.com"
-        ports: [443]
+        enforcement: enforce
+        access: read-only
+      - host: www.googleapis.com
+        port: 443
+        protocol: rest
         tls: true
-        rules:
-          - allow:
-              method: GET
-        allowed_ips:
-          - 142.250.183.42
-          - 142.250.195.234
-          - 172.217.25.170
-          - 142.251.42.106
-          - 142.250.207.10
-          - 142.251.222.234
-          - 142.250.195.106
-          - 142.251.222.10
-          - 142.250.195.138
-      - host: "youtube.com"
-        ports: [443]
+        enforcement: enforce
+        access: read-only
+      - host: youtube.com
+        port: 443
+        protocol: rest
         tls: true
-        access: allow
-      - host: "host.docker.internal"
-        ports: [9000]
-        access: allow
-      - host: "api.telegram.org"
-        ports: [443]
+        access: read-only
+    binaries:
+      - path: /usr/local/bin/python
+      - path: /usr/local/bin/python3.12
+  local_llm:
+    name: local-llm
+    endpoints:
+      - host: host.docker.internal
+        port: 9000
+      - host: "172.22.0.1"
+        port: 9000
+    binaries:
+      - path: /usr/local/bin/python
+      - path: /usr/local/bin/python3.12
+  telegram:
+    name: telegram
+    endpoints:
+      - host: api.telegram.org
+        port: 443
+        protocol: rest
         tls: true
-        access: allow
-    binaries: []
-  default_action:
-    name: deny
-    endpoints: []
-    binaries: []
-
-
-
-
-
+        access: read-write
+    binaries:
+      - path: /usr/local/bin/python
+      - path: /usr/local/bin/python3.12
