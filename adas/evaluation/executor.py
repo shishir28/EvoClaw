@@ -238,23 +238,19 @@ class RecencyStrategyExecutor(_BaseStrategyExecutor):
             for video in self.base_candidates(videos)
             if _subscriber_floor(video, 1000)
         ]
-        # Prefer the 48h window, but fall back to the full candidate pool when it is too sparse.
+        # Prefer the 48h window, but fall back to the full 7d pool when fewer than 3 eligible videos.
         recent_candidates = [video for video in candidates if _age_hours(video) <= 48.0]
-        pool = recent_candidates if len(recent_candidates) >= 3 else candidates
-
-        preferred = sorted(
-            _preferred_duration_pool(pool),
-            key=_published_at,
-            reverse=True,
-        )
-        fallback = sorted(
-            [video for video in pool if video not in preferred],
-            key=_published_at,
-            reverse=True,
-        )
-        selected = (preferred + fallback)[:3]
+        preferred_recent = _preferred_duration_pool(recent_candidates)
+        if len(preferred_recent) >= 3:
+            selected = sorted(preferred_recent, key=_published_at, reverse=True)[:3]
+            window = "48h window"
+        else:
+            selected = sorted(
+                _preferred_duration_pool(candidates), key=_published_at, reverse=True
+            )[:3]
+            window = "7d fallback pool"
         duration_note = (
-            f"Preferred {min(len(preferred), 3)} video(s) at least "
+            f"Selected {len(selected)} video(s) at least "
             f"{MIN_PREFERRED_DURATION_MINUTES:g} minutes long."
         )
         return SkillExecutionResult(
@@ -262,7 +258,7 @@ class RecencyStrategyExecutor(_BaseStrategyExecutor):
             notes=[
                 "Executed recency strategy adapter.",
                 duration_note,
-                f"Selected from {'48h window' if pool is recent_candidates else '7d fallback pool'}.",
+                f"Selected from {window}.",
             ],
         )
 
@@ -275,20 +271,21 @@ class EngagementVelocityStrategyExecutor(_BaseStrategyExecutor):
         primary_pool = [
             video for video in candidates if _subscriber_floor(video, 10000)
         ]
-        # Prefer larger channels, but relax the subscriber floor when the pool is too sparse.
-        pool = primary_pool
-        if len(pool) < 3:
-            pool = [video for video in candidates if _subscriber_floor(video, 1000)]
-        selected = sorted(
-            pool,
-            key=lambda video: (video.views_per_hour, _published_at(video)),
-            reverse=True,
-        )[:3]
+        # Prefer larger channels, but relax the subscriber floor when fewer than 3 eligible videos.
+        key_fn = lambda video: (video.views_per_hour, _published_at(video))
+        preferred_primary = _preferred_duration_pool(primary_pool)
+        if len(preferred_primary) >= 3:
+            selected = sorted(preferred_primary, key=key_fn, reverse=True)[:3]
+            threshold_note = "10,000"
+        else:
+            fallback_pool = [video for video in candidates if _subscriber_floor(video, 1000)]
+            selected = sorted(_preferred_duration_pool(fallback_pool), key=key_fn, reverse=True)[:3]
+            threshold_note = "1,000 fallback"
         return SkillExecutionResult(
             selected_video_ids=[video.video_id for video in selected],
             notes=[
                 "Executed engagement-velocity strategy adapter.",
-                f"Used subscriber threshold {'10,000' if pool is primary_pool else '1,000 fallback'}.",
+                f"Used subscriber threshold {threshold_note}.",
             ],
         )
 
@@ -299,7 +296,7 @@ class SubstanceProxyStrategyExecutor(_BaseStrategyExecutor):
     def execute(self, videos: list[VideoRecord]) -> SkillExecutionResult:
         # Approximate substance without an LLM: richer text and reasonable duration rank higher.
         ranked = sorted(
-            self.base_candidates(videos),
+            _preferred_duration_pool(self.base_candidates(videos)),
             key=lambda video: (
                 _transcript_bonus(video)
                 + _description_bonus(video)
